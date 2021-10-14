@@ -32,8 +32,6 @@
         <module>ui.apps.structure</module>
         <module>ui.config</module>
         <module>ui.content</module>
-        <module>it.tests</module>
-        <module>ui.tests</module>
     </modules>
 
     <properties>
@@ -46,7 +44,7 @@
         <vault.user>admin</vault.user>
         <vault.password>admin</vault.password>
         <frontend-maven-plugin.version>1.12.0</frontend-maven-plugin.version>
-        <core.wcm.components.version>2.17.2</core.wcm.components.version>
+<!--        <core.wcm.components.version>2.17.2</core.wcm.components.version>-->
 
         <bnd.version>5.1.2</bnd.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -658,6 +656,7 @@ Bundle-DocURL:
                 <groupId>com.adobe.aem</groupId>
                 <artifactId>uber-jar</artifactId>
                 <version>6.5.5</version>
+                <classifier>apis</classifier>
                 <scope>provided</scope>
             </dependency>
             <!-- Apache Sling Dependencies -->
@@ -701,23 +700,23 @@ Bundle-DocURL:
                 <version>5.7.4</version>
                 <scope>provided</scope>
             </dependency>
-            <dependency>
-                <groupId>com.adobe.cq</groupId>
-                <artifactId>core.wcm.components.core</artifactId>
-                <version>${core.wcm.components.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.adobe.cq</groupId>
-                <artifactId>core.wcm.components.content</artifactId>
-                <type>zip</type>
-                <version>${core.wcm.components.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.adobe.cq</groupId>
-                <artifactId>core.wcm.components.config</artifactId>
-                <type>zip</type>
-                <version>${core.wcm.components.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.adobe.cq</groupId>-->
+<!--                <artifactId>core.wcm.components.core</artifactId>-->
+<!--                <version>${core.wcm.components.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>com.adobe.cq</groupId>-->
+<!--                <artifactId>core.wcm.components.content</artifactId>-->
+<!--                <type>zip</type>-->
+<!--                <version>${core.wcm.components.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>com.adobe.cq</groupId>-->
+<!--                <artifactId>core.wcm.components.config</artifactId>-->
+<!--                <type>zip</type>-->
+<!--                <version>${core.wcm.components.version}</version>-->
+<!--            </dependency>-->
 
 
             <!-- Testing -->

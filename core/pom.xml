@@ -77,6 +77,14 @@ Import-Package: javax.annotation;version=0.0.0,*
                     </archive>
                 </configuration>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <source>8</source>-->
+<!--                    <target>8</target>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
@@ -155,11 +163,12 @@ Import-Package: javax.annotation;version=0.0.0,*
         <dependency>
             <groupId>com.adobe.aem</groupId>
             <artifactId>uber-jar</artifactId>
+            <classifier>apis</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.core</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.core</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.models.api</artifactId>

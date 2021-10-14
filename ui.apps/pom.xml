@@ -61,14 +61,14 @@
                         </repositoryStructurePackage>
                     </repositoryStructurePackages>
                     <dependencies>
-                        <dependency>
-                            <groupId>com.adobe.cq</groupId>
-                            <artifactId>core.wcm.components.content</artifactId>
-                        </dependency>
-                        <dependency>
-                            <groupId>com.adobe.cq</groupId>
-                            <artifactId>core.wcm.components.config</artifactId>
-                        </dependency>
+<!--                        <dependency>-->
+<!--                            <groupId>com.adobe.cq</groupId>-->
+<!--                            <artifactId>core.wcm.components.content</artifactId>-->
+<!--                        </dependency>-->
+<!--                        <dependency>-->
+<!--                            <groupId>com.adobe.cq</groupId>-->
+<!--                            <artifactId>core.wcm.components.config</artifactId>-->
+<!--                        </dependency>-->
                     </dependencies>
                 </configuration>
             </plugin>
@@ -128,26 +128,27 @@
             <type>zip</type>
         </dependency>
 
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.core</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.core</artifactId>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.content</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.config</artifactId>
-            <type>zip</type>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.content</artifactId>-->
+<!--            <type>zip</type>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.config</artifactId>-->
+<!--            <type>zip</type>-->
+<!--        </dependency>-->
 
 
         <dependency>
             <groupId>com.adobe.aem</groupId>
             <artifactId>uber-jar</artifactId>
+            <classifier>apis</classifier>
         </dependency>
 
         <dependency>

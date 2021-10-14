@@ -77,23 +77,23 @@
                             <type>zip</type>
                             <target>/apps/etoolbox-rollout-manager-packages/application/install</target>
                         </embedded>
-                        <embedded>
-                            <groupId>com.adobe.cq</groupId>
-                            <artifactId>core.wcm.components.content</artifactId>
-                            <type>zip</type>
-                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>com.adobe.cq</groupId>
-                            <artifactId>core.wcm.components.core</artifactId>
-                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>com.adobe.cq</groupId>
-                            <artifactId>core.wcm.components.config</artifactId>
-                            <type>zip</type>
-                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>
-                        </embedded>
+<!--                        <embedded>-->
+<!--                            <groupId>com.adobe.cq</groupId>-->
+<!--                            <artifactId>core.wcm.components.content</artifactId>-->
+<!--                            <type>zip</type>-->
+<!--                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>-->
+<!--                        </embedded>-->
+<!--                        <embedded>-->
+<!--                            <groupId>com.adobe.cq</groupId>-->
+<!--                            <artifactId>core.wcm.components.core</artifactId>-->
+<!--                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>-->
+<!--                        </embedded>-->
+<!--                        <embedded>-->
+<!--                            <groupId>com.adobe.cq</groupId>-->
+<!--                            <artifactId>core.wcm.components.config</artifactId>-->
+<!--                            <type>zip</type>-->
+<!--                            <target>/apps/etoolbox-rollout-manager-vendor-packages/application/install</target>-->
+<!--                        </embedded>-->
                     </embeddeds>
                 </configuration>
             </plugin>
@@ -202,15 +202,15 @@
             <type>zip</type>
         </dependency>
 
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.content</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>com.adobe.cq</groupId>
-            <artifactId>core.wcm.components.config</artifactId>
-            <type>zip</type>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.content</artifactId>-->
+<!--            <type>zip</type>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.adobe.cq</groupId>-->
+<!--            <artifactId>core.wcm.components.config</artifactId>-->
+<!--            <type>zip</type>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

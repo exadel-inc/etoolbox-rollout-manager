@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
-    <filter root="/conf/etoolbox-rollout-manager" mode="merge"/>
     <filter root="/content/etoolbox-rollout-manager" mode="merge"/>
-    <filter root="/content/dam/etoolbox-rollout-manager/asset.jpg" mode="merge"/>
-    <filter root="/content/experience-fragments/etoolbox-rollout-manager" mode="merge"/>
 </workspaceFilter>
