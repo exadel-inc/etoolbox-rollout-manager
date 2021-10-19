@@ -53,21 +53,41 @@
         };
     }
 
-    //todo checkboxes tree works improperly
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (liveCopiesJsonArray.length > 0) {
-            var nestedList = $('<ul class="foundation-nestedcheckboxlist" data-foundation-nestedcheckboxlist-disconnected="false">');
+            var nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
+
             for (var i = 0; i < liveCopiesJsonArray.length; i++) {
                 var liveCopyJson = liveCopiesJsonArray[i];
 
-                var item = $('<li class="foundation-nestedcheckboxlist-item">');
+                var liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
                 var liveCopyCheckbox =
-                    $('<coral-checkbox name="liveCopyProperties[]" data-master="' + liveCopyJson.master + '" data-depth="' + liveCopyJson.depth + '" value="' + liveCopyJson.path + '" checked>')
+                    $('<coral-checkbox coral-interactive name="liveCopyProperties[]" data-master="' + liveCopyJson.master + '" data-depth="' + liveCopyJson.depth + '" value="' + liveCopyJson.path + '">')
                         .text(liveCopyJson.path);
-                liveCopyCheckbox.appendTo(item);
-                appendNestedCheckboxList(liveCopyJson.liveCopies, item);
 
-                item.appendTo(nestedList)
+                if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
+                    var accordion = $('<coral-accordion variant="quiet">');
+
+                    var accordionItem = $('<coral-accordion-item>');
+
+                    var accordionItemLabel = $('<coral-accordion-item-label>');
+
+                    liveCopyCheckbox.appendTo(accordionItemLabel);
+                    accordionItemLabel.appendTo(accordionItem);
+
+                    var accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
+                    appendNestedCheckboxList(liveCopyJson.liveCopies, accordionItemContent);
+                    accordionItemContent.appendTo(accordionItem);
+
+                    accordionItem.appendTo(accordion);
+
+                    accordion.appendTo(liItem);
+                } else {
+                    liveCopyCheckbox.addClass("inner-checkbox-option");
+                    liveCopyCheckbox.appendTo(liItem);
+                }
+
+                liItem.appendTo(nestedList);
             }
             nestedList.appendTo(sourceElement);
         }
@@ -98,17 +118,16 @@
 
         var onResolve = function () {
             var selectedLiveCopies = [];
-            //todo get only selected
             $("coral-checkbox[name='liveCopyProperties[]']").each(function () {
-                var selectedLiveCopyJson = {};
-                selectedLiveCopyJson.master = $(this).data("master");
-                selectedLiveCopyJson.target = $(this).val();
-                selectedLiveCopyJson.depth = $(this).data("depth");
-                selectedLiveCopyJson.deepRollout = false;
-
-                selectedLiveCopies.push(selectedLiveCopyJson);
+                if ($(this).prop("checked")) {
+                    var selectedLiveCopyJson = {};
+                    selectedLiveCopyJson.master = $(this).data("master");
+                    selectedLiveCopyJson.target = $(this).val();
+                    selectedLiveCopyJson.depth = $(this).data("depth");
+                    selectedLiveCopyJson.deepRollout = false;
+                    selectedLiveCopies.push(selectedLiveCopyJson);
+                }
             });
-            console.log(selectedLiveCopies);
             deferred.resolve(selectedLiveCopies);
         };
 
@@ -127,7 +146,6 @@
     }
 
     function onRolloutActiveCondition(name, el, config, collection, selections) {
-        console.log("onRolloutActiveCondition")
         var selectedPath = selections[0].dataset.foundationCollectionItemId;
         return blueprintCheck(selectedPath);
     }
@@ -164,7 +182,6 @@
     var BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
     function blueprintCheck(path) {
-        console.log("blueprintCheck")
         var isBlueprint = false;
         $.ajax({
             url: BLUEPRINT_CHECK_COMMAND,

@@ -1,4 +1,5 @@
 #base=js
 
+console-ui.checkboxlist.js
 console-ui.common.js
 console-ui.rollout.js

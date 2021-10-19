@@ -1,0 +1,35 @@
+.rollout-manager-nestedcheckboxlist .rollout-manager-nestedcheckboxlist {
+    padding-left: 0;
+}
+
+.rollout-manager-nestedcheckboxlist-item > coral-checkbox {
+    margin: 0 0 0 1rem !important;
+}
+
+.rollout-manager-nestedcheckboxlist-item > coral-accordion {
+    border: none;
+}
+
+.rollout-manager-nestedcheckboxlist {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.rollout-manager-coral-accordion-item-content {
+    padding-bottom: 0;
+}
+
+.rollout-manager-nestedcheckboxlist {
+    list-style: none;
+    padding: 0;
+}
+
+.rollout-manager-nestedcheckboxlist-item .inner-checkbox-option {
+    padding-left:1rem;
+    height: max-content;
+    min-width:9rem;
+}
+
+.rollout-manager-nestedcheckboxlist-item label {
+    margin: 0 .1rem 0 .5rem;
+}
