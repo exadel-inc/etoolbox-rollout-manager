@@ -55,15 +55,7 @@
     }
 
     function appendTargetsHeader(sourceElement) {
-        // var span = $('<span>');
         var label = $('<h3 class="rollout-manager-targets-label">').text('Target paths');
-        // var infoIcon = $('<coral-icon id="rollout-manager-targets-info-icon" icon="info" size="XS">');
-        // var infoTooltip = $('<coral-tooltip placement="right" target="_prev" interaction="on" open>')
-        //     .text('Live copies will be synchronized or created (if possible) for selected paths');
-        // label.appendTo(span);
-        // infoIcon.appendTo(span);
-        // infoTooltip.appendTo(span);
-        // span.appendTo(sourceElement);
         label.appendTo(sourceElement);
     }
 
