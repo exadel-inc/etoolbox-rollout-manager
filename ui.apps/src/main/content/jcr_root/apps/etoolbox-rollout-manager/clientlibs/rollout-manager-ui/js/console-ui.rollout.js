@@ -25,7 +25,7 @@
         var liveCopiesJsonArray = collectLiveCopies(selectedPath);
 
         showDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
-            rolloutItems(data, selectedPath, buildRolloutRequest);
+            rolloutItems(data, buildRolloutRequest);
         });
     }
 
@@ -38,7 +38,8 @@
                 url: ROLLOUT_COMMAND,
                 type: "POST",
                 data: {
-                    liveCopiesArray: JSON.stringify(data)
+                    liveCopiesArray: JSON.stringify(data.liveCopiesArray),
+                    isDeepRollout: data.isDeepRollout
                 }
             }).fail(function (xhr, status, error) {
                 if (xhr.status === 500) {
@@ -51,6 +52,26 @@
                 logger.log("Selected live copies successfully synchronized", false);
             });
         };
+    }
+
+    function appendTargetsHeader(sourceElement) {
+        // var span = $('<span>');
+        var label = $('<h3 class="rollout-manager-targets-label">').text('Target paths');
+        // var infoIcon = $('<coral-icon id="rollout-manager-targets-info-icon" icon="info" size="XS">');
+        // var infoTooltip = $('<coral-tooltip placement="right" target="_prev" interaction="on" open>')
+        //     .text('Live copies will be synchronized or created (if possible) for selected paths');
+        // label.appendTo(span);
+        // infoIcon.appendTo(span);
+        // infoTooltip.appendTo(span);
+        // span.appendTo(sourceElement);
+        label.appendTo(sourceElement);
+    }
+
+    function appendRolloutScope(sourceElement) {
+        var label = $('<h3>').text('Rollout scope');
+        var isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text('Rollout page and all sub pages');
+        label.appendTo(sourceElement);
+        isDeepCheckbox.appendTo(sourceElement);
     }
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
@@ -111,12 +132,19 @@
         $cancelBtn.appendTo(el.footer);
         $updateBtn.appendTo(el.footer);
 
+        appendTargetsHeader(el.content);
+
         appendNestedCheckboxList(liveCopiesJsonArray, el.content);
+
+        appendRolloutScope(el.content);
 
         // function onValidate() {
         // }
 
         var onResolve = function () {
+            var isDeepRollout = $("coral-checkbox[name='isDeepRollout']").prop("checked");
+            console.log("isDeep: " + isDeepRollout);
+
             var selectedLiveCopies = [];
             $("coral-checkbox[name='liveCopyProperties[]']").each(function () {
                 if ($(this).prop("checked")) {
@@ -124,11 +152,16 @@
                     selectedLiveCopyJson.master = $(this).data("master");
                     selectedLiveCopyJson.target = $(this).val();
                     selectedLiveCopyJson.depth = $(this).data("depth");
-                    selectedLiveCopyJson.deepRollout = false;
+                    selectedLiveCopyJson.deepRollout = isDeepRollout;
                     selectedLiveCopies.push(selectedLiveCopyJson);
                 }
             });
-            deferred.resolve(selectedLiveCopies);
+            var data = {
+                path: path,
+                isDeepRollout: isDeepRollout,
+                liveCopiesArray: selectedLiveCopies
+            }
+            deferred.resolve(data);
         };
 
         // el.on('change', 'input', onValidate);
@@ -201,9 +234,9 @@
     var PROCESSING_LABEL = Granite.I18n.get('Processing');
     var ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
-    function rolloutItems(selectedLiveCopies, blueprintPath, rolloutRequest) {
-        var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, blueprintPath);
-        var requests = $.Deferred().resolve().then(rolloutRequest(selectedLiveCopies, logger));
+    function rolloutItems(data, rolloutRequest) {
+        var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        var requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
         requests.always(function () {
             logger.finished();
             logger.dialog.on('coral-overlay:close', function () {

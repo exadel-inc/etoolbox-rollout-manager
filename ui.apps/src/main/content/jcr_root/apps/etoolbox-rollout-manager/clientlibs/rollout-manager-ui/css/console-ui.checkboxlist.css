@@ -33,3 +33,8 @@
 .rollout-manager-nestedcheckboxlist-item label {
     margin: 0 .1rem 0 .5rem;
 }
+
+.rollout-manager-targets-label {
+    display: inline-block;
+    margin-right: 1%;
+}

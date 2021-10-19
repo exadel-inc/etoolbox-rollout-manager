@@ -37,6 +37,10 @@ public class ServletUtil {
                 .orElse(StringUtils.EMPTY);
     }
 
+    public static boolean getRequestParamBoolean(SlingHttpServletRequest request, String param) {
+        return Boolean.parseBoolean(getRequestParamString(request, param));
+    }
+
     public static void writeJsonResponse(SlingHttpServletResponse response, String json) {
         response.setCharacterEncoding(CharEncoding.UTF_8);
         response.setContentType(ContentType.APPLICATION_JSON.getMimeType());

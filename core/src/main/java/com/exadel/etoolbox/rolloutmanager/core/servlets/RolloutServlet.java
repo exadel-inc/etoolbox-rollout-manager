@@ -58,6 +58,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String LIVE_COPIES_ARRAY_PARAM = "liveCopiesArray";
+    private static final String IS_DEEP_ROLLOUT_PARAM = "isDeepRollout";
     private static final String FAILED_TARGETS_RESPONSE_PARAM = "failedTargets";
 
     @Reference
@@ -86,7 +87,8 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             return;
         }
 
-        List<RolloutStatus> rolloutStatuses = doItemsRollout(rolloutItems, pageManager);
+        boolean isDeepRollout = ServletUtil.getRequestParamBoolean(request, IS_DEEP_ROLLOUT_PARAM);
+        List<RolloutStatus> rolloutStatuses = doItemsRollout(rolloutItems, pageManager, isDeepRollout);
         writeStatusesIfFailed(rolloutStatuses, response);
     }
 
@@ -105,26 +107,26 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         }
     }
 
-    private List<RolloutStatus> doItemsRollout(RolloutItem[] items, PageManager pageManager) {
+    private List<RolloutStatus> doItemsRollout(RolloutItem[] items, PageManager pageManager, boolean isDeep) {
         return Arrays.stream(items)
                 .collect(Collectors.groupingBy(RolloutItem::getDepth))
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(Map.Entry::getValue)
-                .flatMap(sortedByDepthItems -> rolloutSortedByDepthItems(sortedByDepthItems, pageManager))
+                .flatMap(sortedByDepthItems -> rolloutSortedByDepthItems(sortedByDepthItems, pageManager, isDeep))
                 .collect(Collectors.toList());
     }
 
-    private Stream<RolloutStatus> rolloutSortedByDepthItems(List<RolloutItem> items, PageManager pageManager) {
+    private Stream<RolloutStatus> rolloutSortedByDepthItems(List<RolloutItem> items, PageManager pageManager, boolean isDeep) {
         return items.stream()
                 .collect(Collectors.groupingBy(RolloutItem::getMaster))
                 .entrySet()
                 .stream()
-                .map(masterToTargets -> rollout(masterToTargets.getKey(), masterToTargets.getValue(), pageManager));
+                .map(masterToTargets -> rollout(masterToTargets.getKey(), masterToTargets.getValue(), pageManager, isDeep));
     }
 
-    private RolloutStatus rollout(String masterPath, List<RolloutItem> targets, PageManager pageManager) {
+    private RolloutStatus rollout(String masterPath, List<RolloutItem> targets, PageManager pageManager, boolean isDeep) {
         RolloutStatus status = new RolloutStatus();
         Optional<Page> masterPage = Optional.ofNullable(pageManager.getPage(masterPath));
         if (!masterPage.isPresent() || CollectionUtils.isEmpty(targets)) {
@@ -134,7 +136,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             return status;
         }
         status.setTargets(targets.stream().map(RolloutItem::getTarget).collect(Collectors.toList()));
-        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targets);
+        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targets, isDeep);
         try {
             rolloutManager.rollout(params);
             status.setSuccess(true);
@@ -147,12 +149,13 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         return status;
     }
 
-    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, List<RolloutItem> targets) {
+    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, List<RolloutItem> targets, boolean isDeep) {
         RolloutManager.RolloutParams params = new RolloutManager.RolloutParams();
         params.master = masterPage;
         params.targets = targets.stream()
                 .map(RolloutItem::getTarget)
                 .toArray(String[]::new);
+        params.isDeep = isDeep;
         params.trigger = RolloutManager.Trigger.ROLLOUT;
         return params;
     }
