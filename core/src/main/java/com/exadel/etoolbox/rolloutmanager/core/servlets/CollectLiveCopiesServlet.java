@@ -15,8 +15,10 @@
 package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
 import com.day.cq.wcm.api.WCMException;
+import com.day.cq.wcm.msm.api.LiveCopy;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
+import com.exadel.etoolbox.rolloutmanager.core.services.AvailabilityCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +58,9 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
 
+    @Reference
+    private transient AvailabilityCheckerService availabilityCheckerService;
+
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
         String path = ServletUtil.getRequestParamString(request, PATH_PARAM);
@@ -64,13 +69,17 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
             LOG.warn("Path is blank, live copies collection failed");
             return;
         }
-        String jsonResponse = getLiveCopiesJsonArray(path, request.getResourceResolver(), 0)
+        String jsonResponse = getLiveCopiesJsonArray(path, StringUtils.EMPTY, request.getResourceResolver(), 0)
                 .toString();
         ServletUtil.writeJsonResponse(response, jsonResponse);
     }
 
-    private JsonArray getLiveCopiesJsonArray(String bluePrintPath, ResourceResolver resourceResolver, int depth) {
-        Optional<Resource> blueprintResource = Optional.ofNullable(resourceResolver.getResource(bluePrintPath));
+    //non empty syncPath indicates that rollout is triggered for child page under the blueprint. for the blueprint itself sync path is empty
+    private JsonArray getLiveCopiesJsonArray(String source,
+                                             String sourceSyncPath,
+                                             ResourceResolver resourceResolver,
+                                             int depth) {
+        Optional<Resource> blueprintResource = Optional.ofNullable(resourceResolver.getResource(source));
         if (!blueprintResource.isPresent()) {
             return JsonValue.EMPTY_JSON_ARRAY;
         }
@@ -80,21 +89,52 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                     liveRelationshipManager.getLiveRelationships(blueprintResource.get(), null, null);
             while (relationships.hasNext()) {
                 LiveRelationship relationship = (LiveRelationship) relationships.next();
-                String liveCopyPath = relationship.getLiveCopy().getPath();
-
-                JsonObject liveCopyJson = Json.createObjectBuilder()
-                        .add("master", bluePrintPath)
-                        .add("path", liveCopyPath)
-                        .add("depth", depth)
-                        .add("liveCopies", getLiveCopiesJsonArray(liveCopyPath, resourceResolver, depth + 1))
-                        .build();
-
-                jsonArrayBuilder.add(liveCopyJson);
+                JsonObject liveCopyJson = relationshipToJson(relationship, source, sourceSyncPath, depth, resourceResolver);
+                if (!liveCopyJson.isEmpty()) {
+                    jsonArrayBuilder.add(liveCopyJson);
+                }
             }
-
         } catch (WCMException e) {
             LOG.error("live copies collection failed", e);
         }
         return jsonArrayBuilder.build();
+    }
+
+    private JsonObject relationshipToJson(LiveRelationship relationship,
+                                          String source,
+                                          String sourceSyncPath,
+                                          int depth,
+                                          ResourceResolver resourceResolver) {
+        String syncPath = buildSyncPath(relationship, sourceSyncPath);
+        String targetPath = buildTargetPath(relationship, syncPath);
+
+        LiveCopy liveCopy = relationship.getLiveCopy();
+        if (liveCopy == null
+                || (StringUtils.isNotBlank(syncPath) && !liveCopy.isDeep())
+                || !availabilityCheckerService.isAvailableForRollout(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver)) {
+            return Json.createObjectBuilder().build();
+        }
+
+        String liveCopyPath = liveCopy.getPath();
+        return Json.createObjectBuilder()
+                .add("master", source + sourceSyncPath)
+                .add("path", liveCopyPath + syncPath)
+                .add("depth", depth)
+                .add("liveCopies", getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
+                .build();
+    }
+
+    private String buildSyncPath(LiveRelationship relationship, String sourceSyncPath) {
+        return Optional.ofNullable(relationship.getSyncPath())
+                .filter(StringUtils::isNotBlank)
+                .orElse(sourceSyncPath);
+    }
+
+    private String buildTargetPath(LiveRelationship relationship, String syncPath) {
+        String targetPath = relationship.getTargetPath();
+        if (StringUtils.isBlank(targetPath)) {
+            return syncPath;
+        }
+        return targetPath.contains(syncPath) ? targetPath : targetPath + syncPath;
     }
 }

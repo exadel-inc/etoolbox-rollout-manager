@@ -172,7 +172,7 @@
 
     function onRolloutActiveCondition(name, el, config, collection, selections) {
         var selectedPath = selections[0].dataset.foundationCollectionItemId;
-        return blueprintCheck(selectedPath);
+        return isAvailableForRollout(selectedPath);
     }
 
     // INIT
@@ -206,8 +206,8 @@
 
     var BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
-    function blueprintCheck(path) {
-        var isBlueprint = false;
+    function isAvailableForRollout(path) {
+        var isAvailableForRollout = false;
         $.ajax({
             url: BLUEPRINT_CHECK_COMMAND,
             type: 'POST',
@@ -217,10 +217,10 @@
                 path: path
             },
             success: function (data) {
-                isBlueprint = data && data.isBlueprint;
+                isAvailableForRollout = data && data.isAvailableForRollout;
             }
         });
-        return isBlueprint;
+        return isAvailableForRollout;
     }
 
     var PROCESSING_LABEL = Granite.I18n.get('Processing');
