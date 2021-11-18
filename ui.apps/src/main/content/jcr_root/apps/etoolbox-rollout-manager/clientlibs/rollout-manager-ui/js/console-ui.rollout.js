@@ -21,12 +21,16 @@
 
     /** Root action handler */
     function onShowReferencesDialog(name, el, config, collection, selections) {
-        var selectedPath = selections[0].dataset.foundationCollectionItemId;
-        var liveCopiesJsonArray = collectLiveCopies(selectedPath);
-
-        showDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
-            rolloutItems(data, buildRolloutRequest);
-        });
+        let selectedPath = selections[0].dataset.foundationCollectionItemId;
+        let foundationUi = $(window).adaptTo('foundation-ui');
+        foundationUi.wait();
+        collectLiveCopies(selectedPath).then((liveCopiesJsonArray) => {
+                foundationUi.clearWait();
+                showDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
+                    rolloutItems(data, buildRolloutRequest);
+                })
+            }
+        );
     }
 
     var ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
@@ -78,6 +82,11 @@
                     $('<coral-checkbox coral-interactive name="liveCopyProperties[]" data-master="' + liveCopyJson.master + '" data-depth="' + liveCopyJson.depth + '" value="' + liveCopyJson.path + '">')
                         .text(liveCopyJson.path);
 
+                if (liveCopyJson.isNew) {
+                    let newLabel = $('<i class="rollout-manager-new-label">').text(" new");
+                    liveCopyCheckbox.append(newLabel);
+                }
+
                 if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
                     var accordion = $('<coral-accordion variant="quiet">');
 
@@ -109,7 +118,6 @@
     var CANCEL_LABEL = Granite.I18n.get('Cancel');
     var DIALOG_LABEL = Granite.I18n.get('Rollout');
 
-    // Confirmation dialog common methods
     function showDialog(liveCopiesJsonArray, path) {
         var deferred = $.Deferred();
 
@@ -130,13 +138,13 @@
 
         appendRolloutScope(el.content);
 
-        // function onValidate() {
-        // }
+        function onValidate() {
+            let isValidSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
+            $updateBtn.attr('disabled', !isValidSelection);
+        }
 
         var onResolve = function () {
             var isDeepRollout = $("coral-checkbox[name='isDeepRollout']").prop("checked");
-            console.log("isDeep: " + isDeepRollout);
-
             var selectedLiveCopies = [];
             $("coral-checkbox[name='liveCopyProperties[]']").each(function () {
                 if ($(this).prop("checked")) {
@@ -156,16 +164,16 @@
             deferred.resolve(data);
         };
 
-        // el.on('change', 'input', onValidate);
+        el.on('change', 'coral-checkbox', onValidate);
         el.on('click', '[data-dialog-action]', onResolve);
         el.on('coral-overlay:close', function () {
-            // el.off('change', 'input', onValidate);
+            el.off('change', 'coral-checkbox', onValidate);
             el.off('click', '[data-dialog-action]', onResolve);
             deferred.reject();
         });
 
         el.show();
-        // onValidate();
+        onValidate();
 
         return deferred.promise();
     }
@@ -188,26 +196,20 @@
     var COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
 
     function collectLiveCopies(path) {
-        var result = [];
-        $.ajax({
+        return $.ajax({
             url: COLLECT_LIVE_COPIES_COMMAND,
             type: 'POST',
-            async: false,
             data: {
                 _charset_: "UTF-8",
                 path: path
-            },
-            success: function (data) {
-                result = data;
             }
         });
-        return result;
     }
 
     var BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
     function isAvailableForRollout(path) {
-        var isAvailableForRollout = false;
+        let isAvailableForRollout = false;
         $.ajax({
             url: BLUEPRINT_CHECK_COMMAND,
             type: 'POST',
@@ -215,10 +217,9 @@
             data: {
                 _charset_: "UTF-8",
                 path: path
-            },
-            success: function (data) {
-                isAvailableForRollout = data && data.isAvailableForRollout;
             }
+        }).done(function (data) {
+            isAvailableForRollout = data && data.isAvailableForRollout;
         });
         return isAvailableForRollout;
     }
@@ -231,10 +232,6 @@
         var requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
         requests.always(function () {
             logger.finished();
-            logger.dialog.on('coral-overlay:close', function () {
-                $(window).adaptTo('foundation-ui').wait();
-                window.location.reload();
-            });
         });
         return requests;
     }

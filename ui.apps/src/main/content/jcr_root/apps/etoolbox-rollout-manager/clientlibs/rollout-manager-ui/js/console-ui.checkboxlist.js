@@ -1,27 +1,50 @@
-(function(document, $) {
+(function (document, $) {
     "use strict";
 
     function updateParents(el, checked) {
-        var parent = el.closest(".rollout-manager-nestedcheckboxlist").closest("li.rollout-manager-nestedcheckboxlist-item");
+        let parent = el.closest(".rollout-manager-nestedcheckboxlist")
+            .closest("li.rollout-manager-nestedcheckboxlist-item");
         if (parent && parent.length > 0) {
-            var parentCoralCheckbox = parent.find("coral-checkbox").first();
+            let parentCoralCheckbox = parent.find("coral-checkbox").first();
             if (parentCoralCheckbox && parentCoralCheckbox.length > 0) {
-                parentCoralCheckbox.prop('checked', checked);
+                if (checked) {
+                    parentCoralCheckbox.attr('intermediate', true);
+                    parentCoralCheckbox.prop('checked', true);
+                } else {
+                    let childCheckboxesChecked = parentCoralCheckbox.closest("li")
+                        .find("coral-accordion-item-content")
+                        .find("coral-checkbox[name='liveCopyProperties[]'][checked]")
+                    if (!childCheckboxesChecked || childCheckboxesChecked.length === 0) {
+                        parentCoralCheckbox.removeAttr('intermediate');
+                    }
+                }
                 updateParents(parent, checked);
             }
         }
     }
 
-    $(document).on("change", "coral-checkbox[name='liveCopyProperties[]']", function(e) {
+    $(document).on("change", "coral-checkbox[name='liveCopyProperties[]']", function (e) {
         e.stopPropagation();
 
-        var coralCheckbox = $(this);
-        var checked = coralCheckbox.prop("checked");
+        let coralCheckbox = $(this);
+        let isChecked = coralCheckbox.prop("checked");
 
-        $(this).closest("li").find("coral-checkbox[name='liveCopyProperties[]']").prop('checked', checked);
+        let parentLi = $(this).closest("li");
+        let childCheckboxes = parentLi.find("coral-accordion-item-content")
+            .find("coral-checkbox[name='liveCopyProperties[]']");
 
-        if (checked) {
-            updateParents($(this), checked);
+        if (isChecked) {
+            $(this).attr('intermediate', true);
+            childCheckboxes.attr('intermediate', true);
+        } else {
+            let isIntermediateState = coralCheckbox.attr("intermediate");
+            if (isIntermediateState && childCheckboxes.length > 0) {
+                $(this).prop('checked', true);
+                $(this).removeAttr('intermediate');
+                childCheckboxes.removeAttr('intermediate');
+            }
         }
+        updateParents($(this), isChecked);
+        childCheckboxes.prop('checked', isChecked);
     });
 })(document, Granite.$);

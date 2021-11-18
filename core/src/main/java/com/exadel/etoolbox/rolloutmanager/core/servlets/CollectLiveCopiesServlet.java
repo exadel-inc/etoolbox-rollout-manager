@@ -121,6 +121,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .add("path", liveCopyPath + syncPath)
                 .add("depth", depth)
                 .add("liveCopies", getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
+                .add("isNew", !resourceExists(resourceResolver, liveCopyPath + syncPath))
                 .build();
     }
 
@@ -136,5 +137,10 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
             return syncPath;
         }
         return targetPath.contains(syncPath) ? targetPath : targetPath + syncPath;
+    }
+
+    private boolean resourceExists(ResourceResolver resourceResolver, String path) {
+        return Optional.ofNullable(resourceResolver.getResource(path))
+                .isPresent();
     }
 }

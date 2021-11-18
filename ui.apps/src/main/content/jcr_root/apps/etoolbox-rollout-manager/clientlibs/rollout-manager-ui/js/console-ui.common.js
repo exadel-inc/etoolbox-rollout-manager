@@ -40,11 +40,12 @@
         if (!sharableDialog) {
             sharableDialog = new Coral.Dialog().set({
                 backdrop: Coral.Dialog.backdrop.STATIC,
-                interaction: 'off'
+                interaction: 'off',
+                closable: 'on'
             }).on('coral-overlay:close', function (e) {
                 e.target.remove();
             });
-            sharableDialog.classList.add('elc-dialog');
+            sharableDialog.classList.add('rollout-manager-dialog');
         }
         return sharableDialog;
     }
@@ -93,7 +94,7 @@
             },
             log: function (message, safe) {
                 var logItem = document.createElement('div');
-                logItem.className = 'elc-log-item';
+                logItem.className = 'rollout-manager-log-item';
                 logItem[safe ? 'textContent' : 'innerHTML'] = message;
                 el.content.insertAdjacentElement('beforeend', logItem);
             }
