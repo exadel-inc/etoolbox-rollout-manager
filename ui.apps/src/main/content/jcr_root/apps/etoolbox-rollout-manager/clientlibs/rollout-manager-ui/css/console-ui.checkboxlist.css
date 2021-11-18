@@ -15,6 +15,11 @@
     margin-bottom: 0;
 }
 
+.rollout-manager-select-all {
+    float: right;
+    font-size: small
+}
+
 .rollout-manager-coral-accordion-item-content {
     padding-bottom: 0;
 }

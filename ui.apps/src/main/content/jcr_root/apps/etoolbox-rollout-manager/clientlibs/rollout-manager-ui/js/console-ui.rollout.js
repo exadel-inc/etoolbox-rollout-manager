@@ -33,8 +33,8 @@
         );
     }
 
-    var ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
-    var PROCESSING_ERROR_MSG = 'Rollout failed';
+    const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
+    const PROCESSING_ERROR_MSG = 'Rollout failed';
 
     function buildRolloutRequest(data, logger) {
         return function () {
@@ -58,9 +58,19 @@
         };
     }
 
+    const TARGET_PATHS_LABEL = 'Target paths';
+
     function appendTargetsHeader(sourceElement) {
-        var label = $('<h3 class="rollout-manager-targets-label">').text('Target paths');
-        label.appendTo(sourceElement);
+        let span = $('<span>');
+
+        let selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
+            .text(SELECT_ALL_LABEL);
+        selectAll.appendTo(span);
+
+        let label = $('<h3 class="rollout-manager-targets-label">').text(TARGET_PATHS_LABEL);
+        label.appendTo(span);
+
+        span.appendTo(sourceElement);
     }
 
     function appendRolloutScope(sourceElement) {
@@ -115,8 +125,10 @@
         }
     }
 
-    var CANCEL_LABEL = Granite.I18n.get('Cancel');
-    var DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const CANCEL_LABEL = Granite.I18n.get('Cancel');
+    const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
+    const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
 
     function showDialog(liveCopiesJsonArray, path) {
         var deferred = $.Deferred();
@@ -138,9 +150,19 @@
 
         appendRolloutScope(el.content);
 
-        function onValidate() {
-            let isValidSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
-            $updateBtn.attr('disabled', !isValidSelection);
+        function onCheckboxChange() {
+            let hasSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
+            changeSelectAllLabel(hasSelection);
+            validateSelection(hasSelection);
+        }
+
+        function validateSelection(hasSelection) {
+            $updateBtn.attr('disabled', !hasSelection);
+        }
+
+        function onSelectAllClick() {
+            selectUnselectAll();
+            onCheckboxChange();
         }
 
         var onResolve = function () {
@@ -164,18 +186,38 @@
             deferred.resolve(data);
         };
 
-        el.on('change', 'coral-checkbox', onValidate);
+        el.on('change', 'coral-checkbox', onCheckboxChange);
+        el.on('click', '.rollout-manager-select-all', onSelectAllClick);
         el.on('click', '[data-dialog-action]', onResolve);
         el.on('coral-overlay:close', function () {
-            el.off('change', 'coral-checkbox', onValidate);
+            el.off('change', 'coral-checkbox', onCheckboxChange);
+            el.on('click', '.rollout-manager-select-all', onSelectAllClick);
             el.off('click', '[data-dialog-action]', onResolve);
             deferred.reject();
         });
 
         el.show();
-        onValidate();
+        onCheckboxChange();
 
         return deferred.promise();
+    }
+
+    function changeSelectAllLabel(hasSelection) {
+        let selectAllEl = $('.rollout-manager-select-all');
+        if (hasSelection) {
+            selectAllEl.text(UNSELECT_ALL_LABEL);
+        } else {
+            selectAllEl.text(SELECT_ALL_LABEL);
+        }
+    }
+
+    function selectUnselectAll() {
+        let hasSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
+        if (hasSelection) {
+            $("coral-checkbox[name='liveCopyProperties[]']").prop('checked', false);
+        } else {
+            $("coral-checkbox[name='liveCopyProperties[]']").prop('checked', true);
+        }
     }
 
     function onRolloutActiveCondition(name, el, config, collection, selections) {
@@ -193,7 +235,7 @@
         handler: onRolloutActiveCondition
     });
 
-    var COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
+    const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
 
     function collectLiveCopies(path) {
         return $.ajax({
@@ -206,7 +248,7 @@
         });
     }
 
-    var BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
+    const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
     function isAvailableForRollout(path) {
         let isAvailableForRollout = false;
@@ -224,8 +266,8 @@
         return isAvailableForRollout;
     }
 
-    var PROCESSING_LABEL = Granite.I18n.get('Processing');
-    var ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
+    const PROCESSING_LABEL = Granite.I18n.get('Processing');
+    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
     function rolloutItems(data, rolloutRequest) {
         var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
