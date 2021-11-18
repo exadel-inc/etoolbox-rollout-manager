@@ -61,14 +61,6 @@
                         </repositoryStructurePackage>
                     </repositoryStructurePackages>
                     <dependencies>
-<!--                        <dependency>-->
-<!--                            <groupId>com.adobe.cq</groupId>-->
-<!--                            <artifactId>core.wcm.components.content</artifactId>-->
-<!--                        </dependency>-->
-<!--                        <dependency>-->
-<!--                            <groupId>com.adobe.cq</groupId>-->
-<!--                            <artifactId>core.wcm.components.config</artifactId>-->
-<!--                        </dependency>-->
                     </dependencies>
                 </configuration>
             </plugin>
@@ -120,30 +112,12 @@
             <version>${project.version}</version>
         </dependency>
 
-
         <dependency>
             <groupId>com.exadel.etoolbox</groupId>
             <artifactId>etoolbox-rollout-manager.ui.apps.structure</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>com.adobe.cq</groupId>-->
-<!--            <artifactId>core.wcm.components.core</artifactId>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>com.adobe.cq</groupId>-->
-<!--            <artifactId>core.wcm.components.content</artifactId>-->
-<!--            <type>zip</type>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.adobe.cq</groupId>-->
-<!--            <artifactId>core.wcm.components.config</artifactId>-->
-<!--            <type>zip</type>-->
-<!--        </dependency>-->
-
 
         <dependency>
             <groupId>com.adobe.aem</groupId>

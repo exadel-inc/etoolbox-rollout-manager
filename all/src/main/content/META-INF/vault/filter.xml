@@ -16,5 +16,4 @@
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 <workspaceFilter version="1.0">
     <filter root="/apps/etoolbox-rollout-manager-packages"/>
-    <filter root="/apps/etoolbox-rollout-manager-vendor-packages"/>
 </workspaceFilter>

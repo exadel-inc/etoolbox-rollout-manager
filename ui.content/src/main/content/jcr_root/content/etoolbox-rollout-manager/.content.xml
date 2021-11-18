@@ -1,20 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
-    jcr:primaryType="cq:Page">
-    <jcr:content
-        cq:allowedTemplates="[/conf/etoolbox-rollout-manager/settings/wcm/templates/(?!xf-).*]"
-        cq:conf="/conf/etoolbox-rollout-manager"
-        cq:redirectTarget="/content/etoolbox-rollout-manager/us/en"
-        cq:template="/conf/etoolbox-rollout-manager/settings/wcm/templates/page-content"
-        jcr:primaryType="cq:PageContent"
-        jcr:title="EToolbox Rollout Manager"
-        sling:configRef="/conf/etoolbox-rollout-manager"
-        sling:redirect="{Boolean}true"
-        sling:redirectStatus="{Long}302"
-        sling:resourceType="etoolbox-rollout-manager/components/page">
-        <image jcr:primaryType="nt:unstructured">
-            <file/>
-        </image>
-    </jcr:content>
-    <us/>
-</jcr:root>
+<!--
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          jcr:primaryType="sling:Folder"/>
