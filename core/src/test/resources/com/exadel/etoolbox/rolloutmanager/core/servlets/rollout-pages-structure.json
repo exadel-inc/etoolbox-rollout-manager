@@ -1,0 +1,253 @@
+{
+  "jcr:primaryType": "cq:Page",
+  "jcr:content": {
+    "jcr:primaryType": "cq:PageContent"
+  },
+  "language-masters": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent"
+    },
+    "en": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:title": "English",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    }
+  },
+  "us": {
+    "jcr:primaryType": "cq:Page",
+    "en": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "English",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_US",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    },
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "United States",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "sling:resourceType": "weretail/components/structure/page"
+    }
+  },
+  "ca": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "Canada",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "jcr:language": "en_CA",
+      "sling:resourceType": "weretail/components/structure/page"
+    },
+    "en": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "English",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_CA",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    },
+    "fr": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:createdBy": "admin",
+      "jcr:created": "Tue Sep 08 2020 12:06:34 GMT+0200",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:createdBy": "admin",
+        "jcr:title": "Français",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "fr_CA",
+        "cq:lastRolledout": "Tue Aug 21 2018 16:34:52 GMT+0300",
+        "cq:contextHubSegmentsPath": "/conf/we-retail/settings/wcm/segments",
+        "jcr:created": "Tue Sep 08 2020 12:06:34 GMT+0200",
+        "cq:lastModified": "Tue Aug 21 2018 16:34:54 GMT+0300",
+        "sling:resourceType": "weretail/components/structure/page",
+        "cq:contextHubPath": "/libs/settings/cloudsettings/legacy/contexthub",
+        "cq:lastRolledoutBy": "admin",
+        "navRoot": true,
+        "cq:lastModifiedBy": "admin"
+      }
+    },
+    "test-no-live-copies": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:createdBy": "admin",
+      "jcr:created": "Thu Oct 14 2021 13:28:08 GMT+0300",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:createdBy": "admin",
+        "jcr:title": "test no live copies",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/content-page",
+        "jcr:created": "Thu Oct 14 2021 13:28:08 GMT+0300",
+        "cq:lastModified": "Thu Oct 14 2021 13:28:08 GMT+0300",
+        "sling:resourceType": "weretail/components/structure/page",
+        "cq:lastModifiedBy": "admin"
+      }
+    }
+  },
+  "ch": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "Switzerland",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "jcr:language": "de_CH",
+      "sling:resourceType": "weretail/components/structure/page"
+    },
+    "ca-es-ch-livecopy": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "ca-es-ch-livecopy",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_CA",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    }
+  },
+  "de": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "Germany",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "jcr:language": "de_DE",
+      "sling:resourceType": "weretail/components/structure/page"
+    },
+    "de": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "Deutsch",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "de_DE",
+        "sling:resourceType": "weretail/components/structure/page"
+      }
+    },
+    "ca-es-de-livecopy": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "ca-es-de-livecopy",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_CA",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    }
+  },
+  "fr": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "France",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "jcr:language": "fr_FR",
+      "sling:resourceType": "weretail/components/structure/page"
+    },
+    "ca-fr-livecopy": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "ca-fr-livecopy",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_CA",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    }
+  },
+  "es": {
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+      "jcr:primaryType": "cq:PageContent",
+      "jcr:title": "Spain",
+      "cq:template": "/conf/we-retail/settings/wcm/templates/redirect-page",
+      "jcr:language": "es_ES",
+      "sling:resourceType": "weretail/components/structure/page"
+    },
+    "es": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "Español",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "es_ES",
+        "sling:resourceType": "weretail/components/structure/page"
+      }
+    },
+    "ca-es-livecopy": {
+      "jcr:primaryType": "cq:Page",
+      "jcr:content": {
+        "jcr:primaryType": "cq:PageContent",
+        "jcr:mixinTypes": [
+          "cq:LiveRelationship",
+          "cq:LiveSync"
+        ],
+        "jcr:title": "ca-es-livecopy",
+        "cq:template": "/conf/we-retail/settings/wcm/templates/hero-page",
+        "jcr:language": "en_CA",
+        "sling:resourceType": "weretail/components/structure/page"
+      },
+      "experience": {
+        "jcr:primaryType": "cq:Page"
+      }
+    }
+  }
+}

@@ -174,7 +174,6 @@
                     selectedLiveCopyJson.master = $(this).data("master");
                     selectedLiveCopyJson.target = $(this).val();
                     selectedLiveCopyJson.depth = $(this).data("depth");
-                    selectedLiveCopyJson.deepRollout = isDeepRollout;
                     selectedLiveCopies.push(selectedLiveCopyJson);
                 }
             });
@@ -191,12 +190,13 @@
         el.on('click', '[data-dialog-action]', onResolve);
         el.on('coral-overlay:close', function () {
             el.off('change', 'coral-checkbox', onCheckboxChange);
-            el.on('click', '.rollout-manager-select-all', onSelectAllClick);
+            el.off('click', '.rollout-manager-select-all', onSelectAllClick);
             el.off('click', '[data-dialog-action]', onResolve);
             deferred.reject();
         });
 
-        el.show();
+        el.show().center();
+
         onCheckboxChange();
 
         return deferred.promise();

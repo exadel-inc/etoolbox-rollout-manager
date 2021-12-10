@@ -1,0 +1,32 @@
+[
+  {
+    "master": "/content/we-retail/language-masters/en/experience",
+    "target": "/content/we-retail/ca/en/experience",
+    "depth": 0
+  },
+  {
+    "master": "/content/we-retail/ca/en/experience",
+    "target": "/content/we-retail/es/ca-es-livecopy/experience",
+    "depth": 1
+  },
+  {
+    "master": "/content/we-retail/es/ca-es-livecopy/experience",
+    "target": "/content/we-retail/de/ca-es-de-livecopy/experience",
+    "depth": 2
+  },
+  {
+    "master": "/content/we-retail/es/ca-es-livecopy/experience",
+    "target": "/content/we-retail/ch/ca-es-ch-livecopy/experience",
+    "depth": 2
+  },
+  {
+    "master": "/content/we-retail/ca/en/experience",
+    "target": "/content/we-retail/fr/ca-fr-livecopy/experience",
+    "depth": 1
+  },
+  {
+    "master": "/content/we-retail/language-masters/en/experience",
+    "target": "/content/we-retail/us/en/experience",
+    "depth": 0
+  }
+]

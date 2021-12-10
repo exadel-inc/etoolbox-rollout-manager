@@ -39,7 +39,7 @@
     function getDialog() {
         if (!sharableDialog) {
             sharableDialog = new Coral.Dialog().set({
-                backdrop: Coral.Dialog.backdrop.STATIC,
+                backdrop: Coral.Dialog.backdrop.MODAL,
                 interaction: 'off',
                 closable: 'on'
             }).on('coral-overlay:close', function (e) {

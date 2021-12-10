@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.json.Json;
 import javax.servlet.Servlet;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -126,17 +125,20 @@ public class RolloutServlet extends SlingAllMethodsServlet {
                 .map(masterToTargets -> rollout(masterToTargets.getKey(), masterToTargets.getValue(), pageManager, isDeep));
     }
 
-    private RolloutStatus rollout(String masterPath, List<RolloutItem> targets, PageManager pageManager, boolean isDeep) {
+    private RolloutStatus rollout(String masterPath, List<RolloutItem> targetItems, PageManager pageManager, boolean isDeep) {
         RolloutStatus status = new RolloutStatus();
+
+        List<String> targetPaths = rolloutItemsToTargetPaths(targetItems);
+        status.setTargets(targetPaths);
+
         Optional<Page> masterPage = Optional.ofNullable(pageManager.getPage(masterPath));
-        if (!masterPage.isPresent() || CollectionUtils.isEmpty(targets)) {
+        if (!masterPage.isPresent() || CollectionUtils.isEmpty(targetPaths)) {
             status.setSuccess(false);
-            status.setTargets(new ArrayList<>());
-            LOG.warn("Rollout failed - targets are empty, master: {}", masterPath);
+            LOG.warn("Rollout failed - master page is null or targets are empty, master page path: {}", masterPath);
             return status;
         }
-        status.setTargets(targets.stream().map(RolloutItem::getTarget).collect(Collectors.toList()));
-        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targets, isDeep);
+
+        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targetPaths, isDeep);
         try {
             rolloutManager.rollout(params);
             status.setSuccess(true);
@@ -149,12 +151,17 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         return status;
     }
 
-    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, List<RolloutItem> targets, boolean isDeep) {
+    private List<String> rolloutItemsToTargetPaths(List<RolloutItem> items) {
+        return items.stream()
+                .map(RolloutItem::getTarget)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+    }
+
+    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, List<String> targetPaths, boolean isDeep) {
         RolloutManager.RolloutParams params = new RolloutManager.RolloutParams();
         params.master = masterPage;
-        params.targets = targets.stream()
-                .map(RolloutItem::getTarget)
-                .toArray(String[]::new);
+        params.targets = targetPaths.toArray(new String[0]);
         params.isDeep = isDeep;
         params.trigger = RolloutManager.Trigger.ROLLOUT;
         return params;
@@ -173,7 +180,6 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         private String master;
         private String target;
         private int depth;
-        private boolean deepRollout;
 
         public String getMaster() {
             return master;
@@ -185,10 +191,6 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
         public int getDepth() {
             return depth;
-        }
-
-        public boolean isDeepRollout() {
-            return deepRollout;
         }
     }
 

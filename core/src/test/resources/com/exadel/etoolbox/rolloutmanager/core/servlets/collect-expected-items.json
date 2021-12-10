@@ -1,0 +1,17 @@
+[
+  {
+    "master": "/content/my-site/language-masters/en/testResource",
+    "path": "/content/my-site/fr/en/testResource",
+    "depth": 0,
+    "liveCopies": [
+      {
+        "master": "/content/my-site/fr/en/testResource",
+        "path": "/content/my-site/ca/en/testResource",
+        "depth": 1,
+        "liveCopies": [],
+        "isNew": true
+      }
+    ],
+    "isNew": false
+  }
+]

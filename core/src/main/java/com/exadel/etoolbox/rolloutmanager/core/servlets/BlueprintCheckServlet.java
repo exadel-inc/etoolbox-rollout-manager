@@ -93,7 +93,7 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
                 }
             }
         } catch (WCMException e) {
-            LOG.error("blueprint check failed", e);
+            LOG.error("Blueprint check failed", e);
         }
         return false;
     }

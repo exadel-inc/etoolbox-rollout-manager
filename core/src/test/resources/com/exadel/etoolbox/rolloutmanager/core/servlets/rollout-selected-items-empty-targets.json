@@ -1,0 +1,11 @@
+[
+  {
+    "master": "/content/we-retail/language-masters/en/experience",
+    "depth": 0
+  },
+  {
+    "master": "/content/we-retail/ca/en/experience",
+    "target": "",
+    "depth": 1
+  }
+]

@@ -79,14 +79,14 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                                              String sourceSyncPath,
                                              ResourceResolver resourceResolver,
                                              int depth) {
-        Optional<Resource> blueprintResource = Optional.ofNullable(resourceResolver.getResource(source));
-        if (!blueprintResource.isPresent()) {
+        Optional<Resource> sourceResource = Optional.ofNullable(resourceResolver.getResource(source));
+        if (!sourceResource.isPresent()) {
             return JsonValue.EMPTY_JSON_ARRAY;
         }
         JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
         try {
             RangeIterator relationships =
-                    liveRelationshipManager.getLiveRelationships(blueprintResource.get(), null, null);
+                    liveRelationshipManager.getLiveRelationships(sourceResource.get(), null, null);
             while (relationships.hasNext()) {
                 LiveRelationship relationship = (LiveRelationship) relationships.next();
                 JsonObject liveCopyJson = relationshipToJson(relationship, source, sourceSyncPath, depth, resourceResolver);
@@ -112,7 +112,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         if (liveCopy == null
                 || (StringUtils.isNotBlank(syncPath) && !liveCopy.isDeep())
                 || !availabilityCheckerService.isAvailableForRollout(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver)) {
-            return Json.createObjectBuilder().build();
+            return JsonValue.EMPTY_JSON_OBJECT;
         }
 
         String liveCopyPath = liveCopy.getPath();
