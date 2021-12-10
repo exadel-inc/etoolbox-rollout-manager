@@ -17,7 +17,7 @@ package com.exadel.etoolbox.rolloutmanager.core.servlets;
 import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
-import com.exadel.etoolbox.rolloutmanager.core.services.AvailabilityCheckerService;
+import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import io.wcm.testing.mock.aem.junit5.AemContext;
 import io.wcm.testing.mock.aem.junit5.AemContextExtension;
 import org.apache.commons.httpclient.HttpStatus;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith({AemContextExtension.class, MockitoExtension.class})
 class BlueprintCheckServletTest {
-    private static final String PATH_PARAM = "path";
+    private static final String PATH_REQUEST_PARAM = "path";
     private static final String IS_AVAILABLE_FOR_ROLLOUT_PARAM = "isAvailableForRollout";
 
     private static final String TEST_RESOURCE_PATH = "/content/my-site/en/testResource";
@@ -54,7 +54,7 @@ class BlueprintCheckServletTest {
     private LiveRelationshipManager liveRelationshipManager;
 
     @Mock
-    private AvailabilityCheckerService availabilityCheckerService;
+    private RelationshipCheckerService relationshipCheckerService;
 
     @InjectMocks
     private final BlueprintCheckServlet fixture = new BlueprintCheckServlet();
@@ -71,7 +71,7 @@ class BlueprintCheckServletTest {
     @Test
     void doPost_AvailableForRollout_True() throws WCMException {
         context.create().resource(TEST_RESOURCE_PATH);
-        request.addRequestParameter(PATH_PARAM, TEST_RESOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_RESOURCE_PATH);
 
         RangeIterator relationships = mock(RangeIterator.class);
         when(relationships.hasNext()).thenReturn(true);
@@ -79,7 +79,7 @@ class BlueprintCheckServletTest {
         when(relationships.next()).thenReturn(liveRelationship);
         when(liveRelationshipManager.getLiveRelationships(any(Resource.class), any(), any()))
                 .thenReturn(relationships);
-        when(availabilityCheckerService.isAvailableForRollout(liveRelationship, request.getResourceResolver()))
+        when(relationshipCheckerService.isAvailableForSync(liveRelationship, request.getResourceResolver()))
                 .thenReturn(true);
 
         fixture.doPost(request, response);
@@ -89,7 +89,7 @@ class BlueprintCheckServletTest {
     @Test
     void doPost_AvailableForRollout_False() throws WCMException {
         context.create().resource(TEST_RESOURCE_PATH);
-        request.addRequestParameter(PATH_PARAM, TEST_RESOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_RESOURCE_PATH);
 
         RangeIterator relationships = mock(RangeIterator.class);
         when(relationships.hasNext()).thenReturn(true, false);
@@ -97,7 +97,7 @@ class BlueprintCheckServletTest {
         when(relationships.next()).thenReturn(liveRelationship);
         when(liveRelationshipManager.getLiveRelationships(any(Resource.class), any(), any()))
                 .thenReturn(relationships);
-        when(availabilityCheckerService.isAvailableForRollout(liveRelationship, request.getResourceResolver()))
+        when(relationshipCheckerService.isAvailableForSync(liveRelationship, request.getResourceResolver()))
                 .thenReturn(false);
 
         fixture.doPost(request, response);
@@ -107,7 +107,7 @@ class BlueprintCheckServletTest {
     @Test
     void doPost_NoLiveRelationships_False() throws WCMException {
         context.create().resource(TEST_RESOURCE_PATH);
-        request.addRequestParameter(PATH_PARAM, TEST_RESOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_RESOURCE_PATH);
 
         RangeIterator relationships = mock(RangeIterator.class);
         when(relationships.hasNext()).thenReturn(false);
@@ -121,7 +121,7 @@ class BlueprintCheckServletTest {
     @Test
     void doPost_NoLiveRelationshipsException_False() throws WCMException {
         context.create().resource(TEST_RESOURCE_PATH);
-        request.addRequestParameter(PATH_PARAM, TEST_RESOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_RESOURCE_PATH);
 
         when(liveRelationshipManager.getLiveRelationships(any(Resource.class), any(), any()))
                 .thenThrow(new WCMException("Failed to getLiveRelationships"));
@@ -140,7 +140,7 @@ class BlueprintCheckServletTest {
 
     @Test
     void doPost_ResourceAbsent_BadRequest() {
-        request.addRequestParameter(PATH_PARAM, TEST_RESOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_RESOURCE_PATH);
 
         fixture.doPost(request, response);
 

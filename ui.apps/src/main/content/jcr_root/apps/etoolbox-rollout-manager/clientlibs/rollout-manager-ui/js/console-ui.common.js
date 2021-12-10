@@ -19,7 +19,7 @@
 (function (window, document, $, Granite) {
     'use strict';
 
-    var Utils = Granite.ERM = (Granite.ERM || {});
+    let Utils = Granite.ERM = (Granite.ERM || {});
 
     /**
      * @param {string} text - text to format
@@ -51,8 +51,8 @@
     }
     Utils.getSharableDlg = getDialog;
 
-    var CLOSE_LABEL = Granite.I18n.get('Close');
-    var FINISHED_LABEL = Granite.I18n.get('Rollout');
+    const CLOSE_LABEL = Granite.I18n.get('Close');
+    const FINISHED_LABEL = Granite.I18n.get('Rollout');
 
     /**
      * Create {@return ProcessLogger} wrapper
@@ -63,14 +63,14 @@
      * @method log
      */
     function createLoggerDialog(title, processingMsg, selectedPath) {
-        var el = getDialog();
+        let el = getDialog();
         el.variant = 'default';
         el.header.textContent = title;
         el.header.insertBefore(new Coral.Wait(), el.header.firstChild);
         el.footer.innerHTML = '';
         el.content.innerHTML = '';
 
-        var processingLabel = document.createElement('p');
+        let processingLabel = document.createElement('p');
         processingLabel.textContent = processingMsg;
         el.content.append(processingLabel);
 
@@ -83,7 +83,7 @@
                 el.header.textContent = FINISHED_LABEL + ' ' + selectedPath;
                 processingLabel.remove();
 
-                var closeBtn = new Coral.Button();
+                let closeBtn = new Coral.Button();
                 closeBtn.variant = 'primary';
                 closeBtn.label.textContent = CLOSE_LABEL;
                 closeBtn.on('click', function () {
@@ -93,7 +93,7 @@
                 el.footer.appendChild(closeBtn);
             },
             log: function (message, safe) {
-                var logItem = document.createElement('div');
+                let logItem = document.createElement('div');
                 logItem.className = 'rollout-manager-log-item';
                 logItem[safe ? 'textContent' : 'innerHTML'] = message;
                 el.content.insertAdjacentElement('beforeend', logItem);

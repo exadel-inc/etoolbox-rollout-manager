@@ -18,7 +18,7 @@ import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveCopy;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
-import com.exadel.etoolbox.rolloutmanager.core.services.AvailabilityCheckerService;
+import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import io.wcm.testing.mock.aem.junit5.AemContext;
 import io.wcm.testing.mock.aem.junit5.AemContextExtension;
 import org.apache.commons.httpclient.HttpStatus;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith({AemContextExtension.class, MockitoExtension.class})
 class CollectLiveCopiesServletTest {
-    private static final String PATH_PARAM = "path";
+    private static final String PATH_REQUEST_PARAM = "path";
 
     private static final String TEST_SOURCE_PATH = "/content/my-site/language-masters/en/testResource";
     private static final String TEST_SYNC_PATH = "/testResource";
@@ -69,7 +69,7 @@ class CollectLiveCopiesServletTest {
     private LiveRelationshipManager liveRelationshipManager;
 
     @Mock
-    private AvailabilityCheckerService availabilityCheckerService;
+    private RelationshipCheckerService relationshipCheckerService;
 
     @InjectMocks
     private final CollectLiveCopiesServlet fixture = new CollectLiveCopiesServlet();
@@ -89,17 +89,17 @@ class CollectLiveCopiesServletTest {
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         verifyNoInteractions(liveRelationshipManager);
-        verifyNoInteractions(availabilityCheckerService);
+        verifyNoInteractions(relationshipCheckerService);
     }
 
     @Test
     void doPost_EmptySourceResource_BadRequest() {
-        request.addRequestParameter(PATH_PARAM, TEST_SOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_SOURCE_PATH);
         fixture.doPost(request, response);
 
         assertEquals(JsonValue.EMPTY_JSON_ARRAY.toString(), response.getOutputAsString());
         verifyNoInteractions(liveRelationshipManager);
-        verifyNoInteractions(availabilityCheckerService);
+        verifyNoInteractions(relationshipCheckerService);
     }
 
     @Test
@@ -152,7 +152,7 @@ class CollectLiveCopiesServletTest {
         when(relationship.getSyncPath()).thenReturn(TEST_SYNC_PATH);
 
         when(liveCopy.isDeep()).thenReturn(true);
-        when(availabilityCheckerService.isAvailableForRollout(any(), any(), any(), any()))
+        when(relationshipCheckerService.isAvailableForSync(any(), any(), any(), any()))
                 .thenReturn(false);
 
         fixture.doPost(request, response);
@@ -175,7 +175,7 @@ class CollectLiveCopiesServletTest {
                 any()
         );
 
-        when(availabilityCheckerService.isAvailableForRollout(any(), any(), any(), any()))
+        when(relationshipCheckerService.isAvailableForSync(any(), any(), any(), any()))
                 .thenReturn(true);
 
         fixture.doPost(request, response);
@@ -210,6 +210,6 @@ class CollectLiveCopiesServletTest {
 
     private void createSourceResource() {
         context.create().resource(TEST_SOURCE_PATH);
-        request.addRequestParameter(PATH_PARAM, TEST_SOURCE_PATH);
+        request.addRequestParameter(PATH_REQUEST_PARAM, TEST_SOURCE_PATH);
     }
 }

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(AemContextExtension.class)
-class AvailabilityCheckerServiceImplTest {
+class RelationshipCheckerServiceImplTest {
     private static final String TEST_SYNC_PATH = "/page-to-sync";
     private static final String TEST_PARENT_SYNC_PATH = "/parent-page/page-to-sync";
     private static final String TEST_TARGET_PATH = "/content/my-site/en";
@@ -43,26 +43,26 @@ class AvailabilityCheckerServiceImplTest {
 
     private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
 
-    private final AvailabilityCheckerServiceImpl fixture = new AvailabilityCheckerServiceImpl();
+    private final RelationshipCheckerServiceImpl fixture = new RelationshipCheckerServiceImpl();
 
     @Test
-    void isAvailableForRollout_NullLiveCopy_False() {
+    void isAvailableForSync_NullLiveCopy_False() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
 
-        assertFalse(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertFalse(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 
     @Test
-    void isAvailableForRollout_EmptySyncPath_True() {
+    void isAvailableForSync_EmptySyncPath_True() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
         when(relationshipMock.getLiveCopy()).thenReturn(mock(LiveCopy.class));
         when(relationshipMock.getSyncPath()).thenReturn(StringUtils.EMPTY);
 
-        assertTrue(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertTrue(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 
     @Test
-    void isAvailableForRollout_InExclusions_False() {
+    void isAvailableForSync_InExclusions_False() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
         LiveCopy LiveCopyMock = mock(LiveCopy.class);
         when(relationshipMock.getLiveCopy()).thenReturn(LiveCopyMock);
@@ -72,11 +72,11 @@ class AvailabilityCheckerServiceImplTest {
 
         when(relationshipMock.getSyncPath()).thenReturn(TEST_SYNC_PATH);
 
-        assertFalse(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertFalse(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 
     @Test
-    void isAvailableForRollout_ParentInExclusions_False() {
+    void isAvailableForSync_ParentInExclusions_False() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
         LiveCopy LiveCopyMock = mock(LiveCopy.class);
         when(relationshipMock.getLiveCopy()).thenReturn(LiveCopyMock);
@@ -86,11 +86,11 @@ class AvailabilityCheckerServiceImplTest {
 
         when(relationshipMock.getSyncPath()).thenReturn(TEST_PARENT_SYNC_PATH);
 
-        assertFalse(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertFalse(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 
     @Test
-    void isAvailableForRollout_TargetParentExists_True() {
+    void isAvailableForSync_TargetParentExists_True() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
         LiveCopy LiveCopyMock = mock(LiveCopy.class);
         when(relationshipMock.getLiveCopy()).thenReturn(LiveCopyMock);
@@ -103,11 +103,11 @@ class AvailabilityCheckerServiceImplTest {
         when(relationshipMock.getTargetPath()).thenReturn(TEST_TARGET_PATH + TEST_SYNC_PATH);
         context.create().resource(TEST_TARGET_PATH);
 
-        assertTrue(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertTrue(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 
     @Test
-    void isAvailableForRollout_TargetParentEmptyPath_True() {
+    void isAvailableForSync_TargetParentEmptyPath_True() {
         LiveRelationship relationshipMock = mock(LiveRelationship.class);
         LiveCopy LiveCopyMock = mock(LiveCopy.class);
         when(relationshipMock.getLiveCopy()).thenReturn(LiveCopyMock);
@@ -119,6 +119,6 @@ class AvailabilityCheckerServiceImplTest {
 
         when(relationshipMock.getTargetPath()).thenReturn(TEST_CONTENT_PATH);
 
-        assertTrue(fixture.isAvailableForRollout(relationshipMock, context.resourceResolver()));
+        assertTrue(fixture.isAvailableForSync(relationshipMock, context.resourceResolver()));
     }
 }

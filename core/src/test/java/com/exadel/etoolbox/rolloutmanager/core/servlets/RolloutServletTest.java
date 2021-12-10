@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith({AemContextExtension.class, MockitoExtension.class})
 class RolloutServletTest {
-    private static final String LIVE_COPIES_ARRAY_PARAM = "liveCopiesArray";
+    private static final String SELECTION_JSON_ARRAY_PARAM = "selectionJsonArray";
     private static final String FAILED_TARGETS_RESPONSE_PARAM = "failedTargets";
 
     private static final String SELECTED_LIVECOPIES_REQUEST_JSON =
@@ -100,7 +100,7 @@ class RolloutServletTest {
 
     @Test
     void doPost_EmptyRolloutItems_BadRequest() {
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, JsonValue.EMPTY_JSON_ARRAY.toString());
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, JsonValue.EMPTY_JSON_ARRAY.toString());
         fixture.doPost(request, response);
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
@@ -115,7 +115,7 @@ class RolloutServletTest {
 
         String selectedLiveCopies = new String(Files.readAllBytes(Paths.get(SELECTED_LIVECOPIES_REQUEST_JSON)));
         RequestParameter requestParameter = mock(RequestParameter.class);
-        when(requestMock.getRequestParameter(LIVE_COPIES_ARRAY_PARAM)).thenReturn(requestParameter);
+        when(requestMock.getRequestParameter(SELECTION_JSON_ARRAY_PARAM)).thenReturn(requestParameter);
         when(requestParameter.getString()).thenReturn(selectedLiveCopies);
 
         fixture.doPost(requestMock, response);
@@ -129,7 +129,7 @@ class RolloutServletTest {
         context.load().json(TEST_PAGES_STRUCTURE_PATH, TEST_FOLDER_PATH);
 
         String selectedLiveCopies = new String(Files.readAllBytes(Paths.get(SELECTED_LIVECOPIES_REQUEST_JSON)));
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, selectedLiveCopies);
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, selectedLiveCopies);
 
         fixture.doPost(request, response);
 
@@ -143,7 +143,7 @@ class RolloutServletTest {
         context.load().json(TEST_PAGES_STRUCTURE_PATH, TEST_FOLDER_PATH);
 
         String selectedLiveCopies = new String(Files.readAllBytes(Paths.get(SELECTED_LIVECOPIES_REQUEST_JSON)));
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, selectedLiveCopies);
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, selectedLiveCopies);
 
         doThrow(new WCMException("Failed to rollout")).when(rolloutManager)
                 .rollout(any(RolloutManager.RolloutParams.class));
@@ -164,7 +164,7 @@ class RolloutServletTest {
     void doPost_EmptyTargets_NoRollout() throws IOException, WCMException {
         String selectedLiveCopies =
                 new String(Files.readAllBytes(Paths.get(SELECTED_LIVECOPIES_EMPTY_TARGETS_REQUEST_JSON)));
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, selectedLiveCopies);
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, selectedLiveCopies);
 
         fixture.doPost(request, response);
 
@@ -173,7 +173,7 @@ class RolloutServletTest {
 
     @Test
     void doPost_ParseJsonException_NoRollout() throws IOException, WCMException {
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, NOT_A_JSON_STRING);
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, NOT_A_JSON_STRING);
 
         fixture.doPost(request, response);
 
@@ -183,7 +183,7 @@ class RolloutServletTest {
     @Test
     void doPost_NonExistingMaster_FailedTargetsInResponse() throws IOException {
         String selectedLiveCopies = new String(Files.readAllBytes(Paths.get(SELECTED_LIVECOPIES_REQUEST_JSON)));
-        request.addRequestParameter(LIVE_COPIES_ARRAY_PARAM, selectedLiveCopies);
+        request.addRequestParameter(SELECTION_JSON_ARRAY_PARAM, selectedLiveCopies);
 
         fixture.doPost(request, response);
 

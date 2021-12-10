@@ -17,7 +17,7 @@ package com.exadel.etoolbox.rolloutmanager.core.servlets;
 import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
-import com.exadel.etoolbox.rolloutmanager.core.services.AvailabilityCheckerService;
+import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
@@ -39,27 +39,27 @@ import javax.json.Json;
 import javax.servlet.Servlet;
 import java.util.Optional;
 
-@Component(service = {Servlet.class})
+@Component(service = Servlet.class)
 @SlingServletResourceTypes(
-        resourceTypes = "/bin/etoolbox/rollout-manager/blueprint-check",
+        resourceTypes = "/apps/etoolbox-rollout-manager/blueprint-check",
         methods = HttpConstants.METHOD_POST
 )
 @ServiceDescription("The servlet for checking if page is blueprint")
 public class BlueprintCheckServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(BlueprintCheckServlet.class);
 
-    private static final String PATH_PARAM = "path";
+    private static final String PATH_REQUEST_PARAM = "path";
     private static final String IS_AVAILABLE_FOR_ROLLOUT_PARAM = "isAvailableForRollout";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
 
     @Reference
-    private transient AvailabilityCheckerService availabilityCheckerService;
+    private transient RelationshipCheckerService relationshipCheckerService;
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
-        String path = ServletUtil.getRequestParamString(request, PATH_PARAM);
+        String path = ServletUtil.getRequestParamString(request, PATH_REQUEST_PARAM);
         if (StringUtils.isBlank(path)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             LOG.warn("Path is blank, blueprint check failed");
@@ -71,7 +71,7 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
         Optional<Resource> sourceResource = Optional.ofNullable(resourceResolver.getResource(path));
         if (!sourceResource.isPresent()) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("Source resource is null, rollout availability check failed");
+            LOG.warn("Source resource is null, rollout availability check failed, path: {}", path);
             return;
         }
 
@@ -88,7 +88,7 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
                     liveRelationshipManager.getLiveRelationships(sourceResource, null, null);
             while (relationships.hasNext()) {
                 LiveRelationship relationship = (LiveRelationship) relationships.next();
-                if (availabilityCheckerService.isAvailableForRollout(relationship, resourceResolver)) {
+                if (relationshipCheckerService.isAvailableForSync(relationship, resourceResolver)) {
                     return true;
                 }
             }

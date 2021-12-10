@@ -12,6 +12,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<jcr:root sling:resourceType="/bin/etoolbox/rollout-manager/blueprint-check" jcr:primaryType="nt:unstructured"
+<jcr:root sling:resourceType="/apps/etoolbox-rollout-manager/blueprint-check" jcr:primaryType="nt:unstructured"
           xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
           xmlns:sling="http://sling.apache.org/jcr/sling/1.0"/>

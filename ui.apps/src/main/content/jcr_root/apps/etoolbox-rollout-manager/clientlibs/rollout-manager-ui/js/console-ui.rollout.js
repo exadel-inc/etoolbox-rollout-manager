@@ -42,7 +42,7 @@
                 url: ROLLOUT_COMMAND,
                 type: "POST",
                 data: {
-                    liveCopiesArray: JSON.stringify(data.liveCopiesArray),
+                    selectionJsonArray: JSON.stringify(data.selectionJsonArray),
                     isDeepRollout: data.isDeepRollout
                 }
             }).fail(function (xhr, status, error) {
@@ -74,21 +74,21 @@
     }
 
     function appendRolloutScope(sourceElement) {
-        var label = $('<h3>').text('Rollout scope');
-        var isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text('Rollout page and all sub pages');
+        let label = $('<h3>').text('Rollout scope');
+        let isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text('Include subpages');
         label.appendTo(sourceElement);
         isDeepCheckbox.appendTo(sourceElement);
     }
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (liveCopiesJsonArray.length > 0) {
-            var nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
+            let nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
 
-            for (var i = 0; i < liveCopiesJsonArray.length; i++) {
-                var liveCopyJson = liveCopiesJsonArray[i];
+            for (let i = 0; i < liveCopiesJsonArray.length; i++) {
+                let liveCopyJson = liveCopiesJsonArray[i];
 
-                var liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
-                var liveCopyCheckbox =
+                let liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
+                let liveCopyCheckbox =
                     $('<coral-checkbox coral-interactive name="liveCopyProperties[]" data-master="' + liveCopyJson.master + '" data-depth="' + liveCopyJson.depth + '" value="' + liveCopyJson.path + '">')
                         .text(liveCopyJson.path);
 
@@ -98,16 +98,16 @@
                 }
 
                 if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
-                    var accordion = $('<coral-accordion variant="quiet">');
+                    let accordion = $('<coral-accordion variant="quiet">');
 
-                    var accordionItem = $('<coral-accordion-item>');
+                    let accordionItem = $('<coral-accordion-item>');
 
-                    var accordionItemLabel = $('<coral-accordion-item-label>');
+                    let accordionItemLabel = $('<coral-accordion-item-label>');
 
                     liveCopyCheckbox.appendTo(accordionItemLabel);
                     accordionItemLabel.appendTo(accordionItem);
 
-                    var accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
+                    let accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
                     appendNestedCheckboxList(liveCopyJson.liveCopies, accordionItemContent);
                     accordionItemContent.appendTo(accordionItem);
 
@@ -131,16 +131,16 @@
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
 
     function showDialog(liveCopiesJsonArray, path) {
-        var deferred = $.Deferred();
+        let deferred = $.Deferred();
 
-        var el = ERM.getSharableDlg();
+        let el = ERM.getSharableDlg();
         el.variant = 'notice';
         el.header.textContent = DIALOG_LABEL + " " + path;
         el.footer.innerHTML = ''; // Clean content
         el.content.innerHTML = ''; // Clean content
 
-        var $cancelBtn = $('<button is="coral-button" variant="default" coral-close>').text(CANCEL_LABEL);
-        var $updateBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
+        let $cancelBtn = $('<button is="coral-button" variant="default" coral-close>').text(CANCEL_LABEL);
+        let $updateBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
         $cancelBtn.appendTo(el.footer);
         $updateBtn.appendTo(el.footer);
 
@@ -165,22 +165,22 @@
             onCheckboxChange();
         }
 
-        var onResolve = function () {
-            var isDeepRollout = $("coral-checkbox[name='isDeepRollout']").prop("checked");
-            var selectedLiveCopies = [];
+        let onResolve = function () {
+            let isDeepRollout = $("coral-checkbox[name='isDeepRollout']").prop("checked");
+            let selectedLiveCopies = [];
             $("coral-checkbox[name='liveCopyProperties[]']").each(function () {
                 if ($(this).prop("checked")) {
-                    var selectedLiveCopyJson = {};
+                    let selectedLiveCopyJson = {};
                     selectedLiveCopyJson.master = $(this).data("master");
                     selectedLiveCopyJson.target = $(this).val();
                     selectedLiveCopyJson.depth = $(this).data("depth");
                     selectedLiveCopies.push(selectedLiveCopyJson);
                 }
             });
-            var data = {
+            let data = {
                 path: path,
                 isDeepRollout: isDeepRollout,
-                liveCopiesArray: selectedLiveCopies
+                selectionJsonArray: selectedLiveCopies
             }
             deferred.resolve(data);
         };
@@ -221,7 +221,7 @@
     }
 
     function onRolloutActiveCondition(name, el, config, collection, selections) {
-        var selectedPath = selections[0].dataset.foundationCollectionItemId;
+        let selectedPath = selections[0].dataset.foundationCollectionItemId;
         return isAvailableForRollout(selectedPath);
     }
 
@@ -270,8 +270,8 @@
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
     function rolloutItems(data, rolloutRequest) {
-        var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
-        var requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
+        let logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        let requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
         requests.always(function () {
             logger.finished();
         });

@@ -18,7 +18,7 @@ import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveCopy;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
-import com.exadel.etoolbox.rolloutmanager.core.services.AvailabilityCheckerService;
+import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
@@ -44,26 +44,32 @@ import javax.json.JsonValue;
 import javax.servlet.Servlet;
 import java.util.Optional;
 
-@Component(service = {Servlet.class})
+@Component(service = Servlet.class)
 @SlingServletResourceTypes(
-        resourceTypes = "/bin/etoolbox/rollout-manager/collect-live-copies",
+        resourceTypes = "/apps/etoolbox-rollout-manager/collect-live-copies",
         methods = HttpConstants.METHOD_POST
 )
 @ServiceDescription("The servlet for collecting live copies")
 public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(CollectLiveCopiesServlet.class);
 
-    private static final String PATH_PARAM = "path";
+    private static final String PATH_REQUEST_PARAM = "path";
+
+    private static final String MASTER_JSON_FIELD = "master";
+    private static final String PATH_JSON_FIELD = "path";
+    private static final String DEPTH_JSON_FIELD = "depth";
+    private static final String LIVE_COPIES_JSON_FIELD = "liveCopies";
+    private static final String IS_NEW_JSON_FIELD = "isNew";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
 
     @Reference
-    private transient AvailabilityCheckerService availabilityCheckerService;
+    private transient RelationshipCheckerService relationshipCheckerService;
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
-        String path = ServletUtil.getRequestParamString(request, PATH_PARAM);
+        String path = ServletUtil.getRequestParamString(request, PATH_REQUEST_PARAM);
         if (StringUtils.isBlank(path)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             LOG.warn("Path is blank, live copies collection failed");
@@ -83,7 +89,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         if (!sourceResource.isPresent()) {
             return JsonValue.EMPTY_JSON_ARRAY;
         }
-        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+        JsonArrayBuilder responseArrayBuilder = Json.createArrayBuilder();
         try {
             RangeIterator relationships =
                     liveRelationshipManager.getLiveRelationships(sourceResource.get(), null, null);
@@ -91,13 +97,13 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 LiveRelationship relationship = (LiveRelationship) relationships.next();
                 JsonObject liveCopyJson = relationshipToJson(relationship, source, sourceSyncPath, depth, resourceResolver);
                 if (!liveCopyJson.isEmpty()) {
-                    jsonArrayBuilder.add(liveCopyJson);
+                    responseArrayBuilder.add(liveCopyJson);
                 }
             }
         } catch (WCMException e) {
-            LOG.error("live copies collection failed", e);
+            LOG.error("Live copies collecting failed", e);
         }
-        return jsonArrayBuilder.build();
+        return responseArrayBuilder.build();
     }
 
     private JsonObject relationshipToJson(LiveRelationship relationship,
@@ -111,17 +117,17 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         LiveCopy liveCopy = relationship.getLiveCopy();
         if (liveCopy == null
                 || (StringUtils.isNotBlank(syncPath) && !liveCopy.isDeep())
-                || !availabilityCheckerService.isAvailableForRollout(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver)) {
+                || !relationshipCheckerService.isAvailableForSync(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver)) {
             return JsonValue.EMPTY_JSON_OBJECT;
         }
 
         String liveCopyPath = liveCopy.getPath();
         return Json.createObjectBuilder()
-                .add("master", source + sourceSyncPath)
-                .add("path", liveCopyPath + syncPath)
-                .add("depth", depth)
-                .add("liveCopies", getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
-                .add("isNew", !resourceExists(resourceResolver, liveCopyPath + syncPath))
+                .add(MASTER_JSON_FIELD, source + sourceSyncPath)
+                .add(PATH_JSON_FIELD, liveCopyPath + syncPath)
+                .add(DEPTH_JSON_FIELD, depth)
+                .add(LIVE_COPIES_JSON_FIELD, getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
+                .add(IS_NEW_JSON_FIELD, !resourceExists(resourceResolver, liveCopyPath + syncPath))
                 .build();
     }
 

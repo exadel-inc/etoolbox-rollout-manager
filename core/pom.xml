@@ -26,6 +26,11 @@
     <artifactId>etoolbox-rollout-manager.core</artifactId>
     <name>EToolbox Rollout Manager - Core</name>
     <description>Core bundle for EToolbox Rollout Manager</description>
+    <properties>
+        <sonar.java.binaries>target/classes</sonar.java.binaries>
+        <sonar.junit.reportPaths>target/surefire-reports</sonar.junit.reportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -87,6 +92,20 @@ Import-Package: javax.annotation;version=0.0.0,*
 <!--            </plugin>-->
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

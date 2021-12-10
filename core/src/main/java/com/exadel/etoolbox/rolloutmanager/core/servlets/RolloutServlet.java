@@ -45,9 +45,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component(service = {Servlet.class})
+@Component(service = Servlet.class)
 @SlingServletResourceTypes(
-        resourceTypes = "/bin/etoolbox/rollout-manager/rollout",
+        resourceTypes = "/apps/etoolbox-rollout-manager/rollout",
         methods = HttpConstants.METHOD_POST
 )
 @ServiceDescription("The servlet for collecting live copies")
@@ -56,7 +56,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private static final String LIVE_COPIES_ARRAY_PARAM = "liveCopiesArray";
+    private static final String SELECTION_JSON_ARRAY_PARAM = "selectionJsonArray";
     private static final String IS_DEEP_ROLLOUT_PARAM = "isDeepRollout";
     private static final String FAILED_TARGETS_RESPONSE_PARAM = "failedTargets";
 
@@ -65,24 +65,24 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
-        String liveCopiesArray = ServletUtil.getRequestParamString(request, LIVE_COPIES_ARRAY_PARAM);
-        if (StringUtils.isBlank(liveCopiesArray)) {
+        String selectionJsonArray = ServletUtil.getRequestParamString(request, SELECTION_JSON_ARRAY_PARAM);
+        if (StringUtils.isBlank(selectionJsonArray)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("liveCopiesArray is blank, rollout failed");
+            LOG.warn("Selection json array is blank, rollout failed");
             return;
         }
 
-        RolloutItem[] rolloutItems = jsonArrayToRolloutItems(liveCopiesArray);
+        RolloutItem[] rolloutItems = jsonArrayToRolloutItems(selectionJsonArray);
         if (ArrayUtils.isEmpty(rolloutItems)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("rolloutModels array is empty, rollout failed");
+            LOG.warn("Rollout items array is empty, rollout failed. Selected live copies json: {}", selectionJsonArray);
             return;
         }
 
         PageManager pageManager = request.getResourceResolver().adaptTo(PageManager.class);
         if (pageManager == null) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("pageManager is null, rollout failed");
+            LOG.warn("Page Manager is null, rollout failed. Selected live copies json: {}", selectionJsonArray);
             return;
         }
 
