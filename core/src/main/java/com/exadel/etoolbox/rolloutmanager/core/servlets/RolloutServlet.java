@@ -97,7 +97,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
                 .flatMap(status -> status.getTargets().stream())
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedTargets)) {
-            response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(HttpStatus.SC_BAD_REQUEST);
             String jsonResponse = Json.createObjectBuilder()
                     .add(FAILED_TARGETS_RESPONSE_PARAM, Json.createArrayBuilder(failedTargets))
                     .build()

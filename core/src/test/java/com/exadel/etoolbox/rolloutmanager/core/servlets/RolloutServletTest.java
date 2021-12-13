@@ -157,7 +157,7 @@ class RolloutServletTest {
 
         assertEquals(expectedResponse, response.getOutputAsString());
 
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, response.getStatus());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
     }
 
     @Test
@@ -194,6 +194,6 @@ class RolloutServletTest {
 
         assertEquals(expectedResponse, response.getOutputAsString());
 
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, response.getStatus());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
     }
 }

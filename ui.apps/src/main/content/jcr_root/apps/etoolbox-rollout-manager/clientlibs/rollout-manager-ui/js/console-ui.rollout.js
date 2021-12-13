@@ -34,7 +34,9 @@
     }
 
     const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
-    const PROCESSING_ERROR_MSG = 'Rollout failed';
+    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
+    const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
+    const SUCCESS_MSG = Granite.I18n.get('Selected live copies successfully synchronized');
 
     function buildRolloutRequest(data, logger) {
         return function () {
@@ -42,23 +44,24 @@
                 url: ROLLOUT_COMMAND,
                 type: "POST",
                 data: {
+                    _charset_: "UTF-8",
                     selectionJsonArray: JSON.stringify(data.selectionJsonArray),
                     isDeepRollout: data.isDeepRollout
                 }
-            }).fail(function (xhr, status, error) {
-                if (xhr.status === 500) {
-                    logger.log("Rollout failed for the following paths:<br/><br/>"
+            }).fail(function (xhr) {
+                if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
+                    logger.log(PROCESSING_ERROR_FAILED_PATHS_MSG + "<br/><br/>"
                         + xhr.responseJSON.failedTargets.join("<br/>"), false);
                 } else {
                     logger.log(PROCESSING_ERROR_MSG, false);
                 }
             }).done(function () {
-                logger.log("Selected live copies successfully synchronized", false);
+                logger.log(SUCCESS_MSG, false);
             });
         };
     }
 
-    const TARGET_PATHS_LABEL = 'Target paths';
+    const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
 
     function appendTargetsHeader(sourceElement) {
         let span = $('<span>');
@@ -73,9 +76,13 @@
         span.appendTo(sourceElement);
     }
 
+    const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
+    const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
+    const NEW_LABEL = Granite.I18n.get('new');
+
     function appendRolloutScope(sourceElement) {
-        let label = $('<h3>').text('Rollout scope');
-        let isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text('Include subpages');
+        let label = $('<h3>').text(ROLLOUT_SCOPE_LABEL);
+        let isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text(INCLUDE_SUBPAGES_LABEL);
         label.appendTo(sourceElement);
         isDeepCheckbox.appendTo(sourceElement);
     }
@@ -93,7 +100,7 @@
                         .text(liveCopyJson.path);
 
                 if (liveCopyJson.isNew) {
-                    let newLabel = $('<i class="rollout-manager-new-label">').text(" new");
+                    let newLabel = $('<i class="rollout-manager-new-label">').text(' ' + NEW_LABEL);
                     liveCopyCheckbox.append(newLabel);
                 }
 
