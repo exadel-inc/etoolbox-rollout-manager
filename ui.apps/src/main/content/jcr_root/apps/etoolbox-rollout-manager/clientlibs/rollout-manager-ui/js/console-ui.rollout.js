@@ -20,7 +20,7 @@
     'use strict';
 
     /** Root action handler */
-    function onShowReferencesDialog(name, el, config, collection, selections) {
+    function onShowRolloutDialog(name, el, config, collection, selections) {
         let selectedPath = selections[0].dataset.foundationCollectionItemId;
         let foundationUi = $(window).adaptTo('foundation-ui');
         foundationUi.wait();
@@ -140,7 +140,7 @@
     function showDialog(liveCopiesJsonArray, path) {
         let deferred = $.Deferred();
 
-        let el = ERM.getSharableDlg();
+        let el = ERM.getBaseDialog();
         el.variant = 'notice';
         el.header.textContent = DIALOG_LABEL + " " + path;
         el.footer.innerHTML = ''; // Clean content
@@ -152,9 +152,7 @@
         $updateBtn.appendTo(el.footer);
 
         appendTargetsHeader(el.content);
-
         appendNestedCheckboxList(liveCopiesJsonArray, el.content);
-
         appendRolloutScope(el.content);
 
         function onCheckboxChange() {
@@ -235,7 +233,7 @@
     // INIT
     $(window).adaptTo("foundation-registry").register("foundation.collection.action.action", {
         name: "etoolbox.rollout-manager.show-references-dialog",
-        handler: onShowReferencesDialog
+        handler: onShowRolloutDialog
     });
     $(window).adaptTo("foundation-registry").register("foundation.collection.action.activecondition", {
         name: "etoolbox.rollout-manager.rollout-active-condition",

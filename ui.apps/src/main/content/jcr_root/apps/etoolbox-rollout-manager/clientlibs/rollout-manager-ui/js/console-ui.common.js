@@ -34,22 +34,22 @@
     }
     Utils.format = format;
 
-    let sharableDialog;
-    /** Common sharable dialog instance getter */
+    let baseDialog;
+    /** Common base Coral dialog instance getter */
     function getDialog() {
-        if (!sharableDialog) {
-            sharableDialog = new Coral.Dialog().set({
+        if (!baseDialog) {
+            baseDialog = new Coral.Dialog().set({
                 backdrop: Coral.Dialog.backdrop.MODAL,
                 interaction: 'off',
                 closable: 'on'
             }).on('coral-overlay:close', function (e) {
                 e.target.remove();
             });
-            sharableDialog.classList.add('rollout-manager-dialog');
+            baseDialog.classList.add('rollout-manager-dialog');
         }
-        return sharableDialog;
+        return baseDialog;
     }
-    Utils.getSharableDlg = getDialog;
+    Utils.getBaseDialog = getDialog;
 
     const CLOSE_LABEL = Granite.I18n.get('Close');
     const FINISHED_LABEL = Granite.I18n.get('Rollout');
