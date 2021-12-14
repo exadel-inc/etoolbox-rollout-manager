@@ -44,6 +44,10 @@ import javax.json.JsonValue;
 import javax.servlet.Servlet;
 import java.util.Optional;
 
+/**
+ * Collects data related to eligible for synchronization live relationships for the given resource.
+ * The data is necessary for building 'Targets' tree in the UI dialog and further rollout in {@link RolloutServlet}
+ */
 @Component(service = Servlet.class)
 @SlingServletResourceTypes(
         resourceTypes = "/apps/etoolbox-rollout-manager/collect-live-copies",
@@ -80,7 +84,6 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         ServletUtil.writeJsonResponse(response, jsonResponse);
     }
 
-    //non empty syncPath indicates that rollout is triggered for child page under the blueprint. for the blueprint itself sync path is empty
     private JsonArray getLiveCopiesJsonArray(String source,
                                              String sourceSyncPath,
                                              ResourceResolver resourceResolver,

@@ -25,12 +25,19 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
+/**
+ * Implements methods for checking if a live relationship can be synchronized with a blueprint in scope of usage
+ * the rollout manager tool.
+ */
 @Component(service = RelationshipCheckerService.class)
 public class RelationshipCheckerServiceImpl implements RelationshipCheckerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(RelationshipCheckerServiceImpl.class);
     private static final String SLASH = "/";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAvailableForSync(LiveRelationship relationship, ResourceResolver resourceResolver) {
         LiveCopy liveCopy = relationship.getLiveCopy();
@@ -46,6 +53,9 @@ public class RelationshipCheckerServiceImpl implements RelationshipCheckerServic
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAvailableForSync(String syncPath, String targetPath, Set<String> exclusions, ResourceResolver resourceResolver) {
         if (StringUtils.isEmpty(syncPath)) {

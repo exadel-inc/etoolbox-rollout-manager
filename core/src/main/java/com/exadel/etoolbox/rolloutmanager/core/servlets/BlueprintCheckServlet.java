@@ -39,6 +39,11 @@ import javax.json.Json;
 import javax.servlet.Servlet;
 import java.util.Optional;
 
+/**
+ * Checks if the given resource has live relationships eligible for synchronization and thus can be rolled out.
+ * The 'Rollout' button is displayed in the Sites toolbar based on this condition. The actual check is done using
+ * {@link RelationshipCheckerService}
+ */
 @Component(service = Servlet.class)
 @SlingServletResourceTypes(
         resourceTypes = "/apps/etoolbox-rollout-manager/blueprint-check",

@@ -26,21 +26,45 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * Contains common methods for operating servlet request and response.
+ */
 public class ServletUtil {
     private static final Logger LOG = LoggerFactory.getLogger(ServletUtil.class);
 
-    private ServletUtil() {}
+    private ServletUtil() {
+    }
 
+    /**
+     * Gets {@link String} parameter value from {@link SlingHttpServletRequest}
+     *
+     * @param request - {@link SlingHttpServletRequest}
+     * @param param   - parameter name
+     * @return String request parameter value
+     */
     public static String getRequestParamString(SlingHttpServletRequest request, String param) {
         return Optional.ofNullable(request.getRequestParameter(param))
                 .map(RequestParameter::getString)
                 .orElse(StringUtils.EMPTY);
     }
 
+    /**
+     * Gets boolean parameter value from {@link SlingHttpServletRequest}
+     *
+     * @param request - {@link SlingHttpServletRequest}
+     * @param param   - parameter name
+     * @return boolean request parameter value
+     */
     public static boolean getRequestParamBoolean(SlingHttpServletRequest request, String param) {
         return Boolean.parseBoolean(getRequestParamString(request, param));
     }
 
+    /**
+     * Writes a json to response with UTF-8 encoding
+     *
+     * @param response - {@link SlingHttpServletResponse}
+     * @param json - json to write
+     */
     public static void writeJsonResponse(SlingHttpServletResponse response, String json) {
         response.setCharacterEncoding(CharEncoding.UTF_8);
         response.setContentType(ContentType.APPLICATION_JSON.getMimeType());
