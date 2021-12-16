@@ -14,7 +14,7 @@
 
 /**
  * EToolbox Rollout Manager clientlib.
- * "Rollout" action definition.
+ * 'Rollout' button and dialog actions definition.
  */
 (function (window, document, $, ERM, Granite) {
     "use strict";
