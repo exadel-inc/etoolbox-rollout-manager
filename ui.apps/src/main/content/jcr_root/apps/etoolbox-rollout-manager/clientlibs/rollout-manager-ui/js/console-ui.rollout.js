@@ -17,27 +17,81 @@
  * "Rollout" action definition.
  */
 (function (window, document, $, ERM, Granite) {
-    'use strict';
+    "use strict";
 
-    /** Root action handler */
-    function onShowRolloutDialog(name, el, config, collection, selections) {
-        let selectedPath = selections[0].dataset.foundationCollectionItemId;
-        let foundationUi = $(window).adaptTo('foundation-ui');
-        foundationUi.wait();
-        collectLiveCopies(selectedPath).then((liveCopiesJsonArray) => {
-                foundationUi.clearWait();
-                showDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
-                    rolloutItems(data, buildRolloutRequest);
-                })
+    var COLLECT_LIVE_COPIES_COMMAND = "/content/etoolbox-rollout-manager/servlet/collect-live-copies";
+
+    /**
+     * Retrieves data related to eligible for synchronization live copies as a json array. The data is
+     * used for building 'Targets' tree in the UI dialog
+     * @param path - path of the page selected in Sites
+     * @returns {*}
+     */
+    function collectLiveCopies(path) {
+        return $.ajax({
+            url: COLLECT_LIVE_COPIES_COMMAND,
+            type: "POST",
+            data: {
+                _charset_: "UTF-8",
+                path: path
             }
-        );
+        });
     }
 
-    const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
-    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
-    const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const SUCCESS_MSG = Granite.I18n.get('Selected live copies successfully synchronized');
+    var BLUEPRINT_CHECK_COMMAND = "/content/etoolbox-rollout-manager/servlet/blueprint-check";
 
+    /**
+     * Checks if selected page has live relationships eligible for synchronization and thus can be rolled out.
+     * The 'Rollout' button is displayed in the Sites toolbar based on this condition.
+     * @param path - path of the page selected in Sites
+     * @returns {boolean}
+     */
+    function isAvailableForRollout(path) {
+        var result = false;
+        $.ajax({
+            url: BLUEPRINT_CHECK_COMMAND,
+            type: "POST",
+            async: false,
+            data: {
+                _charset_: "UTF-8",
+                path: path
+            }
+        }).done(function (data) {
+            result = data && data.isAvailableForRollout;
+        });
+        return result;
+    }
+
+    var PROCESSING_LABEL = Granite.I18n.get("Processing");
+    var ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get("Rollout in progress ...");
+
+    /**
+     * Performs rollout based on data collected in the Rollout dialog.
+     *
+     * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
+     * @param rolloutRequest - {@link #buildRolloutRequest}
+     * @returns {*}
+     */
+    function doItemsRollout(data, rolloutRequest) {
+        var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        var requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
+        requests.always(function () {
+            logger.finished();
+        });
+        return requests;
+    }
+
+    var ROLLOUT_COMMAND = "/content/etoolbox-rollout-manager/servlet/rollout";
+    var PROCESSING_ERROR_MSG = Granite.I18n.get("Rollout failed");
+    var PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get("Rollout failed for the following paths:");
+    var SUCCESS_MSG = Granite.I18n.get("Selected live copies successfully synchronized");
+
+    /**
+     * Build a request to the servlet for rolling out items based on data collected in the Rollout dialog.
+     * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
+     * @param logger - the logger dialog displaying progress of the rollout process
+     * @returns {function(): *}
+     */
     function buildRolloutRequest(data, logger) {
         return function () {
             return $.ajax({
@@ -50,8 +104,8 @@
                 }
             }).fail(function (xhr) {
                 if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
-                    logger.log(PROCESSING_ERROR_FAILED_PATHS_MSG + "<br/><br/>"
-                        + xhr.responseJSON.failedTargets.join("<br/>"), false);
+                    logger.log(PROCESSING_ERROR_FAILED_PATHS_MSG + "<br/><br/>" +
+                        xhr.responseJSON.failedTargets.join("<br/>"), false);
                 } else {
                     logger.log(PROCESSING_ERROR_MSG, false);
                 }
@@ -61,226 +115,37 @@
         };
     }
 
-    const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
-
-    function appendTargetsHeader(sourceElement) {
-        let span = $('<span>');
-
-        let selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
-
-        let label = $('<h3 class="rollout-manager-targets-label">').text(TARGET_PATHS_LABEL);
-        label.appendTo(span);
-
-        span.appendTo(sourceElement);
-    }
-
-    const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
-    const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
-    const NEW_LABEL = Granite.I18n.get('new');
-
-    function appendRolloutScope(sourceElement) {
-        let label = $('<h3>').text(ROLLOUT_SCOPE_LABEL);
-        let isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">').text(INCLUDE_SUBPAGES_LABEL);
-        label.appendTo(sourceElement);
-        isDeepCheckbox.appendTo(sourceElement);
-    }
-
-    function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
-        if (liveCopiesJsonArray.length > 0) {
-            let nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
-
-            for (let i = 0; i < liveCopiesJsonArray.length; i++) {
-                let liveCopyJson = liveCopiesJsonArray[i];
-
-                let liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
-                let liveCopyCheckbox =
-                    $('<coral-checkbox coral-interactive name="liveCopyProperties[]" data-master="' + liveCopyJson.master + '" data-depth="' + liveCopyJson.depth + '" value="' + liveCopyJson.path + '">')
-                        .text(liveCopyJson.path);
-
-                if (liveCopyJson.isNew) {
-                    let newLabel = $('<i class="rollout-manager-new-label">').text(' ' + NEW_LABEL);
-                    liveCopyCheckbox.append(newLabel);
-                }
-
-                if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
-                    let accordion = $('<coral-accordion variant="quiet">');
-
-                    let accordionItem = $('<coral-accordion-item>');
-
-                    let accordionItemLabel = $('<coral-accordion-item-label>');
-
-                    liveCopyCheckbox.appendTo(accordionItemLabel);
-                    accordionItemLabel.appendTo(accordionItem);
-
-                    let accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
-                    appendNestedCheckboxList(liveCopyJson.liveCopies, accordionItemContent);
-                    accordionItemContent.appendTo(accordionItem);
-
-                    accordionItem.appendTo(accordion);
-
-                    accordion.appendTo(liItem);
-                } else {
-                    liveCopyCheckbox.addClass("inner-checkbox-option");
-                    liveCopyCheckbox.appendTo(liItem);
-                }
-
-                liItem.appendTo(nestedList);
+    /** Action handler for the 'Rollout' button */
+    function onShowRolloutDialog(name, el, config, collection, selections) {
+        var selectedPath = selections[0].dataset.foundationCollectionItemId;
+        var foundationUi = $(window).adaptTo("foundation-ui");
+        // Show a wait mask before the live copies data is fully collected
+        foundationUi.wait();
+        collectLiveCopies(selectedPath).then(function (liveCopiesJsonArray) {
+                // Clears the wait mask once the dialog is loaded
+                foundationUi.clearWait();
+                ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
+                    doItemsRollout(data, buildRolloutRequest);
+                });
             }
-            nestedList.appendTo(sourceElement);
-        }
+        );
     }
 
-    const CANCEL_LABEL = Granite.I18n.get('Cancel');
-    const DIALOG_LABEL = Granite.I18n.get('Rollout');
-    const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
-    const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
-
-    function showDialog(liveCopiesJsonArray, path) {
-        let deferred = $.Deferred();
-
-        let el = ERM.getBaseDialog();
-        el.variant = 'notice';
-        el.header.textContent = DIALOG_LABEL + " " + path;
-        el.footer.innerHTML = ''; // Clean content
-        el.content.innerHTML = ''; // Clean content
-
-        let $cancelBtn = $('<button is="coral-button" variant="default" coral-close>').text(CANCEL_LABEL);
-        let $updateBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
-        $cancelBtn.appendTo(el.footer);
-        $updateBtn.appendTo(el.footer);
-
-        appendTargetsHeader(el.content);
-        appendNestedCheckboxList(liveCopiesJsonArray, el.content);
-        appendRolloutScope(el.content);
-
-        function onCheckboxChange() {
-            let hasSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
-            changeSelectAllLabel(hasSelection);
-            validateSelection(hasSelection);
-        }
-
-        function validateSelection(hasSelection) {
-            $updateBtn.attr('disabled', !hasSelection);
-        }
-
-        function onSelectAllClick() {
-            selectUnselectAll();
-            onCheckboxChange();
-        }
-
-        let onResolve = function () {
-            let isDeepRollout = $("coral-checkbox[name='isDeepRollout']").prop("checked");
-            let selectedLiveCopies = [];
-            $("coral-checkbox[name='liveCopyProperties[]']").each(function () {
-                if ($(this).prop("checked")) {
-                    let selectedLiveCopyJson = {};
-                    selectedLiveCopyJson.master = $(this).data("master");
-                    selectedLiveCopyJson.target = $(this).val();
-                    selectedLiveCopyJson.depth = $(this).data("depth");
-                    selectedLiveCopies.push(selectedLiveCopyJson);
-                }
-            });
-            let data = {
-                path: path,
-                isDeepRollout: isDeepRollout,
-                selectionJsonArray: selectedLiveCopies
-            }
-            deferred.resolve(data);
-        };
-
-        el.on('change', 'coral-checkbox', onCheckboxChange);
-        el.on('click', '.rollout-manager-select-all', onSelectAllClick);
-        el.on('click', '[data-dialog-action]', onResolve);
-        el.on('coral-overlay:close', function () {
-            el.off('change', 'coral-checkbox', onCheckboxChange);
-            el.off('click', '.rollout-manager-select-all', onSelectAllClick);
-            el.off('click', '[data-dialog-action]', onResolve);
-            deferred.reject();
-        });
-
-        el.show().center();
-
-        onCheckboxChange();
-
-        return deferred.promise();
-    }
-
-    function changeSelectAllLabel(hasSelection) {
-        let selectAllEl = $('.rollout-manager-select-all');
-        if (hasSelection) {
-            selectAllEl.text(UNSELECT_ALL_LABEL);
-        } else {
-            selectAllEl.text(SELECT_ALL_LABEL);
-        }
-    }
-
-    function selectUnselectAll() {
-        let hasSelection = $("coral-checkbox[name='liveCopyProperties[]'][checked]").length > 0;
-        if (hasSelection) {
-            $("coral-checkbox[name='liveCopyProperties[]']").prop('checked', false);
-        } else {
-            $("coral-checkbox[name='liveCopyProperties[]']").prop('checked', true);
-        }
-    }
-
+    /** Active condition for the 'Rollout' button */
     function onRolloutActiveCondition(name, el, config, collection, selections) {
-        let selectedPath = selections[0].dataset.foundationCollectionItemId;
+        var selectedPath = selections[0].dataset.foundationCollectionItemId;
         return isAvailableForRollout(selectedPath);
     }
 
-    // INIT
+    // Init action handler for the 'Rollout' button
     $(window).adaptTo("foundation-registry").register("foundation.collection.action.action", {
         name: "etoolbox.rollout-manager.show-references-dialog",
         handler: onShowRolloutDialog
     });
+    // Init active condition for the 'Rollout' button
     $(window).adaptTo("foundation-registry").register("foundation.collection.action.activecondition", {
         name: "etoolbox.rollout-manager.rollout-active-condition",
         handler: onRolloutActiveCondition
     });
-
-    const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
-
-    function collectLiveCopies(path) {
-        return $.ajax({
-            url: COLLECT_LIVE_COPIES_COMMAND,
-            type: 'POST',
-            data: {
-                _charset_: "UTF-8",
-                path: path
-            }
-        });
-    }
-
-    const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
-
-    function isAvailableForRollout(path) {
-        let isAvailableForRollout = false;
-        $.ajax({
-            url: BLUEPRINT_CHECK_COMMAND,
-            type: 'POST',
-            async: false,
-            data: {
-                _charset_: "UTF-8",
-                path: path
-            }
-        }).done(function (data) {
-            isAvailableForRollout = data && data.isAvailableForRollout;
-        });
-        return isAvailableForRollout;
-    }
-
-    const PROCESSING_LABEL = Granite.I18n.get('Processing');
-    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
-
-    function rolloutItems(data, rolloutRequest) {
-        let logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
-        let requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
-        requests.always(function () {
-            logger.finished();
-        });
-        return requests;
-    }
 
 })(window, document, Granite.$, Granite.ERM, Granite);
