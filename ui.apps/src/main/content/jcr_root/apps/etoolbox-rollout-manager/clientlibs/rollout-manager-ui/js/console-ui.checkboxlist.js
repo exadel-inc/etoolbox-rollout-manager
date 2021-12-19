@@ -25,20 +25,20 @@
  */
 
 (function (document, $) {
-    "use strict";
+    'use strict';
 
-    var INTERMEDIATE_ATTR = "intermediate";
-    var CORAL_CHECKBOX_ITEM = "coral-checkbox[name=\"liveCopyProperties[]\"]";
+    const INTERMEDIATE_ATTR = 'intermediate';
+    const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
 
     function parentIntermediateStateOn(parentCheckbox) {
         parentCheckbox.attr(INTERMEDIATE_ATTR, true);
-        parentCheckbox.prop("checked", true);
+        parentCheckbox.prop('checked', true);
     }
 
     function parentIntermediateStateOff(parentCheckbox) {
-        var childCheckboxesChecked = parentCheckbox.closest("li")
-            .find("coral-accordion-item-content")
-            .find(CORAL_CHECKBOX_ITEM + "[checked]");
+        const childCheckboxesChecked = parentCheckbox.closest('li')
+            .find('coral-accordion-item-content')
+            .find(CORAL_CHECKBOX_ITEM + '[checked]');
         if (!childCheckboxesChecked || childCheckboxesChecked.length === 0) {
             parentCheckbox.removeAttr(INTERMEDIATE_ATTR);
         }
@@ -53,10 +53,10 @@
     }
 
     function setParentsState(el, isChecked) {
-        var parent = el.closest(".rollout-manager-nestedcheckboxlist")
-            .closest("li.rollout-manager-nestedcheckboxlist-item");
+        const parent = el.closest('.rollout-manager-nestedcheckboxlist')
+            .closest('li.rollout-manager-nestedcheckboxlist-item');
         if (parent.length > 0) {
-            var parentCheckbox = parent.find("coral-checkbox").first();
+            const parentCheckbox = parent.find('coral-checkbox').first();
             if (parentCheckbox.length > 0) {
                 setClosestParentState(parentCheckbox, isChecked);
                 setParentsState(parent, isChecked);
@@ -65,29 +65,29 @@
     }
 
     function setCurrentAndChildrenState(currentCheckbox, isChecked) {
-        var parentLi = currentCheckbox.closest("li");
-        var childCheckboxes = parentLi.find("coral-accordion-item-content")
+        const parentLi = currentCheckbox.closest('li');
+        const childCheckboxes = parentLi.find('coral-accordion-item-content')
             .find(CORAL_CHECKBOX_ITEM);
         if (isChecked) {
             currentCheckbox.attr(INTERMEDIATE_ATTR, true);
             childCheckboxes.attr(INTERMEDIATE_ATTR, true);
         } else {
-            var isIntermediateState = currentCheckbox.attr(INTERMEDIATE_ATTR);
+            const isIntermediateState = currentCheckbox.attr(INTERMEDIATE_ATTR);
             if (isIntermediateState && childCheckboxes.length > 0) {
-                currentCheckbox.prop("checked", true);
+                currentCheckbox.prop('checked', true);
                 currentCheckbox.removeAttr(INTERMEDIATE_ATTR);
                 childCheckboxes.removeAttr(INTERMEDIATE_ATTR);
             }
         }
-        childCheckboxes.prop("checked", isChecked);
+        childCheckboxes.prop('checked', isChecked);
     }
 
-    $(document).off("change.rollout-manager")
-        .on("change.rollout-manager", CORAL_CHECKBOX_ITEM, function (e) {
+    $(document).off('change.rollout-manager')
+        .on('change.rollout-manager', CORAL_CHECKBOX_ITEM, function (e) {
             e.stopPropagation();
 
-            var coralCheckbox = $(this);
-            var isChecked = coralCheckbox.prop("checked");
+            const coralCheckbox = $(this);
+            const isChecked = coralCheckbox.prop('checked');
 
             setCurrentAndChildrenState(coralCheckbox, isChecked);
             setParentsState(coralCheckbox, isChecked);

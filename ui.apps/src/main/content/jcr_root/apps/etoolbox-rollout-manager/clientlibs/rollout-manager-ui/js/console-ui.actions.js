@@ -17,9 +17,9 @@
  * 'Rollout' button and dialog actions definition.
  */
 (function (window, document, $, ERM, Granite) {
-    "use strict";
+    'use strict';
 
-    var COLLECT_LIVE_COPIES_COMMAND = "/content/etoolbox-rollout-manager/servlet/collect-live-copies";
+    const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
@@ -30,15 +30,15 @@
     function collectLiveCopies(path) {
         return $.ajax({
             url: COLLECT_LIVE_COPIES_COMMAND,
-            type: "POST",
+            type: 'POST',
             data: {
-                _charset_: "UTF-8",
+                _charset_: 'UTF-8',
                 path: path
             }
         });
     }
 
-    var BLUEPRINT_CHECK_COMMAND = "/content/etoolbox-rollout-manager/servlet/blueprint-check";
+    const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
     /**
      * Checks if selected page has live relationships eligible for synchronization and thus can be rolled out.
@@ -47,23 +47,23 @@
      * @returns {boolean}
      */
     function isAvailableForRollout(path) {
-        var result = false;
+        let result = false;
         $.ajax({
             url: BLUEPRINT_CHECK_COMMAND,
-            type: "POST",
+            type: 'POST',
             async: false,
             data: {
-                _charset_: "UTF-8",
+                _charset_: 'UTF-8',
                 path: path
             }
-        }).done(function (data) {
+        }).done((data) => {
             result = data && data.isAvailableForRollout;
         });
         return result;
     }
 
-    var PROCESSING_LABEL = Granite.I18n.get("Processing");
-    var ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get("Rollout in progress ...");
+    const PROCESSING_LABEL = Granite.I18n.get('Processing');
+    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
     /**
      * Performs rollout based on data collected in the Rollout dialog.
@@ -73,18 +73,26 @@
      * @returns {*}
      */
     function doItemsRollout(data, rolloutRequest) {
-        var logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
-        var requests = $.Deferred().resolve().then(rolloutRequest(data, logger));
-        requests.always(function () {
-            logger.finished();
-        });
-        return requests;
+        const logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        return $.Deferred()
+            .resolve()
+            .then(rolloutRequest(data, logger))
+            .always(() => {
+                logger.finished();
+            });
     }
 
-    var ROLLOUT_COMMAND = "/content/etoolbox-rollout-manager/servlet/rollout";
-    var PROCESSING_ERROR_MSG = Granite.I18n.get("Rollout failed");
-    var PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get("Rollout failed for the following paths:");
-    var SUCCESS_MSG = Granite.I18n.get("Selected live copies successfully synchronized");
+    const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
+    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
+    const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
+    const SUCCESS_MSG = Granite.I18n.get('Selected live copies successfully synchronized');
+
+    function getProcessingErrorMsg(xhr) {
+        if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
+            return `${PROCESSING_ERROR_FAILED_PATHS_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
+        }
+        return PROCESSING_ERROR_MSG;
+    }
 
     /**
      * Build a request to the servlet for rolling out items based on data collected in the Rollout dialog.
@@ -96,20 +104,15 @@
         return function () {
             return $.ajax({
                 url: ROLLOUT_COMMAND,
-                type: "POST",
+                type: 'POST',
                 data: {
-                    _charset_: "UTF-8",
+                    _charset_: 'UTF-8',
                     selectionJsonArray: JSON.stringify(data.selectionJsonArray),
                     isDeepRollout: data.isDeepRollout
                 }
-            }).fail(function (xhr) {
-                if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
-                    logger.log(PROCESSING_ERROR_FAILED_PATHS_MSG + "<br/><br/>" +
-                        xhr.responseJSON.failedTargets.join("<br/>"), false);
-                } else {
-                    logger.log(PROCESSING_ERROR_MSG, false);
-                }
-            }).done(function () {
+            }).fail((xhr) => {
+                logger.log(getProcessingErrorMsg(xhr), false);
+            }).done(() => {
                 logger.log(SUCCESS_MSG, false);
             });
         };
@@ -117,35 +120,37 @@
 
     /** Action handler for the 'Rollout' button */
     function onShowRolloutDialog(name, el, config, collection, selections) {
-        var selectedPath = selections[0].dataset.foundationCollectionItemId;
-        var foundationUi = $(window).adaptTo("foundation-ui");
+        const selectedPath = selections[0].dataset.foundationCollectionItemId;
+        const foundationUi = $(window).adaptTo('foundation-ui');
         // Show a wait mask before the live copies data is fully collected
         foundationUi.wait();
-        collectLiveCopies(selectedPath).then(function (liveCopiesJsonArray) {
+        collectLiveCopies(selectedPath)
+            .then((liveCopiesJsonArray) => {
                 // Clears the wait mask once the dialog is loaded
                 foundationUi.clearWait();
-                ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath).then(function (data) {
-                    doItemsRollout(data, buildRolloutRequest);
-                });
-            }
-        );
+                ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath)
+                    .then(function (data) {
+                        doItemsRollout(data, buildRolloutRequest);
+                    });
+            });
     }
 
     /** Active condition for the 'Rollout' button */
     function onRolloutActiveCondition(name, el, config, collection, selections) {
-        var selectedPath = selections[0].dataset.foundationCollectionItemId;
+        const selectedPath = selections[0].dataset.foundationCollectionItemId;
         return isAvailableForRollout(selectedPath);
     }
 
     // Init action handler for the 'Rollout' button
-    $(window).adaptTo("foundation-registry").register("foundation.collection.action.action", {
-        name: "etoolbox.rollout-manager.show-references-dialog",
-        handler: onShowRolloutDialog
-    });
+    $(window).adaptTo('foundation-registry')
+        .register('foundation.collection.action.action', {
+            name: 'etoolbox.rollout-manager.show-references-dialog',
+            handler: onShowRolloutDialog
+        });
     // Init active condition for the 'Rollout' button
-    $(window).adaptTo("foundation-registry").register("foundation.collection.action.activecondition", {
-        name: "etoolbox.rollout-manager.rollout-active-condition",
-        handler: onRolloutActiveCondition
-    });
-
+    $(window).adaptTo('foundation-registry')
+        .register('foundation.collection.action.activecondition', {
+            name: 'etoolbox.rollout-manager.rollout-active-condition',
+            handler: onRolloutActiveCondition
+        });
 })(window, document, Granite.$, Granite.ERM, Granite);

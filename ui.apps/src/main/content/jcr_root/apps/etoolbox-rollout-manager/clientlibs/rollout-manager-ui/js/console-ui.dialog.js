@@ -17,39 +17,39 @@
  * Contains helper functions to showing the rollout process dialogs.
  */
 (function (window, document, $, Granite) {
-    "use strict";
+    'use strict';
 
-    var Utils = Granite.ERM = (Granite.ERM || {});
+    const Utils = Granite.ERM = (Granite.ERM || {});
 
-    var baseDialog;
+    let baseDialog;
 
     /** Common base Coral dialog instance getter */
     function getBaseDialog() {
         if (!baseDialog) {
             baseDialog = new Coral.Dialog().set({
                 backdrop: Coral.Dialog.backdrop.MODAL,
-                interaction: "off",
-                closable: "on"
-            }).on("coral-overlay:close", function (e) {
+                interaction: 'off',
+                closable: 'on'
+            }).on('coral-overlay:close', function (e) {
                 e.target.remove();
             });
-            baseDialog.classList.add("rollout-manager-dialog");
+            baseDialog.classList.add('rollout-manager-dialog');
         }
         return baseDialog;
     }
 
     // Logger dialog related constants
-    var CLOSE_LABEL = Granite.I18n.get("Close");
-    var FINISHED_LABEL = Granite.I18n.get("Rollout");
+    const CLOSE_LABEL = Granite.I18n.get('Close');
+    const FINISHED_LABEL = Granite.I18n.get('Rollout');
 
     function loggerDialogFinished(dialog, selectedPath, processingLabel) {
-        dialog.header.textContent = FINISHED_LABEL + " " + selectedPath;
+        dialog.header.textContent = `${FINISHED_LABEL} ${selectedPath}`;
         processingLabel.remove();
 
-        var closeBtn = new Coral.Button();
-        closeBtn.variant = "primary";
+        const closeBtn = new Coral.Button();
+        closeBtn.variant = 'primary';
         closeBtn.label.textContent = CLOSE_LABEL;
-        closeBtn.on("click", function () {
+        closeBtn.on('click', function () {
             dialog.hide();
         });
 
@@ -57,10 +57,10 @@
     }
 
     function insertLogItem(dialog, message, safe) {
-        var logItem = document.createElement("div");
-        logItem.className = "rollout-manager-log-item";
-        logItem[safe ? "textContent" : "innerHTML"] = message;
-        dialog.content.insertAdjacentElement("beforeend", logItem);
+        const logItem = document.createElement('div');
+        logItem.className = 'rollout-manager-log-item';
+        logItem[safe ? 'textContent' : 'innerHTML'] = message;
+        dialog.content.insertAdjacentElement('beforeend', logItem);
     }
 
     /**
@@ -72,14 +72,14 @@
      * @method log
      */
     function createLoggerDialog(title, processingMsg, selectedPath) {
-        var dialog = getBaseDialog();
-        dialog.variant = "default";
+        const dialog = getBaseDialog();
+        dialog.variant = 'default';
         dialog.header.textContent = title;
         dialog.header.insertBefore(new Coral.Wait(), dialog.header.firstChild);
-        dialog.footer.innerHTML = "";
-        dialog.content.innerHTML = "";
+        dialog.footer.innerHTML = '';
+        dialog.content.innerHTML = '';
 
-        var processingLabel = document.createElement("p");
+        const processingLabel = document.createElement('p');
         processingLabel.textContent = processingMsg;
         dialog.content.append(processingLabel);
 
@@ -99,25 +99,25 @@
     Utils.createLoggerDialog = createLoggerDialog;
 
     // Rollout dialog related constants
-    var CANCEL_LABEL = Granite.I18n.get("Cancel");
-    var DIALOG_LABEL = Granite.I18n.get("Rollout");
-    var SELECT_ALL_LABEL = Granite.I18n.get("Select all");
-    var UNSELECT_ALL_LABEL = Granite.I18n.get("Unselect all");
-    var TARGET_PATHS_LABEL = Granite.I18n.get("Target paths");
-    var ROLLOUT_SCOPE_LABEL = Granite.I18n.get("Rollout scope");
-    var INCLUDE_SUBPAGES_LABEL = Granite.I18n.get("Include subpages");
-    var NEW_LABEL = Granite.I18n.get("new");
-    var CORAL_CHECKBOX_ITEM = "coral-checkbox[name=\"liveCopyProperties[]\"]";
-    var MASTER_DATA_ATTR = "master";
-    var DEPTH_DATA_ATTR = "depth";
+    const CANCEL_LABEL = Granite.I18n.get('Cancel');
+    const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
+    const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
+    const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
+    const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
+    const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
+    const NEW_LABEL = Granite.I18n.get('new');
+    const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
+    const MASTER_DATA_ATTR = 'master';
+    const DEPTH_DATA_ATTR = 'depth';
 
     function initRolloutDialog(path) {
-        var dialog = getBaseDialog();
-        dialog.variant = "notice";
-        dialog.header.textContent = DIALOG_LABEL + " " + path;
-        dialog.footer.innerHTML = ""; // Clean content
-        dialog.content.innerHTML = ""; // Clean content
-        var $cancelBtn = $("<button is=\"coral-button\" variant=\"default\" coral-close>")
+        const dialog = getBaseDialog();
+        dialog.variant = 'notice';
+        dialog.header.textContent = `${DIALOG_LABEL} ${path}`;
+        dialog.footer.innerHTML = ''; // Clean content
+        dialog.content.innerHTML = ''; // Clean content
+        const $cancelBtn = $('<button is="coral-button" variant="default" coral-close>')
             .text(CANCEL_LABEL);
         $cancelBtn.appendTo(dialog.footer);
 
@@ -125,34 +125,37 @@
     }
 
     function appendTargetsHeader(sourceElement) {
-        var span = $("<span>");
+        const span = $('<span>');
 
-        var selectAll = $("<a is=\"coral-anchorbutton\" variant=\"quiet\" class=\"rollout-manager-select-all\">")
+        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
             .text(SELECT_ALL_LABEL);
         selectAll.appendTo(span);
 
-        var label = $("<h3 class=\"rollout-manager-targets-label\">").text(TARGET_PATHS_LABEL);
+        const label = $('<h3 class="rollout-manager-targets-label">')
+            .text(TARGET_PATHS_LABEL);
         label.appendTo(span);
 
         span.appendTo(sourceElement);
     }
 
     function appendRolloutScope(sourceElement) {
-        var label = $("<h3>").text(ROLLOUT_SCOPE_LABEL);
-        var isDeepCheckbox = $("<coral-checkbox name=\"isDeepRollout\">").text(INCLUDE_SUBPAGES_LABEL);
+        const label = $('<h3>')
+            .text(ROLLOUT_SCOPE_LABEL);
+        const isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">')
+            .text(INCLUDE_SUBPAGES_LABEL);
         label.appendTo(sourceElement);
         isDeepCheckbox.appendTo(sourceElement);
     }
 
     function initNestedAccordion(currentCheckbox, liveCopiesJsonArray) {
-        var accordion = $("<coral-accordion variant=\"quiet\">");
-        var accordionItem = $("<coral-accordion-item>");
-        var accordionItemLabel = $("<coral-accordion-item-label>");
+        const accordion = $('<coral-accordion variant="quiet">');
+        const accordionItem = $('<coral-accordion-item>');
+        const accordionItemLabel = $('<coral-accordion-item-label>');
 
         currentCheckbox.appendTo(accordionItemLabel);
         accordionItemLabel.appendTo(accordionItem);
 
-        var accordionItemContent = $("<coral-accordion-item-content class=\"rollout-manager-coral-accordion-item-content\">");
+        const accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
         appendNestedCheckboxList(liveCopiesJsonArray, accordionItemContent);
         accordionItemContent.appendTo(accordionItem);
 
@@ -162,19 +165,25 @@
     }
 
     function jsonToCheckboxListItem(liveCopyJson) {
-        var liItem = $("<li class=\"rollout-manager-nestedcheckboxlist-item\">");
-        var liveCopyCheckbox =
-            $("<coral-checkbox coral-interactive name=\"liveCopyProperties[]\" data-master=\"" + liveCopyJson.master + "\" data-depth=\"" + liveCopyJson.depth + "\" value=\"" + liveCopyJson.path + "\">")
-                .text(liveCopyJson.path);
+        const liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
+        const liveCopyCheckbox =
+            $(`<coral-checkbox
+                  coral-interactive
+                  name="liveCopyProperties[]"
+                  data-master="${liveCopyJson.master}"
+                  data-depth="${liveCopyJson.depth}"
+                  value="${liveCopyJson.path}">`
+            ).text(liveCopyJson.path);
         if (liveCopyJson.isNew) {
-            var newLabel = $("<i class=\"rollout-manager-new-label\">").text(" " + NEW_LABEL);
+            const newLabel = $('<i class="rollout-manager-new-label">')
+                .text(` ${NEW_LABEL}`);
             liveCopyCheckbox.append(newLabel);
         }
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
-            var accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
+            const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
             accordion.appendTo(liItem);
         } else {
-            liveCopyCheckbox.addClass("inner-checkbox-option");
+            liveCopyCheckbox.addClass('inner-checkbox-option');
             liveCopyCheckbox.appendTo(liItem);
         }
         return liItem;
@@ -182,9 +191,9 @@
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (liveCopiesJsonArray.length > 0) {
-            var nestedList = $("<ul class=\"rollout-manager-nestedcheckboxlist\" data-rollout-manager-nestedcheckboxlist-disconnected=\"false\">");
+            const nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
             liveCopiesJsonArray.forEach(function (liveCopyJson) {
-                var liItem = jsonToCheckboxListItem(liveCopyJson);
+                const liItem = jsonToCheckboxListItem(liveCopyJson);
                 liItem.appendTo(nestedList);
             });
             nestedList.appendTo(sourceElement);
@@ -192,7 +201,7 @@
     }
 
     function checkBoxToJsonData(checkbox) {
-        var selectedLiveCopyJson = {};
+        const selectedLiveCopyJson = {};
         selectedLiveCopyJson.master = checkbox.data(MASTER_DATA_ATTR);
         selectedLiveCopyJson.target = checkbox.val();
         selectedLiveCopyJson.depth = checkbox.data(DEPTH_DATA_ATTR);
@@ -200,28 +209,24 @@
     }
 
     function changeSelectAllLabel(hasSelection) {
-        var selectAllEl = $(".rollout-manager-select-all");
-        if (hasSelection) {
-            selectAllEl.text(UNSELECT_ALL_LABEL);
-        } else {
-            selectAllEl.text(SELECT_ALL_LABEL);
-        }
+        const selectAllEl = $('.rollout-manager-select-all');
+        selectAllEl.text(hasSelection ? UNSELECT_ALL_LABEL : SELECT_ALL_LABEL);
     }
 
     function hasSelection() {
-        return $(CORAL_CHECKBOX_ITEM + "[checked]").length > 0;
+        return $(CORAL_CHECKBOX_ITEM + '[checked]').length > 0;
     }
 
     function selectUnselectAll() {
-        $(CORAL_CHECKBOX_ITEM).prop("checked", !hasSelection());
+        $(CORAL_CHECKBOX_ITEM).prop('checked', !hasSelection());
     }
 
     function validateSelection(hasSelection, submitBtn) {
-        submitBtn.attr("disabled", !hasSelection);
+        submitBtn.attr('disabled', !hasSelection);
     }
 
     function onCheckboxChange(submitBtn) {
-        var hasAnySelection = hasSelection();
+        const hasAnySelection = hasSelection();
         changeSelectAllLabel(hasAnySelection);
         validateSelection(hasAnySelection, submitBtn);
     }
@@ -232,15 +237,15 @@
     }
 
     function onResolve(path, deferred) {
-        var isDeepRollout = $("coral-checkbox[name=\"isDeepRollout\"]").prop("checked");
-        var selectionJsonArray = [];
+        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').prop('checked');
+        const selectionJsonArray = [];
         $(CORAL_CHECKBOX_ITEM).each(function () {
-            var checkbox = $(this);
-            if (checkbox.prop("checked")) {
+            const checkbox = $(this);
+            if (checkbox.prop('checked')) {
                 selectionJsonArray.push(checkBoxToJsonData(checkbox));
             }
         });
-        var data = {
+        const data = {
             path: path,
             isDeepRollout: isDeepRollout,
             selectionJsonArray: selectionJsonArray
@@ -249,13 +254,13 @@
     }
 
     function initEventHandlers(dialog, deferred, onCheckboxChange, onSelectAllClick, onResolve) {
-        dialog.on("change", "coral-checkbox", onCheckboxChange);
-        dialog.on("click", ".rollout-manager-select-all", onSelectAllClick);
-        dialog.on("click", "[data-dialog-action]", onResolve);
-        dialog.on("coral-overlay:close", function () {
-            dialog.off("change", "coral-checkbox", onCheckboxChange);
-            dialog.off("click", ".rollout-manager-select-all", onSelectAllClick);
-            dialog.off("click", "[data-dialog-action]", onResolve);
+        dialog.on('change', 'coral-checkbox', onCheckboxChange);
+        dialog.on('click', '.rollout-manager-select-all', onSelectAllClick);
+        dialog.on('click', '[data-dialog-action]', onResolve);
+        dialog.on('coral-overlay:close', function () {
+            dialog.off('change', 'coral-checkbox', onCheckboxChange);
+            dialog.off('click', '.rollout-manager-select-all', onSelectAllClick);
+            dialog.off('click', '[data-dialog-action]', onResolve);
             deferred.reject();
         });
     }
@@ -267,10 +272,10 @@
      * @returns {*|jQuery}
      */
     function showRolloutDialog(liveCopiesJsonArray, selectedPath) {
-        var deferred = $.Deferred();
+        const deferred = $.Deferred();
 
-        var dialog = initRolloutDialog(selectedPath);
-        var $submitBtn = $("<button data-dialog-action is=\"coral-button\" variant=\"primary\" coral-close>")
+        const dialog = initRolloutDialog(selectedPath);
+        const $submitBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>')
             .text(DIALOG_LABEL);
         $submitBtn.appendTo(dialog.footer);
 
@@ -281,15 +286,9 @@
         initEventHandlers(
             dialog,
             deferred,
-            function () {
-                onCheckboxChange($submitBtn);
-            },
-            function () {
-                onSelectAllClick($submitBtn);
-            },
-            function () {
-                onResolve(selectedPath, deferred);
-            }
+            () => onCheckboxChange($submitBtn),
+            () => onSelectAllClick($submitBtn),
+            () => onResolve(selectedPath, deferred)
         );
 
         dialog.show().center();
@@ -298,5 +297,4 @@
         return deferred.promise();
     }
     Utils.showRolloutDialog = showRolloutDialog;
-
 })(window, document, Granite.$, Granite);
