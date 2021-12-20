@@ -192,7 +192,7 @@
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (liveCopiesJsonArray.length > 0) {
             const nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
-            liveCopiesJsonArray.forEach(function (liveCopyJson) {
+            liveCopiesJsonArray.forEach((liveCopyJson) => {
                 const liItem = jsonToCheckboxListItem(liveCopyJson);
                 liItem.appendTo(nestedList);
             });
@@ -201,11 +201,11 @@
     }
 
     function checkBoxToJsonData(checkbox) {
-        const selectedLiveCopyJson = {};
-        selectedLiveCopyJson.master = checkbox.data(MASTER_DATA_ATTR);
-        selectedLiveCopyJson.target = checkbox.val();
-        selectedLiveCopyJson.depth = checkbox.data(DEPTH_DATA_ATTR);
-        return selectedLiveCopyJson;
+        return {
+            master: checkbox.data(MASTER_DATA_ATTR),
+            target: checkbox.val(),
+            depth: checkbox.data(DEPTH_DATA_ATTR)
+        };
     }
 
     function changeSelectAllLabel(hasSelection) {
@@ -246,9 +246,9 @@
             }
         });
         const data = {
-            path: path,
-            isDeepRollout: isDeepRollout,
-            selectionJsonArray: selectionJsonArray
+            path,
+            isDeepRollout,
+            selectionJsonArray
         };
         deferred.resolve(data);
     }

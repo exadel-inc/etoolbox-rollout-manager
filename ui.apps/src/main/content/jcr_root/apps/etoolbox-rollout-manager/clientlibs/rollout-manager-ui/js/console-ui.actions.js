@@ -33,7 +33,7 @@
             type: 'POST',
             data: {
                 _charset_: 'UTF-8',
-                path: path
+                path
             }
         });
     }
@@ -54,7 +54,7 @@
             async: false,
             data: {
                 _charset_: 'UTF-8',
-                path: path
+                path
             }
         }).done((data) => {
             result = data && data.isAvailableForRollout;
@@ -95,7 +95,7 @@
     }
 
     /**
-     * Build a request to the servlet for rolling out items based on data collected in the Rollout dialog.
+     * Builds a request to the servlet for rolling out items based on data collected in the Rollout dialog.
      * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
      * @param logger - the logger dialog displaying progress of the rollout process
      * @returns {function(): *}
@@ -129,8 +129,8 @@
                 // Clears the wait mask once the dialog is loaded
                 foundationUi.clearWait();
                 ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath)
-                    .then(function (data) {
-                        doItemsRollout(data, buildRolloutRequest);
+                    .then((data) => {
+                        doItemsRollout(data, buildRolloutRequest)
                     });
             });
     }
