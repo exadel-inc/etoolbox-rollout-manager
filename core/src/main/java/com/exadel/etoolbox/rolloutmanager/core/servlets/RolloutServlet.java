@@ -113,7 +113,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
                 .flatMap(status -> status.getTargets().stream())
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedTargets)) {
-            LOG.debug("Rollout failed for the following targets: {}", String.join(",", failedTargets));
+            LOG.debug("Rollout failed for the following targets: {}", failedTargets);
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             String jsonResponse = Json.createObjectBuilder()
                     .add(FAILED_TARGETS_RESPONSE_PARAM, Json.createArrayBuilder(failedTargets))
@@ -194,7 +194,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
     }
 
     private String getRolloutLogMessage(String completionMsg, String masterPath, String[] targets) {
-        return String.format("%s, master: %s, targets: %s", completionMsg, masterPath, String.join(",", targets));
+        return String.format("%s, master: %s, targets: %s", completionMsg, masterPath, Arrays.toString(targets));
     }
 
     private static class RolloutItem {
