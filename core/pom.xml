@@ -222,6 +222,11 @@ Import-Package: javax.annotation;version=0.0.0,*
             <artifactId>jackson-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Required to be able to support injection with @Self and @Via -->
         <dependency>

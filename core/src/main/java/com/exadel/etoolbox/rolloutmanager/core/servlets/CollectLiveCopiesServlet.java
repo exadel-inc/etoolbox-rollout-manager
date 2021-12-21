@@ -22,6 +22,7 @@ import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerServi
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
@@ -43,6 +44,7 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.servlet.Servlet;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Collects data related to eligible for synchronization live relationships for the given resource.
@@ -73,15 +75,23 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
+        StopWatch sw = StopWatch.createStarted();
+        LOG.debug("Starting live copies data collection for the selected page");
+
         String path = ServletUtil.getRequestParamString(request, PATH_REQUEST_PARAM);
         if (StringUtils.isBlank(path)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             LOG.warn("Path is blank, live copies collection failed");
             return;
         }
+        LOG.debug("Selected page path: {}", path);
+
         String jsonResponse = getLiveCopiesJsonArray(path, StringUtils.EMPTY, request.getResourceResolver(), 0)
                 .toString();
+        LOG.debug("Live copies data json: {}", jsonResponse);
+
         ServletUtil.writeJsonResponse(response, jsonResponse);
+        LOG.debug("Live copies data collection is completed in {} ms", sw.getTime(TimeUnit.MILLISECONDS));
     }
 
     private JsonArray getLiveCopiesJsonArray(String source,

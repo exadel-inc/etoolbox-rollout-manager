@@ -21,6 +21,7 @@ import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerServi
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
@@ -38,6 +39,7 @@ import javax.jcr.RangeIterator;
 import javax.json.Json;
 import javax.servlet.Servlet;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Checks if the given resource has live relationships eligible for synchronization and thus can be rolled out.
@@ -64,15 +66,18 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
+        StopWatch sw = StopWatch.createStarted();
+        LOG.debug("Starting blue print check for the selected page");
+
         String path = ServletUtil.getRequestParamString(request, PATH_REQUEST_PARAM);
         if (StringUtils.isBlank(path)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             LOG.warn("Path is blank, blueprint check failed");
             return;
         }
+        LOG.debug("Selected page path: {}", path);
 
         ResourceResolver resourceResolver = request.getResourceResolver();
-
         Optional<Resource> sourceResource = Optional.ofNullable(resourceResolver.getResource(path));
         if (!sourceResource.isPresent()) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
@@ -84,7 +89,10 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
                 .add(IS_AVAILABLE_FOR_ROLLOUT_PARAM, isAvailableForRollout(sourceResource.get(), resourceResolver))
                 .build()
                 .toString();
+        LOG.debug("Json response: {}", jsonResponse);
+
         ServletUtil.writeJsonResponse(response, jsonResponse);
+        LOG.debug("Blue print check is completed in {} ms", sw.getTime(TimeUnit.MILLISECONDS));
     }
 
     private boolean isAvailableForRollout(Resource sourceResource, ResourceResolver resourceResolver) {

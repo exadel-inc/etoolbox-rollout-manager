@@ -24,6 +24,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.servlets.HttpConstants;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,12 +74,16 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
+        StopWatch sw = StopWatch.createStarted();
+        LOG.debug("Starting rollout of selected items");
+
         String selectionJsonArray = ServletUtil.getRequestParamString(request, SELECTION_JSON_ARRAY_PARAM);
         if (StringUtils.isBlank(selectionJsonArray)) {
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             LOG.warn("Selection json array is blank, rollout failed");
             return;
         }
+        LOG.debug("Selection data: {}", selectionJsonArray);
 
         RolloutItem[] rolloutItems = jsonArrayToRolloutItems(selectionJsonArray);
         if (ArrayUtils.isEmpty(rolloutItems)) {
@@ -94,8 +100,11 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         }
 
         boolean isDeepRollout = ServletUtil.getRequestParamBoolean(request, IS_DEEP_ROLLOUT_PARAM);
+        LOG.debug("Is deep rollout (include subpages): {}", isDeepRollout);
+
         List<RolloutStatus> rolloutStatuses = doItemsRollout(rolloutItems, pageManager, isDeepRollout);
         writeStatusesIfFailed(rolloutStatuses, response);
+        LOG.debug("Rollout of selected items is completed in {} ms", sw.getTime(TimeUnit.MILLISECONDS));
     }
 
     private void writeStatusesIfFailed(List<RolloutStatus> rolloutStatuses, SlingHttpServletResponse response) {
@@ -104,6 +113,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
                 .flatMap(status -> status.getTargets().stream())
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedTargets)) {
+            LOG.debug("Rollout failed for the following targets: {}", String.join(",", failedTargets));
             response.setStatus(HttpStatus.SC_BAD_REQUEST);
             String jsonResponse = Json.createObjectBuilder()
                     .add(FAILED_TARGETS_RESPONSE_PARAM, Json.createArrayBuilder(failedTargets))
@@ -147,13 +157,13 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
         RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targetPaths, isDeep);
         try {
+            LOG.debug(getRolloutLogMessage("Item rollout started", masterPath, params.targets));
             rolloutManager.rollout(params);
             status.setSuccess(true);
+            LOG.debug(getRolloutLogMessage("Item rollout completed", masterPath, params.targets));
         } catch (WCMException e) {
             status.setSuccess(false);
-            String message =
-                    String.format("Rollout failed, master: %s, targets: %s", masterPath, String.join(",", params.targets));
-            LOG.error(message, e);
+            LOG.error(getRolloutLogMessage("Item rollout failed", masterPath, params.targets), e);
         }
         return status;
     }
@@ -181,6 +191,10 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             LOG.error("Failed to map json to models", e);
         }
         return new RolloutItem[0];
+    }
+
+    private String getRolloutLogMessage(String completionMsg, String masterPath, String[] targets) {
+        return String.format("%s, master: %s, targets: %s", completionMsg, masterPath, String.join(",", targets));
     }
 
     private static class RolloutItem {
