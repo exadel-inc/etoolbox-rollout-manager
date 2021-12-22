@@ -41,25 +41,33 @@
     const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
 
     /**
+     * Json helper for fetch API
+     * @param response
+     * @returns {Promise<any>}
+     */
+    function getJson(response) {
+        if (!response.ok) throw new Error(`${response.url} responded ${response.status} - ${response.statusText}`);
+        return response.json();
+    }
+
+    /**
      * Checks if selected page has live relationships eligible for synchronization and thus can be rolled out.
      * The 'Rollout' button is displayed in the Sites toolbar based on this condition.
      * @param path - path of the page selected in Sites
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      */
     function isAvailableForRollout(path) {
-        let result = false;
-        $.ajax({
-            url: BLUEPRINT_CHECK_COMMAND,
-            type: 'POST',
-            async: false,
-            data: {
-                _charset_: 'UTF-8',
-                path
-            }
-        }).done((data) => {
-            result = data && data.isAvailableForRollout;
-        });
-        return result;
+        const data = new URLSearchParams();
+        data.append('path', path);
+        return fetch(BLUEPRINT_CHECK_COMMAND, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: data
+        })
+            .then(getJson)
+            .then((response) => (response && response.isAvailableForRollout) || false);
     }
 
     const PROCESSING_LABEL = Granite.I18n.get('Processing');
@@ -130,7 +138,7 @@
                 foundationUi.clearWait();
                 ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath)
                     .then((data) => {
-                        doItemsRollout(data, buildRolloutRequest)
+                        doItemsRollout(data, buildRolloutRequest);
                     });
             });
     }
@@ -138,7 +146,10 @@
     /** Active condition for the 'Rollout' button */
     function onRolloutActiveCondition(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
-        return isAvailableForRollout(selectedPath);
+        isAvailableForRollout(selectedPath).then((res) => {
+            el.classList.toggle('foundation-collection-action-hidden', !res);
+        });
+        return false;
     }
 
     // Init action handler for the 'Rollout' button
