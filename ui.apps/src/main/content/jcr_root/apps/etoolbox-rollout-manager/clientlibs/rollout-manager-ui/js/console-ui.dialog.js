@@ -22,6 +22,8 @@
     const Utils = Granite.ERM = (Granite.ERM || {});
 
     const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
+    const BASE_DIALOG_CLASS = 'rollout-manager-dialog';
+
     let baseDialog;
 
     /** Common base Coral dialog instance getter */
@@ -35,7 +37,7 @@
                 baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
                 e.target.remove();
             });
-            baseDialog.classList.add('rollout-manager-dialog');
+            baseDialog.classList.add(BASE_DIALOG_CLASS);
         }
         return baseDialog;
     }
