@@ -57,3 +57,18 @@
     color: limegreen;
     font-weight: normal;
 }
+
+.rollout-manager-dialog .coral3-Dialog-wrapper {
+    width: 600px;
+    height: 526px;
+}
+
+.rollout-manager-nestedcheckboxlist-container {
+    overflow-y: auto;
+    height: 246px;
+}
+
+.rollout-manager-logger-dialog .coral3-Dialog-wrapper {
+    width: auto;
+    height: auto;
+}

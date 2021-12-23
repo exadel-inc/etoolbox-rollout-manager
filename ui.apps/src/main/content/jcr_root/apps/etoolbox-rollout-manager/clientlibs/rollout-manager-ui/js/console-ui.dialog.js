@@ -31,6 +31,7 @@
                 interaction: 'off',
                 closable: 'on'
             }).on('coral-overlay:close', function (e) {
+                baseDialog.classList.remove('rollout-manager-logger-dialog');
                 e.target.remove();
             });
             baseDialog.classList.add('rollout-manager-dialog');
@@ -78,6 +79,7 @@
         dialog.header.insertBefore(new Coral.Wait(), dialog.header.firstChild);
         dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
+        dialog.classList.add('rollout-manager-logger-dialog');
 
         const processingLabel = document.createElement('p');
         processingLabel.textContent = processingMsg;
@@ -280,7 +282,12 @@
         $submitBtn.appendTo(dialog.footer);
 
         appendTargetsHeader(dialog.content);
-        appendNestedCheckboxList(liveCopiesJsonArray, dialog.content);
+
+        const checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">');
+        checkboxListContainer.appendTo(dialog.content);
+
+        appendNestedCheckboxList(liveCopiesJsonArray, checkboxListContainer);
+
         appendRolloutScope(dialog.content);
 
         initEventHandlers(
@@ -291,7 +298,8 @@
             () => onResolve(selectedPath, deferred)
         );
 
-        dialog.show().center();
+        dialog.show();
+
         validateSelection(hasSelection(), $submitBtn);
 
         return deferred.promise();
