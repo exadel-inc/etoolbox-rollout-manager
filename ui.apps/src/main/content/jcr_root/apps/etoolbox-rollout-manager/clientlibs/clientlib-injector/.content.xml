@@ -12,10 +12,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<jcr:root xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0"
+<jcr:root xmlns:cq="http://www.day.com/jcr/cq/1.0"
           xmlns:jcr="http://www.jcp.org/jcr/1.0"
           jcr:primaryType="cq:ClientLibraryFolder"
-          allowProxy="{Boolean}true"
-          categories="[cq.rolloutmanager]"
-          dependencies="[granite.jquery, granite.utils]"
-          jsProcessor="[min:gcc;languageIn=ECMASCRIPT_2015, compilationLevel=advanced, languageOut=ECMASCRIPT5]"/>
+          categories="[cq.common.wcm]"
+          dependencies="[cq.rolloutmanager]"
+/>

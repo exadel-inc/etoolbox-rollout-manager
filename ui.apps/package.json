@@ -1,0 +1,18 @@
+{
+  "name": "etoolbox-rollout-manager",
+  "description": "A clientlib for EToolbox Rollout Manager",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^8.5.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0"
+  },
+  "scripts": {
+    "lint": "eslint src/main/content/jcr_root/apps/**/*.js"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/exadel-inc/etoolbox-rollout-manager/tree/master/ui.apps/src/main/content/jcr_root/apps/etoolbox-rollout-manager/clientlibs/rollout-manager-ui"
+}
