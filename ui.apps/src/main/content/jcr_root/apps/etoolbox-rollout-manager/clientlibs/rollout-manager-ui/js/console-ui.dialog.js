@@ -21,6 +21,7 @@
 
     const Utils = Granite.ERM = (Granite.ERM || {});
 
+    const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
     let baseDialog;
 
     /** Common base Coral dialog instance getter */
@@ -31,7 +32,7 @@
                 interaction: 'off',
                 closable: 'on'
             }).on('coral-overlay:close', function (e) {
-                baseDialog.classList.remove('rollout-manager-logger-dialog');
+                baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
                 e.target.remove();
             });
             baseDialog.classList.add('rollout-manager-dialog');
@@ -79,7 +80,7 @@
         dialog.header.insertBefore(new Coral.Wait(), dialog.header.firstChild);
         dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
-        dialog.classList.add('rollout-manager-logger-dialog');
+        dialog.classList.add(LOGGER_DIALOG_CLASS);
 
         const processingLabel = document.createElement('p');
         processingLabel.textContent = processingMsg;
