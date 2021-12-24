@@ -8,7 +8,8 @@
 
 **EToolbox Rollout Manager** is a tool for Adobe Experience Manger (AEM) allowing to roll out changes to multiple levels of live relationships simultaneously.
 
-##Description
+## Description
+
 **EToolbox Rollout Manager** is a site-wide tool for AEM environments and is of value to website content managers and QA engineers. Rollout Manager allows users to automate the process of rolling out changes or updates to multiple levels of live relationships simultaneously. In other words, editing website content can become faster than doing it manually for every page in question. When the user needs to find and apply changes to a set of web pages, they can use Rollout Manager to accumulate those pages and update them accordingly. The tool reduces the manual work significantly and lets users check whether all the pages have been updated through a comprehensive interface.
 
 ![overview](_img/overview.png)
