@@ -1,126 +1,136 @@
-# Sample AEM project template
+# EToolbox Rollout Manager
 
-This is a project template for AEM-based applications. It is intended as a best-practice set of examples as well as a potential starting point to develop your own functionality.
+![GitHub contributors](https://img.shields.io/github/contributors/exadel-inc/etoolbox-rollout-manager)
+![GitHub Repo stars](https://img.shields.io/github/stars/exadel-inc/etoolbox-rollout-manager?style=plastic)
+![GitHub Repo forks](https://img.shields.io/github/forks/exadel-inc/etoolbox-rollout-manager?style=plastic)
+![GitHub issues](https://img.shields.io/github/issues/exadel-inc/etoolbox-rollout-manager)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## Modules
+**EToolbox Rollout Manager** is a tool for Adobe Experience Manger (AEM) allowing to roll out changes to multiple levels of live relationships simultaneously.
 
-The main parts of the template are:
+##Description
+**EToolbox Rollout Manager** is a site-wide tool for AEM environments and is of value to website content managers and QA engineers. Rollout Manager allows users to automate the process of rolling out changes or updates to multiple levels of live relationships simultaneously. In other words, editing website content can become faster than doing it manually for every page in question. When the user needs to find and apply changes to a set of web pages, they can use Rollout Manager to accumulate those pages and update them accordingly. The tool reduces the manual work significantly and lets users check whether all the pages have been updated through a comprehensive interface.
 
-* core: Java bundle containing all core functionality like OSGi services, listeners or schedulers, as well as component-related Java code such as servlets or request filters.
-* it.tests: Java based integration tests
-* ui.apps: contains the /apps (and /etc) parts of the project, ie JS&CSS clientlibs, components, and templates
-* ui.content: contains sample content using the components from the ui.apps
-* ui.config: contains runmode specific OSGi configs for the project
-* ui.frontend: an optional dedicated front-end build mechanism (Angular, React or general Webpack project)
-* ui.tests: Selenium based UI tests
-* all: a single content package that embeds all of the compiled modules (bundles and content packages) including any vendor dependencies
-* analyse: this module runs analysis on the project which provides additional validation for deploying into AEMaaCS
+![overview](_img/overview.png)
 
-## How to build
+## System Requirements
 
-To build all the modules run in the project root directory the following command with Maven 3:
+AEM 6.5 | AEM 6.4 | Java SE | Maven
+---------|---------|---------|---------
+6.5.5.0+ | 6.4.8.1+ | 8, 11 | 3.3.9+
 
-    mvn clean install
+## Installation
+The tool can be installed using the package or via building the project.
 
-To build all the modules and deploy the `all` package to a local instance of AEM, run in the project root directory the following command:
+### Package
+1. Get the latest package version from https://github.com/exadel-inc/etoolbox-rollout-manager/releases
+2. Install the package _**etoolbox-rollout-manager.all-XX.zip**_ using the _Package Manager_
+3. Ensure that the bundle **_EToolbox Rollout Manager - Core (etoolbox-rollout-manager.core)_** is in _Active_ state.
+4. Ensure the nodes **_/content/etoolbox-rollout-manager/servlet_** and **_/apps/wcm/core/content/sites/jcr:content/actions/selection/rollout_** are present.
 
-    mvn clean install -PautoInstallSinglePackage
+### How to build
 
-Or to deploy it to a publish instance, run
+Run the following command in the project root directory to build all the modules and deploy the `all` package to a local instance of AEM:
 
-    mvn clean install -PautoInstallSinglePackagePublish
+`mvn clean install -PautoInstallSinglePackage`
 
-Or alternatively
+## Getting Started
+1. Go to _Sites_ and select a page to be rolled out.
+   
+   ![get-started-1](_img/get-started-1.png)
+   
+2. Click the _Rollout_ button in the action bar.
+3. Select target paths and check the _Include subpages_ if necessary, click _Rollout_ in the dialog.
+   
+   ![get-started-2](_img/get-started-2.png)
 
-    mvn clean install -PautoInstallSinglePackage -Daem.port=4503
+## Features
+### Toolbar button
+The _Rollout_ button is added to the _Sites_ action bar:
 
-Or to deploy only the bundle to the author, run
+![toolbar](_img/toolbar.png)
 
-    mvn clean install -PautoInstallBundle
+The button is active if the conditions listed below are satisfied.
 
-Or to deploy only a single content package, run in the sub-module directory (i.e `ui.apps`)
+#### Button active conditions
+- Single selection.
+- Selected page has live relationships.
+- Parent page of the selected page must exist under at least one live relationship (i.e target) path.
 
-    mvn clean install -PautoInstallPackage
+### Loader before the dialog shows
+Foundation UI's _wait()_ function is used to show a wait mask before the dialog is loaded. The delay may be caused by collecting target paths and vary depending on the live copies structure complexity.
 
-## Testing
+![wait-mask](_img/wait-mask.png)
 
-There are three levels of testing contained in the project:
+### Target paths
+The list of live relationships is collected recursively for the selected page and transformed to target paths.  First, the live relationships for the current page are fetched, then for each live  relationship the process of fetching is repeated, until relationships for all levels are collected.
 
-### Unit tests
+![targets](_img/targets.png)
 
-This show-cases classic unit testing of the code contained in the bundle. To
-test, execute:
+#### Exclusions
+- If a live copy was created with the property _Exclude sub pages_ enabled, or the live copy the has the property _Live Copy Inheritance_ disabled in page properties, rollout/synchronization for child pages won't be available.
+  
+  ![exclude-subpages](_img/exclude-subpages.png)
+  
+  ![inheritance-disabled](_img/inheritance-disabled.png)
+  
+  Let's suppose there are a blueprint page _/content/we-retail/language-masters/en_ and its child _/content/we-retail/language-masters/en/experience_. The blueprint _/content/we-retail/language-masters/en_ has a live copy _/content/we-retail/ca/en_, and the child's live relationship is _/content/we-retail/ca/en/experience_. Presuming that the live copy _/content/we-retail/ca/en_ has the property _Live Copy Inheritance_ disabled, _/content/we-retail/ca/en/experience_ won't be present in the _Target paths_ for _/content/we-retail/language-masters/en/experience_.
+  
+  ![inheritance-disabled-example](_img/inheritance-disabled-example.png)
 
-    mvn clean test
+- If a page is in a live copy exclusions, synchronization of the page won't be available under this live copy path. In the example above if the page _/content/we-retail/ca/en/experience_ is deleted, the path _experience_ will be added to the exclusions set of _/content/we-retail/ca/en_. Thus, _/content/we-retail/ca/en/experience_ won't be present in the _Target paths_ for _/content/we-retail/language-masters/en/experience_.
+  
+### Nested checkbox tree
+The checkbox tree is built based on nested [Coral.Accordion](https://www.adobe.io/experience-manager/reference-materials/6-5/coral-ui/coralui3/Coral.Accordion.html) widgets in conjunction with [Coral.Checkbox](https://www.adobe.io/experience-manager/reference-materials/6-5/coral-ui/coralui3/Coral.Checkbox.html). The tree is scrollable.
 
-### Integration tests
+#### Checkboxes states
+- 3 states for a checkbox if contains children: check itself + check children > check itself + uncheck children > uncheck itself
+- 2 states for a checkbox if no children: check > uncheck
+- in addition, checking the current checkbox also checks all parent checkboxes, since it shouldn't be possible to rollout child path w/o rolling out parent target paths
 
-This allows running integration tests that exercise the capabilities of AEM via
-HTTP calls to its API. To run the integration tests, run:
+#### Select/Unselect all
+The button allows to select or unselect all target paths. The button label is changed accordingly (Select all > Unselect all).
 
-    mvn clean verify -Plocal
+![select-all](_img/select-all.png)
 
-Test classes must be saved in the `src/main/java` directory (or any of its
-subdirectories), and must be contained in files matching the pattern `*IT.java`.
+![unselect-all](_img/unselect-all.png)
 
-The configuration provides sensible defaults for a typical local installation of
-AEM. If you want to point the integration tests to different AEM author and
-publish instances, you can use the following system properties via Maven's `-D`
-flag.
+#### New label
+The _new_ label is shown if a selected page doesn't exist under a target path and will be created during a rollout process.
 
-| Property | Description | Default value |
-| --- | --- | --- |
-| `it.author.url` | URL of the author instance | `http://localhost:4502` |
-| `it.author.user` | Admin user for the author instance | `admin` |
-| `it.author.password` | Password of the admin user for the author instance | `admin` |
-| `it.publish.url` | URL of the publish instance | `http://localhost:4503` |
-| `it.publish.user` | Admin user for the publish instance | `admin` |
-| `it.publish.password` | Password of the admin user for the publish instance | `admin` |
+![new-label](_img/new-label.png)
 
-The integration tests in this archetype use the [AEM Testing
-Clients](https://github.com/adobe/aem-testing-clients) and showcase some
-recommended [best
-practices](https://github.com/adobe/aem-testing-clients/wiki/Best-practices) to
-be put in use when writing integration tests for AEM.
+#### Selection validation
+The _Rollout_ button is disabled if no target paths are selected.
 
-## Static Analysis
+![validation](_img/validation.png)
 
-The `analyse` module performs static analysis on the project for deploying into AEMaaCS. It is automatically
-run when executing
+### Rollout
+#### Include subpages
+The option implies rolling out of all child pages along with the selected page to target paths (similarly to the _Rollout page and all sub pages_ OOTB feature).
 
-    mvn clean install
+![include-subpages](_img/include-subpages.png)
 
-from the project root directory. Additional information about this analysis and how to further configure it
-can be found here https://github.com/adobe/aemanalyser-maven-plugin
+#### Rollout in progress
+The message informing that the rollout process in progress is displayed after clicking the _Rollout_ button.
 
-### UI tests
+![rollout-in-progress](_img/rollout-in-progress.png)
 
-They will test the UI layer of your AEM application using Selenium technology. 
+#### Success/Fail message
+The message informing about the rollout process result is displayed after completion.
 
-To run them locally:
+![completed](_img/completed.png)
+   
+## Contributing
 
-    mvn clean verify -Pui-tests-local-execution
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-This default command requires:
-* an AEM author instance available at http://localhost:4502 (with the whole project built and deployed on it, see `How to build` section above)
-* Chrome browser installed at default location
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Check README file in `ui.tests` module for more details.
+## License
 
-## ClientLibs
-
-The frontend module is made available using an [AEM ClientLib](https://helpx.adobe.com/experience-manager/6-5/sites/developing/using/clientlibs.html). When executing the NPM build script, the app is built and the [`aem-clientlib-generator`](https://github.com/wcm-io-frontend/aem-clientlib-generator) package takes the resulting build output and transforms it into such a ClientLib.
-
-A ClientLib will consist of the following files and directories:
-
-- `css/`: CSS files which can be requested in the HTML
-- `css.txt` (tells AEM the order and names of files in `css/` so they can be merged)
-- `js/`: JavaScript files which can be requested in the HTML
-- `js.txt` (tells AEM the order and names of files in `js/` so they can be merged
-- `resources/`: Source maps, non-entrypoint code chunks (resulting from code splitting), static assets (e.g. icons), etc.
-
-## Maven settings
-
-The project comes with the auto-public repository configured. To setup the repository in your Maven settings, refer to:
-
-    http://helpx.adobe.com/experience-manager/kb/SetUpTheAdobeMavenRepository.html
+This project is available under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0).
