@@ -32,6 +32,11 @@
     <packaging>content-package</packaging>
     <name>EToolbox Rollout Manager - UI apps</name>
     <description>UI apps package for EToolbox Rollout Manager</description>
+    <properties>
+        <sonar.coverage.exclusions>
+            **/**.js
+        </sonar.coverage.exclusions>
+    </properties>
 
     <!-- ====================================================================== -->
     <!-- B U I L D   D E F I N I T I O N                                        -->
