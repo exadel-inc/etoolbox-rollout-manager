@@ -27,6 +27,8 @@
 .rollout-manager-nestedcheckboxlist {
     margin-top: 0;
     margin-bottom: 0;
+    list-style: none;
+    padding: 0;
 }
 
 .rollout-manager-select-all {
@@ -36,11 +38,6 @@
 
 .rollout-manager-coral-accordion-item-content {
     padding-bottom: 0;
-}
-
-.rollout-manager-nestedcheckboxlist {
-    list-style: none;
-    padding: 0;
 }
 
 .rollout-manager-nestedcheckboxlist-item .inner-checkbox-option {
