@@ -133,7 +133,7 @@ class RolloutServletTest {
 
         fixture.doPost(request, response);
 
-        verify(rolloutManager, times(3)).rollout(any(RolloutManager.RolloutParams.class));
+        verify(rolloutManager, times(6)).rollout(any(RolloutManager.RolloutParams.class));
 
         assertEquals(HttpStatus.SC_OK, response.getStatus());
     }
