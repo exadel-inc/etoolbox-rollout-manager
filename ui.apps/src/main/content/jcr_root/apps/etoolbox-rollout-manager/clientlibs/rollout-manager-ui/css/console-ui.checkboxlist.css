@@ -67,5 +67,5 @@
 
 .rollout-manager-logger-dialog .coral3-Dialog-wrapper {
     width: 500px;
-    height: 165px;
+    height: auto;
 }

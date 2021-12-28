@@ -110,7 +110,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
     private void writeStatusesIfFailed(List<RolloutStatus> rolloutStatuses, SlingHttpServletResponse response) {
         List<String> failedTargets = rolloutStatuses.stream()
                 .filter(status -> !status.isSuccess())
-                .flatMap(status -> status.getTargets().stream())
+                .map(RolloutStatus::getTarget)
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedTargets)) {
             LOG.debug("Rollout failed for the following targets: {}", failedTargets);
@@ -136,49 +136,40 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     private Stream<RolloutStatus> rolloutSortedByDepthItems(List<RolloutItem> items, PageManager pageManager, boolean isDeep) {
         return items.stream()
-                .collect(Collectors.groupingBy(RolloutItem::getMaster))
-                .entrySet()
-                .stream()
-                .map(masterToTargets -> rollout(masterToTargets.getKey(), masterToTargets.getValue(), pageManager, isDeep));
+                .filter(item -> StringUtils.isNotBlank(item.getTarget()))
+                .map(item -> rollout(item, pageManager, isDeep));
     }
 
-    private RolloutStatus rollout(String masterPath, List<RolloutItem> targetItems, PageManager pageManager, boolean isDeep) {
-        RolloutStatus status = new RolloutStatus();
+    private RolloutStatus rollout(RolloutItem targetItem, PageManager pageManager, boolean isDeep) {
+        String targetPath = targetItem.getTarget();
+        RolloutStatus status = new RolloutStatus(targetPath);
 
-        List<String> targetPaths = rolloutItemsToTargetPaths(targetItems);
-        status.setTargets(targetPaths);
-
+        String masterPath = targetItem.getMaster();
         Optional<Page> masterPage = Optional.ofNullable(pageManager.getPage(masterPath));
-        if (!masterPage.isPresent() || CollectionUtils.isEmpty(targetPaths)) {
+        if (!masterPage.isPresent()) {
             status.setSuccess(false);
-            LOG.warn("Rollout failed - master page is null or targets are empty, master page path: {}", masterPath);
+            LOG.warn("Rollout failed - master page is null, master page path: {}", masterPath);
             return status;
         }
 
-        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targetPaths, isDeep);
+        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targetPath, isDeep);
         try {
-            LOG.debug(getRolloutLogMessage("Item rollout started", masterPath, params.targets));
+            LOG.debug("Item rollout started, master: {}, target: {}", masterPath, targetPath);
             rolloutManager.rollout(params);
             status.setSuccess(true);
-            LOG.debug(getRolloutLogMessage("Item rollout completed", masterPath, params.targets));
+            LOG.debug("Item rollout completed, master: {}, target: {}", masterPath, targetPath);
         } catch (WCMException e) {
             status.setSuccess(false);
-            LOG.error(getRolloutLogMessage("Item rollout failed", masterPath, params.targets), e);
+            String message = String.format("Item rollout failed, master: %s, target: %s", masterPath, targetPath);
+            LOG.error(message, e);
         }
         return status;
     }
 
-    private List<String> rolloutItemsToTargetPaths(List<RolloutItem> items) {
-        return items.stream()
-                .map(RolloutItem::getTarget)
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toList());
-    }
-
-    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, List<String> targetPaths, boolean isDeep) {
+    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, String targetPath, boolean isDeep) {
         RolloutManager.RolloutParams params = new RolloutManager.RolloutParams();
         params.master = masterPage;
-        params.targets = targetPaths.toArray(new String[0]);
+        params.targets = new String[]{targetPath};
         params.isDeep = isDeep;
         params.trigger = RolloutManager.Trigger.ROLLOUT;
         return params;
@@ -191,10 +182,6 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             LOG.error("Failed to map json to models", e);
         }
         return new RolloutItem[0];
-    }
-
-    private String getRolloutLogMessage(String completionMsg, String masterPath, String[] targets) {
-        return String.format("%s, master: %s, targets: %s", completionMsg, masterPath, Arrays.toString(targets));
     }
 
     private static class RolloutItem {
@@ -217,7 +204,11 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     private static class RolloutStatus {
         private boolean isSuccess;
-        private List<String> targets;
+        private final String target;
+
+        public RolloutStatus(String target) {
+            this.target = target;
+        }
 
         public boolean isSuccess() {
             return isSuccess;
@@ -227,12 +218,8 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             isSuccess = success;
         }
 
-        public List<String> getTargets() {
-            return targets;
-        }
-
-        public void setTargets(List<String> targets) {
-            this.targets = targets;
+        public String getTarget() {
+            return target;
         }
     }
 }
