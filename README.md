@@ -1,8 +1,8 @@
 # EToolbox Rollout Manager
 
 ![GitHub contributors](https://img.shields.io/github/contributors/exadel-inc/etoolbox-rollout-manager)
-![GitHub Repo stars](https://img.shields.io/github/stars/exadel-inc/etoolbox-rollout-manager?style=plastic)
-![GitHub Repo forks](https://img.shields.io/github/forks/exadel-inc/etoolbox-rollout-manager?style=plastic)
+![GitHub Repo stars](https://img.shields.io/github/stars/exadel-inc/etoolbox-rollout-manager)
+![GitHub Repo forks](https://img.shields.io/github/forks/exadel-inc/etoolbox-rollout-manager)
 ![GitHub issues](https://img.shields.io/github/issues/exadel-inc/etoolbox-rollout-manager)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
