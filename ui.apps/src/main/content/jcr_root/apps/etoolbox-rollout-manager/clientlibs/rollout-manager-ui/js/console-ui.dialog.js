@@ -30,15 +30,15 @@
     function getBaseDialog() {
         if (!baseDialog) {
             baseDialog = new Coral.Dialog().set({
-                backdrop: Coral.Dialog.backdrop.MODAL,
-                interaction: 'off',
-                closable: 'on'
+                backdrop: Coral.Dialog.backdrop.STATIC,
+                interaction: 'off'
             }).on('coral-overlay:close', function (e) {
                 baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
                 e.target.remove();
             });
             baseDialog.classList.add(BASE_DIALOG_CLASS);
         }
+        baseDialog.closable = 'on';
         return baseDialog;
     }
 
@@ -47,6 +47,7 @@
     const FINISHED_LABEL = Granite.I18n.get('Rollout');
 
     function loggerDialogFinished(dialog, selectedPath, processingLabel) {
+        dialog.closable = 'on';
         dialog.header.textContent = `${FINISHED_LABEL} ${selectedPath}`;
         processingLabel.remove();
 
@@ -83,6 +84,7 @@
         dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
         dialog.classList.add(LOGGER_DIALOG_CLASS);
+        dialog.closable = 'off';
 
         const processingLabel = document.createElement('p');
         processingLabel.textContent = processingMsg;
