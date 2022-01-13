@@ -12,7 +12,6 @@
 
 **EToolbox Rollout Manager** is a comprehensive AEM tool meant for AEM website content managers and QA departments. The Rollout Manager can help users roll out changes and updates across multiple levels of AEM live copies. In other words, users can synchronize content in all necessary live copies simultaneously instead of doing so manually for every individual page. Not only does Exadel Rollout Manager reduce the manual effort needed to apply all changes, but it also presents all updates through a user-friendly interface.
 
-
 ![overview](_img/overview.png)
 
 ## System Requirements
