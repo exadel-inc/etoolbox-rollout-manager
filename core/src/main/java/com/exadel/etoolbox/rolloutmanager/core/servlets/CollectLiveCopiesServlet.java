@@ -18,6 +18,8 @@ import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveCopy;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
+import com.day.cq.wcm.msm.api.RolloutConfig;
+import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
@@ -66,6 +68,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final String DEPTH_JSON_FIELD = "depth";
     private static final String LIVE_COPIES_JSON_FIELD = "liveCopies";
     private static final String IS_NEW_JSON_FIELD = "isNew";
+    private static final String HAS_ROLLOUT_TRIGGER_JSON_FIELD = "autoRolloutTrigger";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
@@ -135,13 +138,21 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         }
 
         String liveCopyPath = liveCopy.getPath();
+        boolean isNew = !resourceExists(resourceResolver, liveCopyPath + syncPath);
         return Json.createObjectBuilder()
                 .add(MASTER_JSON_FIELD, source + sourceSyncPath)
                 .add(PATH_JSON_FIELD, liveCopyPath + syncPath)
                 .add(DEPTH_JSON_FIELD, depth)
                 .add(LIVE_COPIES_JSON_FIELD, getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
-                .add(IS_NEW_JSON_FIELD, !resourceExists(resourceResolver, liveCopyPath + syncPath))
+                .add(IS_NEW_JSON_FIELD, isNew)
+                .add(HAS_ROLLOUT_TRIGGER_JSON_FIELD, !isNew && hasAutoTrigger(liveCopy))
                 .build();
+    }
+
+    private boolean hasAutoTrigger(LiveCopy liveCopy) {
+        return liveCopy.getRolloutConfigs().stream()
+                .map(RolloutConfig::getTrigger)
+                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION || trigger == RolloutManager.Trigger.ROLLOUT);
     }
 
     private String buildSyncPath(LiveRelationship relationship, String sourceSyncPath) {

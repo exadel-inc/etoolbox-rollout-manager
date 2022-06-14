@@ -19,7 +19,7 @@
     <groupId>com.exadel.etoolbox</groupId>
     <artifactId>etoolbox-rollout-manager</artifactId>
     <packaging>pom</packaging>
-    <version>1.0</version>
+    <version>1.1</version>
     <name>EToolbox Rollout Manager</name>
     <description>EToolbox Rollout Manager</description>
 

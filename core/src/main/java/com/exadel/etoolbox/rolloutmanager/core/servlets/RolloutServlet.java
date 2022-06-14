@@ -136,8 +136,17 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     private Stream<RolloutStatus> rolloutSortedByDepthItems(List<RolloutItem> items, PageManager pageManager, boolean isDeep) {
         return items.stream()
+                .filter(item -> !skipAutoTriggered(item))
                 .filter(item -> StringUtils.isNotBlank(item.getTarget()))
                 .map(item -> rollout(item, pageManager, isDeep));
+    }
+
+    private boolean skipAutoTriggered(RolloutItem item) {
+        boolean skipAutoTriggered = item.getDepth() != 0 && item.isAutoRolloutTrigger();
+        if (skipAutoTriggered) {
+            LOG.debug("Item rollout skipped due to auto trigger, master: {}, target: {}", item.getMaster(), item.getTarget());
+        }
+        return skipAutoTriggered;
     }
 
     private RolloutStatus rollout(RolloutItem targetItem, PageManager pageManager, boolean isDeep) {
@@ -188,6 +197,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         private String master;
         private String target;
         private int depth;
+        boolean autoRolloutTrigger;
 
         public String getMaster() {
             return master;
@@ -199,6 +209,10 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
         public int getDepth() {
             return depth;
+        }
+
+        public boolean isAutoRolloutTrigger() {
+            return autoRolloutTrigger;
         }
     }
 

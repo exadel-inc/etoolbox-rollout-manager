@@ -117,6 +117,7 @@
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const MASTER_DATA_ATTR = 'master';
     const DEPTH_DATA_ATTR = 'depth';
+    const AUTO_ROLLOUT_DATA_ATTR = 'auto-rollout';
 
     function initRolloutDialog(path) {
         const dialog = getBaseDialog();
@@ -179,6 +180,7 @@
                   name="liveCopyProperties[]"
                   data-master="${liveCopyJson.master}"
                   data-depth="${liveCopyJson.depth}"
+                  data-auto-rollout="${liveCopyJson.autoRolloutTrigger}"
                   value="${liveCopyJson.path}">`
             ).text(liveCopyJson.path);
         if (liveCopyJson.isNew) {
@@ -211,7 +213,8 @@
         return {
             master: checkbox.data(MASTER_DATA_ATTR),
             target: checkbox.val(),
-            depth: checkbox.data(DEPTH_DATA_ATTR)
+            depth: checkbox.data(DEPTH_DATA_ATTR),
+            autoRolloutTrigger: checkbox.data(AUTO_ROLLOUT_DATA_ATTR),
         };
     }
 

@@ -9,9 +9,11 @@
         "path": "/content/my-site/ca/en/testResource",
         "depth": 1,
         "liveCopies": [],
-        "isNew": true
+        "isNew": true,
+        "autoRolloutTrigger": false
       }
     ],
-    "isNew": false
+    "isNew": false,
+    "autoRolloutTrigger": false
   }
 ]
