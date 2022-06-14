@@ -214,7 +214,7 @@
             master: checkbox.data(MASTER_DATA_ATTR),
             target: checkbox.val(),
             depth: checkbox.data(DEPTH_DATA_ATTR),
-            autoRolloutTrigger: checkbox.data(AUTO_ROLLOUT_DATA_ATTR),
+            autoRolloutTrigger: checkbox.data(AUTO_ROLLOUT_DATA_ATTR)
         };
     }
 
