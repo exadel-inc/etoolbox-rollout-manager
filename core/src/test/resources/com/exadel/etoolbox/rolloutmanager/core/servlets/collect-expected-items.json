@@ -10,10 +10,14 @@
         "depth": 1,
         "liveCopies": [],
         "isNew": true,
-        "autoRolloutTrigger": false
+        "autoRolloutTrigger": false,
+        "lastRolledoutTimeAgo":"Not Rolledout",
+        "lastRolledout":""
       }
     ],
     "isNew": false,
-    "autoRolloutTrigger": false
+    "autoRolloutTrigger": false,
+    "lastRolledoutTimeAgo":"Not Rolledout",
+    "lastRolledout":""
   }
 ]

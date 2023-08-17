@@ -183,11 +183,12 @@
                   data-auto-rollout="${liveCopyJson.autoRolloutTrigger}"
                   value="${liveCopyJson.path}">`
             ).text(liveCopyJson.path);
-        if (liveCopyJson.isNew) {
-            const newLabel = $('<i class="rollout-manager-new-label">')
-                .text(` ${NEW_LABEL}`);
-            liveCopyCheckbox.append(newLabel);
-        }
+        const lastRolledoutTimeAgo =
+            $(`<i
+                title="${liveCopyJson.lastRolledout}"
+                class="rollout-manager-last-rollout-date">`
+            ).text(liveCopyJson.lastRolledoutTimeAgo);
+        liveCopyCheckbox.append(lastRolledoutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
             const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
             accordion.appendTo(liItem);
