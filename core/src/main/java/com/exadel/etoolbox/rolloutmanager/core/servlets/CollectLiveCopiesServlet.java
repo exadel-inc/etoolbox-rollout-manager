@@ -70,7 +70,7 @@ import static com.day.cq.wcm.msm.api.MSMNameConstants.PN_LAST_ROLLEDOUT;
 public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(CollectLiveCopiesServlet.class);
 
-    private static final String NOT_ROLLEDOUT_LABEL = "Not Rolledout";
+    private static final String NOT_ROLLED_OUT_LABEL = "Not Rolled Out";
     private static final String DATE_TIME_PATTERN = "HH:mm:ss z dd-MM-yyyy";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
 
@@ -82,8 +82,8 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final String LIVE_COPIES_JSON_FIELD = "liveCopies";
     private static final String IS_NEW_JSON_FIELD = "isNew";
     private static final String HAS_ROLLOUT_TRIGGER_JSON_FIELD = "autoRolloutTrigger";
-    private static final String LAST_ROLLEDOUT_JSON_FIELD = "lastRolledout";
-    private static final String LAST_ROLLEDOUT_TIME_AGO_JSON_FIELD = "lastRolledoutTimeAgo";
+    private static final String LAST_ROLLED_OUT_JSON_FIELD = "lastRolledOut";
+    private static final String LAST_ROLLED_OUT_TIME_AGO_JSON_FIELD = "lastRolledOutTimeAgo";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
@@ -162,8 +162,8 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .add(LIVE_COPIES_JSON_FIELD, getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
                 .add(IS_NEW_JSON_FIELD, isNew)
                 .add(HAS_ROLLOUT_TRIGGER_JSON_FIELD, !isNew && hasAutoTrigger(liveCopy))
-                .add(LAST_ROLLEDOUT_TIME_AGO_JSON_FIELD, getRolledoutAgoJsonField(resourceResolver, liveCopyPath + syncPath))
-                .add(LAST_ROLLEDOUT_JSON_FIELD, getLastRolloutJsonField(resourceResolver, liveCopyPath + syncPath))
+                .add(LAST_ROLLED_OUT_TIME_AGO_JSON_FIELD, getRolledOutAgoJsonField(resourceResolver, liveCopyPath + syncPath))
+                .add(LAST_ROLLED_OUT_JSON_FIELD, getLastRolledOutJsonField(resourceResolver, liveCopyPath + syncPath))
                 .build();
     }
 
@@ -192,7 +192,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .isPresent();
     }
 
-    private String getLastRolloutJsonField(ResourceResolver resourceResolver, String resourcePath) {
+    private String getLastRolledOutJsonField(ResourceResolver resourceResolver, String resourcePath) {
         String date = getStringDate(resourceResolver, resourcePath);
         ZonedDateTime dateTime = null;
         if (StringUtils.isNotEmpty(date)) {
@@ -202,10 +202,10 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         return dateTime != null ? dateTime.format(DATE_TIME_FORMATTER) : StringUtils.EMPTY;
     }
 
-    private String getRolledoutAgoJsonField(ResourceResolver resourceResolver, String resourcePath) {
+    private String getRolledOutAgoJsonField(ResourceResolver resourceResolver, String resourcePath) {
         String date = getStringDate(resourceResolver, resourcePath);
         if (StringUtils.isEmpty(date)) {
-            return NOT_ROLLEDOUT_LABEL;
+            return NOT_ROLLED_OUT_LABEL;
         }
         return TimeUtil.timeSince(getStringDate(resourceResolver, resourcePath));
     }
