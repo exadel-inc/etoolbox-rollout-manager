@@ -113,7 +113,6 @@
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
-    const NEW_LABEL = Granite.I18n.get('new');
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const MASTER_DATA_ATTR = 'master';
     const DEPTH_DATA_ATTR = 'depth';
