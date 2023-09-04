@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-
 /**
  * EToolbox Rollout Manager Time Utility.
  * Contains utilities for time data processing
@@ -20,8 +19,9 @@
 (function ($, ns, TimeUtil) {
     'use strict';
 
+    const NOT_ROLLED_OUT_LABEL = Granite.I18n.get('Not Rolled Out');
     const TIME_AGO_LABEL = Granite.I18n.get('ago');
-    const PLURAL_SUFFIX = "s";
+    const PLURAL_SUFFIX = 's';
 
     /**
      * Object containing time unit durations in milliseconds.
@@ -32,20 +32,20 @@
         DAY: 24 * 60 * 60 * 1000,
         HOUR: 60 * 60 * 1000,
         MINUTE: 60 * 1000,
-        SECOND: 1000,
+        SECOND: 1000
     };
 
     /**
      * Options for formatting a timestamp.
      */
     const TIME_FORMATTER_OPTIONS = {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "numeric",
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
         hourCycle: 'h23',
-        minute: "2-digit",
-        second: "2-digit"
+        minute: '2-digit',
+        second: '2-digit'
     };
 
     /**
@@ -55,17 +55,17 @@
      */
     TimeUtil.timeSince = function (date) {
         if (!date) {
-            return '';
+            return NOT_ROLLED_OUT_LABEL;
         }
 
-        let startDate = new Date(date);
-        let now = new Date();
-        let millisecondsBetween = now - startDate;
+        const startDate = new Date(date);
+        const now = new Date();
+        const millisecondsBetween = now - startDate;
 
         let result = '';
-        for (let timeUnit in Time) {
+        for (const timeUnit in Time) {
             if (millisecondsBetween >= Time[timeUnit]) {
-                let time = Math.floor(millisecondsBetween / Time[timeUnit]);
+                const time = Math.floor(millisecondsBetween / Time[timeUnit]);
 
                 result = time + ' ' + Granite.I18n.get(timeUnit.toLowerCase() + (time !== 1 ? PLURAL_SUFFIX : '')) + ' ' + TIME_AGO_LABEL;
                 break;
@@ -81,6 +81,9 @@
      * @returns {string} A formatted timestamp string.
      */
     TimeUtil.displayLastRolledOut = function (date) {
+        if (!date) {
+            return '';
+        }
         return new Date(date).toLocaleString(undefined, TIME_FORMATTER_OPTIONS);
     };
 
