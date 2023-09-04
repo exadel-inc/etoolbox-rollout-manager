@@ -22,7 +22,6 @@ import com.day.cq.wcm.msm.api.RolloutConfig;
 import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
-import com.exadel.etoolbox.rolloutmanager.core.servlets.util.TimeUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -35,7 +34,6 @@ import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.servlets.annotations.SlingServletResourceTypes;
-import org.json.XML;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.propertytypes.ServiceDescription;
@@ -49,9 +47,6 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.servlet.Servlet;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -70,10 +65,7 @@ import static com.day.cq.wcm.msm.api.MSMNameConstants.PN_LAST_ROLLEDOUT;
 public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(CollectLiveCopiesServlet.class);
 
-    private static final String NOT_ROLLED_OUT_LABEL = "Not Rolled Out";
-    private static final String DATE_TIME_PATTERN = "HH:mm:ss z dd-MM-yyyy";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-
+    private static final String JCR_CONTENT_NODE = "/" + JcrConstants.JCR_CONTENT;
     private static final String PATH_REQUEST_PARAM = "path";
 
     private static final String MASTER_JSON_FIELD = "master";
@@ -83,7 +75,6 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final String IS_NEW_JSON_FIELD = "isNew";
     private static final String HAS_ROLLOUT_TRIGGER_JSON_FIELD = "autoRolloutTrigger";
     private static final String LAST_ROLLED_OUT_JSON_FIELD = "lastRolledOut";
-    private static final String LAST_ROLLED_OUT_TIME_AGO_JSON_FIELD = "lastRolledOutTimeAgo";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
@@ -162,8 +153,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .add(LIVE_COPIES_JSON_FIELD, getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
                 .add(IS_NEW_JSON_FIELD, isNew)
                 .add(HAS_ROLLOUT_TRIGGER_JSON_FIELD, !isNew && hasAutoTrigger(liveCopy))
-                .add(LAST_ROLLED_OUT_TIME_AGO_JSON_FIELD, getRolledOutAgoJsonField(resourceResolver, liveCopyPath + syncPath))
-                .add(LAST_ROLLED_OUT_JSON_FIELD, getLastRolledOutJsonField(resourceResolver, liveCopyPath + syncPath))
+                .add(LAST_ROLLED_OUT_JSON_FIELD, getStringDate(resourceResolver, liveCopyPath + syncPath))
                 .build();
     }
 
@@ -192,27 +182,11 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .isPresent();
     }
 
-    private String getLastRolledOutJsonField(ResourceResolver resourceResolver, String resourcePath) {
-        String date = getStringDate(resourceResolver, resourcePath);
-        ZonedDateTime dateTime = null;
-        if (StringUtils.isNotEmpty(date)) {
-            dateTime = ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault());
-        }
-
-        return dateTime != null ? dateTime.format(DATE_TIME_FORMATTER) : StringUtils.EMPTY;
-    }
-
-    private String getRolledOutAgoJsonField(ResourceResolver resourceResolver, String resourcePath) {
-        String date = getStringDate(resourceResolver, resourcePath);
-        if (StringUtils.isEmpty(date)) {
-            return NOT_ROLLED_OUT_LABEL;
-        }
-        return TimeUtil.timeSince(getStringDate(resourceResolver, resourcePath));
-    }
-
     private static String getStringDate(ResourceResolver resourceResolver, String resourcePath) {
-        Resource syncResource = resourceResolver.getResource(resourcePath + XML.SLASH + JcrConstants.JCR_CONTENT);
-        ValueMap valueMap = syncResource != null ? syncResource.getValueMap() : null;
-        return valueMap != null && valueMap.containsKey(PN_LAST_ROLLEDOUT) ? valueMap.get(PN_LAST_ROLLEDOUT, String.class) : StringUtils.EMPTY;
+        Resource syncResource = resourceResolver.getResource(resourcePath + JCR_CONTENT_NODE);
+        return Optional.ofNullable(syncResource)
+                .map(r -> r.adaptTo(ValueMap.class))
+                .map(vm -> vm.get(PN_LAST_ROLLEDOUT, String.class))
+                .orElse(StringUtils.EMPTY);
     }
 }

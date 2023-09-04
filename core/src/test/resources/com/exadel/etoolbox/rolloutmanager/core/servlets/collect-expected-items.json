@@ -11,13 +11,11 @@
         "liveCopies": [],
         "isNew": true,
         "autoRolloutTrigger": false,
-        "lastRolledOutTimeAgo":"Not Rolled Out",
         "lastRolledOut":""
       }
     ],
     "isNew": false,
     "autoRolloutTrigger": false,
-    "lastRolledOutTimeAgo":"Not Rolled Out",
     "lastRolledOut":""
   }
 ]

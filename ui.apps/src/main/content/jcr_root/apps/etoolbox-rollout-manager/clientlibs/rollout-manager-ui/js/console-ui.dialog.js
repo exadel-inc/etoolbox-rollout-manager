@@ -184,9 +184,9 @@
             ).text(liveCopyJson.path);
         const lastRolledOutTimeAgo =
             $(`<i
-                title="${liveCopyJson.lastRolledOut}"
+                title="${TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
                 class="rollout-manager-last-rollout-date">`
-            ).text(liveCopyJson.lastRolledOutTimeAgo);
+            ).text(TimeUtil.timeSince(liveCopyJson.lastRolledOut));
         liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
             const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);

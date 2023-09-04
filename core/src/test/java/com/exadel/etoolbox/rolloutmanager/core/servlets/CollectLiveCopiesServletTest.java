@@ -181,7 +181,7 @@ class CollectLiveCopiesServletTest {
         fixture.doPost(request, response);
 
         String expected = new String(Files.readAllBytes(Paths.get(EXPECTED_RESPONSE_JSON)))
-                .replaceAll("(\\r|\\n|\\t|\\s(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$))", StringUtils.EMPTY);
+                .replaceAll("(\\r|\\n|\\t|\\s)", StringUtils.EMPTY);
         assertEquals(expected, response.getOutputAsString());
     }
 
