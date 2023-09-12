@@ -96,10 +96,10 @@ The button allows to select or unselect all target paths. The button label is ch
 
 ![unselect-all](_img/unselect-all.png)
 
-#### New label
-The _new_ label is shown if a selected page doesn't exist under a target path and will be created during a rollout process.
+#### Not Rolled Out label
+The _Not Rolled Out_ label is shown if a selected page doesn't exist under a target path and will be created during a rollout process.
 
-![new-label](_img/new-label.png)
+![new-label](_img/not-rolled-out-label.png)
 
 #### Selection validation
 The _Rollout_ button is disabled if no target paths are selected.

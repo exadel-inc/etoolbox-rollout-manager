@@ -33,7 +33,8 @@
 
 .rollout-manager-select-all {
     float: right;
-    font-size: small
+    font-size: small;
+    min-width: 86px;
 }
 
 .rollout-manager-coral-accordion-item-content {
@@ -56,8 +57,31 @@
 }
 
 .rollout-manager-dialog .coral3-Dialog-wrapper {
-    width: 600px;
+    width: 800px;
     height: 526px;
+}
+
+.rollout-manager-dialog .coral3-Checkbox {
+    display: flex;
+}
+
+.rollout-manager-dialog .coral3-Checkbox-description {
+    display: flex;
+    flex-grow: 1;
+}
+
+.rollout-manager-dialog coral-checkbox-label {
+    display: flex;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+.rollout-manager-dialog .coral3-Accordion-content {
+    padding-right: 0;
+}
+
+.rollout-manager-dialog .coral3-Accordion-header {
+    padding-right: 0;
 }
 
 .rollout-manager-nestedcheckboxlist-container {
@@ -68,4 +92,8 @@
 .rollout-manager-logger-dialog .coral3-Dialog-wrapper {
     width: 500px;
     height: auto;
+}
+
+.rollout-manager-dialog .rollout-manager-last-rollout-date {
+    z-index: 2;
 }

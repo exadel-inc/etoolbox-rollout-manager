@@ -113,7 +113,6 @@
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
-    const NEW_LABEL = Granite.I18n.get('new');
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const MASTER_DATA_ATTR = 'master';
     const DEPTH_DATA_ATTR = 'depth';
@@ -183,11 +182,12 @@
                   data-auto-rollout="${liveCopyJson.autoRolloutTrigger}"
                   value="${liveCopyJson.path}">`
             ).text(liveCopyJson.path);
-        if (liveCopyJson.isNew) {
-            const newLabel = $('<i class="rollout-manager-new-label">')
-                .text(` ${NEW_LABEL}`);
-            liveCopyCheckbox.append(newLabel);
-        }
+        const lastRolledOutTimeAgo =
+            $(`<i
+                title="${TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
+                class="rollout-manager-last-rollout-date">`
+            ).text(TimeUtil.timeSince(liveCopyJson.lastRolledOut));
+        liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
             const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
             accordion.appendTo(liItem);
