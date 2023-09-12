@@ -18,15 +18,19 @@ import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveCopy;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
+import com.day.cq.wcm.msm.api.RolloutConfig;
+import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.servlets.annotations.SlingServletResourceTypes;
@@ -46,6 +50,8 @@ import javax.servlet.Servlet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.day.cq.wcm.msm.api.MSMNameConstants.PN_LAST_ROLLEDOUT;
+
 /**
  * Collects data related to eligible for synchronization live relationships for the given resource.
  * The data is necessary for building 'Targets' tree in the UI dialog and further rollout in {@link RolloutServlet}
@@ -59,6 +65,7 @@ import java.util.concurrent.TimeUnit;
 public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(CollectLiveCopiesServlet.class);
 
+    private static final String JCR_CONTENT_NODE = "/" + JcrConstants.JCR_CONTENT;
     private static final String PATH_REQUEST_PARAM = "path";
 
     private static final String MASTER_JSON_FIELD = "master";
@@ -66,6 +73,8 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final String DEPTH_JSON_FIELD = "depth";
     private static final String LIVE_COPIES_JSON_FIELD = "liveCopies";
     private static final String IS_NEW_JSON_FIELD = "isNew";
+    private static final String HAS_ROLLOUT_TRIGGER_JSON_FIELD = "autoRolloutTrigger";
+    private static final String LAST_ROLLED_OUT_JSON_FIELD = "lastRolledOut";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
@@ -135,13 +144,23 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         }
 
         String liveCopyPath = liveCopy.getPath();
+        boolean isNew = !resourceExists(resourceResolver, liveCopyPath + syncPath);
+
         return Json.createObjectBuilder()
                 .add(MASTER_JSON_FIELD, source + sourceSyncPath)
                 .add(PATH_JSON_FIELD, liveCopyPath + syncPath)
                 .add(DEPTH_JSON_FIELD, depth)
                 .add(LIVE_COPIES_JSON_FIELD, getLiveCopiesJsonArray(liveCopyPath, syncPath, resourceResolver, depth + 1))
-                .add(IS_NEW_JSON_FIELD, !resourceExists(resourceResolver, liveCopyPath + syncPath))
+                .add(IS_NEW_JSON_FIELD, isNew)
+                .add(HAS_ROLLOUT_TRIGGER_JSON_FIELD, !isNew && hasAutoTrigger(liveCopy))
+                .add(LAST_ROLLED_OUT_JSON_FIELD, getStringDate(resourceResolver, liveCopyPath + syncPath))
                 .build();
+    }
+
+    private boolean hasAutoTrigger(LiveCopy liveCopy) {
+        return liveCopy.getRolloutConfigs().stream()
+                .map(RolloutConfig::getTrigger)
+                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION || trigger == RolloutManager.Trigger.ROLLOUT);
     }
 
     private String buildSyncPath(LiveRelationship relationship, String sourceSyncPath) {
@@ -161,5 +180,13 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private boolean resourceExists(ResourceResolver resourceResolver, String path) {
         return Optional.ofNullable(resourceResolver.getResource(path))
                 .isPresent();
+    }
+
+    private static String getStringDate(ResourceResolver resourceResolver, String resourcePath) {
+        Resource syncResource = resourceResolver.getResource(resourcePath + JCR_CONTENT_NODE);
+        return Optional.ofNullable(syncResource)
+                .map(r -> r.adaptTo(ValueMap.class))
+                .map(vm -> vm.get(PN_LAST_ROLLEDOUT, String.class))
+                .orElse(StringUtils.EMPTY);
     }
 }
