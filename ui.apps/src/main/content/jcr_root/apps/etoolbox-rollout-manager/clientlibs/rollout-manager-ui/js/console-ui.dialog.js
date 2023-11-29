@@ -181,7 +181,7 @@
                   data-depth="${liveCopyJson.depth}"
                   data-auto-rollout="${liveCopyJson.autoRolloutTrigger}"
                   value="${liveCopyJson.path}">`
-            ).text(liveCopyJson.path);
+            ).text(liveCopyJson.path).attr('disabled', !!liveCopyJson.disabled);
         const lastRolledOutTimeAgo =
             $(`<i
                 title="${TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"

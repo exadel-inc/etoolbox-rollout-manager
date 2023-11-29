@@ -1,0 +1,12 @@
+[
+  {
+    "master": "/content/my-site/language-masters/en/testResource",
+    "path": "/content/my-site/fr/en/testResource",
+    "depth": 0,
+    "liveCopies": [],
+    "isNew": true,
+    "autoRolloutTrigger": false,
+    "lastRolledOut": "",
+    "disabled": true
+  }
+]
