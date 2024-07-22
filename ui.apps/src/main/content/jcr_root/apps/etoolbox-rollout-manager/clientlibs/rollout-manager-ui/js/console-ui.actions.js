@@ -108,7 +108,8 @@
                 data: {
                     _charset_: 'UTF-8',
                     selectionJsonArray: JSON.stringify(data.selectionJsonArray),
-                    isDeepRollout: data.isDeepRollout
+                    isDeepRollout: data.isDeepRollout,
+                    shouldActivate: data.shouldActivate
                 }
             }).fail((xhr) => {
                 logger.log(getProcessingErrorMsg(xhr), false);

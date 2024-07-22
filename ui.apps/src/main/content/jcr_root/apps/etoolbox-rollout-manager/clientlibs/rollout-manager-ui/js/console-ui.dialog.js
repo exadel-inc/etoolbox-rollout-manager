@@ -108,6 +108,7 @@
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
@@ -246,7 +247,8 @@
         onCheckboxChange(submitBtn);
     }
 
-    function onResolve(path, deferred) {
+    function onResolve($btn, path, deferred) {
+        const shouldActivate = $btn.closest('[data-dialog-action]').data('dialogAction') === 'rolloutPublish';
         const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').prop('checked');
         const selectionJsonArray = [];
         $(CORAL_CHECKBOX_ITEM).each(function () {
@@ -258,7 +260,8 @@
         const data = {
             path,
             isDeepRollout,
-            selectionJsonArray
+            selectionJsonArray,
+            shouldActivate
         };
         deferred.resolve(data);
     }
@@ -285,8 +288,11 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
-        const $submitBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>')
+        const $rolloutBtn = $('<button data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
             .text(DIALOG_LABEL);
+        const $submitBtn = $('<button data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
+            .text(ROLLOUT_AND_PUBLISH_LABEL);
+        $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
         appendTargetsHeader(dialog.content);
@@ -301,14 +307,14 @@
         initEventHandlers(
             dialog,
             deferred,
-            () => onCheckboxChange($submitBtn),
-            () => onSelectAllClick($submitBtn),
-            () => onResolve(selectedPath, deferred)
+            () => onCheckboxChange($submitBtn.add($rolloutBtn)),
+            () => onSelectAllClick($submitBtn.add($rolloutBtn)),
+            (e) => onResolve($(e.target), selectedPath, deferred)
         );
 
         dialog.show();
 
-        validateSelection(hasSelection(), $submitBtn);
+        validateSelection(hasSelection(), $submitBtn.add($rolloutBtn));
 
         return deferred.promise();
     }
