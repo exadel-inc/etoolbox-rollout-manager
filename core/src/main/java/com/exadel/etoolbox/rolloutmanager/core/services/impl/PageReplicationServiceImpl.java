@@ -109,6 +109,7 @@ public class PageReplicationServiceImpl implements PageReplicationService {
         try {
             replicator.replicate(session, ReplicationActionType.ACTIVATE, targetPath);
         } catch (ReplicationException ex) {
+            status.setSuccess(false);
             LOG.error("Exception during page replication", ex);
         }
         status.setSuccess(true);
