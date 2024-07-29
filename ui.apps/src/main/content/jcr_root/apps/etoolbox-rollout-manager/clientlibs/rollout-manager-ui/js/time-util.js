@@ -16,8 +16,9 @@
  * EToolbox Rollout Manager Time Utility.
  * Contains utilities for time data processing
  */
-(function ($, ns, TimeUtil) {
+(function ($, ns) {
     'use strict';
+    ns.TimeUtil = {};
 
     const NOT_ROLLED_OUT_LABEL = Granite.I18n.get('Not Rolled Out');
     const TIME_AGO_LABEL = Granite.I18n.get('ago');
@@ -53,7 +54,7 @@
      * @param {string} date - The date to calculate the time difference from (ISO 8601 format).
      * @returns {string} A formatted string indicating the time difference.
      */
-    TimeUtil.timeSince = function (date) {
+    ns.TimeUtil.timeSince = function (date) {
         if (!date) {
             return NOT_ROLLED_OUT_LABEL;
         }
@@ -80,11 +81,11 @@
      * @param {string} date - The date to format (ISO 8601 format).
      * @returns {string} A formatted timestamp string.
      */
-    TimeUtil.displayLastRolledOut = function (date) {
+    ns.TimeUtil.displayLastRolledOut = function (date) {
         if (!date) {
             return '';
         }
         return new Date(date).toLocaleString(undefined, TIME_FORMATTER_OPTIONS);
     };
 
-})(Granite.$, Granite.author, (window.TimeUtil = (window.TimeUtil || {})));
+})(Granite.$, window.erm = (window.erm || {}));

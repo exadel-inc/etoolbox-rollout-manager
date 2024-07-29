@@ -16,7 +16,7 @@
  * EToolbox Rollout Manager clientlib.
  * 'Rollout' button and dialog actions definition.
  */
-(function (window, document, $, ERM, Granite) {
+(function (window, document, $, ns, Granite) {
     'use strict';
 
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
@@ -73,7 +73,7 @@
      * @returns {*}
      */
     function doItemsRollout(data, rolloutRequest) {
-        const logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        const logger = ns.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
         return $.Deferred()
             .resolve()
             .then(rolloutRequest(data, logger))
@@ -129,7 +129,7 @@
             .then((liveCopiesJsonArray) => {
                 // Clears the wait mask once the dialog is loaded
                 foundationUi.clearWait();
-                ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath)
+                ns.showRolloutDialog(liveCopiesJsonArray, selectedPath)
                     .then((data) => {
                         doItemsRollout(data, buildRolloutRequest);
                     });
@@ -154,4 +154,4 @@
             name: 'etoolbox.rollout-manager.rollout-active-condition',
             handler: onRolloutActiveCondition
         });
-})(window, document, Granite.$, Granite.ERM, Granite);
+})(window, document, Granite.$, window.erm = (window.erm || {}), Granite);
