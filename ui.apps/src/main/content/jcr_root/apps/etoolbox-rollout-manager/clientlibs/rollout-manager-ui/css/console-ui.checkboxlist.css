@@ -32,7 +32,6 @@
 }
 
 .rollout-manager-select-all {
-    float: right;
     font-size: small;
     min-width: 86px;
 }
@@ -96,4 +95,16 @@
 
 .rollout-manager-dialog .rollout-manager-last-rollout-date {
     z-index: 2;
+}
+
+#rolloutAndPublishButton:not([disabled]) {
+    background-color: #1a1adb;
+}
+
+#rolloutButton:not([disabled]) {
+    background-color: #87a9e1;
+}
+
+.coral3-Accordion-label {
+    font-weight: normal;
 }

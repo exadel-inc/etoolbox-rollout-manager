@@ -16,10 +16,8 @@
  * EToolbox Rollout Manager clientlib.
  * Contains helper functions to showing the rollout process dialogs.
  */
-(function (window, document, $, Granite) {
+(function (document, $, Granite, ns) {
     'use strict';
-
-    const Utils = Granite.ERM = (Granite.ERM || {});
 
     const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
     const BASE_DIALOG_CLASS = 'rollout-manager-dialog';
@@ -103,7 +101,7 @@
             }
         };
     }
-    Utils.createLoggerDialog = createLoggerDialog;
+    ns.createLoggerDialog = createLoggerDialog;
 
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
@@ -135,13 +133,13 @@
     function appendTargetsHeader(sourceElement) {
         const span = $('<span>');
 
-        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
-
         const label = $('<h3 class="rollout-manager-targets-label">')
             .text(TARGET_PATHS_LABEL);
         label.appendTo(span);
+
+        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
+            .text(SELECT_ALL_LABEL);
+        selectAll.appendTo(span);
 
         span.appendTo(sourceElement);
     }
@@ -185,9 +183,9 @@
             ).text(liveCopyJson.path).attr('disabled', !!liveCopyJson.disabled);
         const lastRolledOutTimeAgo =
             $(`<i
-                title="${TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
+                title="${ns.TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
                 class="rollout-manager-last-rollout-date">`
-            ).text(TimeUtil.timeSince(liveCopyJson.lastRolledOut));
+            ).text(ns.TimeUtil.timeSince(liveCopyJson.lastRolledOut));
         liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
             const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
@@ -288,9 +286,9 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
-        const $rolloutBtn = $('<button data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
+        const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
             .text(DIALOG_LABEL);
-        const $submitBtn = $('<button data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
+        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
             .text(ROLLOUT_AND_PUBLISH_LABEL);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
@@ -318,5 +316,5 @@
 
         return deferred.promise();
     }
-    Utils.showRolloutDialog = showRolloutDialog;
-})(window, document, Granite.$, Granite);
+    ns.showRolloutDialog = showRolloutDialog;
+})(document, Granite.$, Granite, (window.erm = (window.erm || {})));
