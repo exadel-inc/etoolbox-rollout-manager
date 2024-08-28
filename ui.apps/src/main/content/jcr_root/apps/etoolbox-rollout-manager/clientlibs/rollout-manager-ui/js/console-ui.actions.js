@@ -85,7 +85,7 @@
     const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
     const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const SUCCESS_MSG = Granite.I18n.get('Selected live copies successfully synchronized');
+    const SUCCESS_MSG = Granite.I18n.get('Completed');
 
     function getProcessingErrorMsg(xhr) {
         if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {

@@ -133,13 +133,13 @@
     function appendTargetsHeader(sourceElement) {
         const span = $('<span>');
 
-        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
-
         const label = $('<h3 class="rollout-manager-targets-label">')
             .text(TARGET_PATHS_LABEL);
         label.appendTo(span);
+
+        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
+            .text(SELECT_ALL_LABEL);
+        selectAll.appendTo(span);
 
         span.appendTo(sourceElement);
     }
@@ -286,9 +286,9 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
-        const $rolloutBtn = $('<button data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
+        const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
             .text(DIALOG_LABEL);
-        const $submitBtn = $('<button data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
+        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
             .text(ROLLOUT_AND_PUBLISH_LABEL);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
