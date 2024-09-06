@@ -19,6 +19,7 @@ import com.day.cq.replication.ReplicationException;
 import com.day.cq.replication.Replicator;
 import com.day.cq.wcm.api.Page;
 import com.day.cq.wcm.api.PageManager;
+import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
@@ -88,10 +89,25 @@ public class PageReplicationServiceImpl implements PageReplicationService {
         ExecutorService executorService = Executors.newFixedThreadPool(config.poolSize());
         return items.stream()
                 .filter(item -> StringUtils.isNotBlank(item.getTarget()))
+                .filter(item -> !isBluePrintPage(item, resourceResolver))
                 .map(item -> CompletableFuture.supplyAsync(() -> replicate(resourceResolver, item, pageManager), executorService))
                 .collect(Collectors.toList())
                 .stream()
                 .map(CompletableFuture::join);
+    }
+
+    private boolean isBluePrintPage(RolloutItem item, ResourceResolver resourceResolver) {
+        boolean hasRelationships = true;
+        try {
+            hasRelationships = liveRelationshipManager
+                    .getLiveRelationships(resourceResolver.getResource(item.getTarget()), null, null).hasNext();
+        } catch (WCMException e) {
+            LOG.debug("Item replication skipped due to error while Live Copy initialization, master: {}, target: {}", item.getMaster(), item.getTarget());
+        }
+        if (hasRelationships) {
+            LOG.debug("Item replication skipped, master: {}, target: {}", item.getMaster(), item.getTarget());
+        }
+        return hasRelationships;
     }
 
     private RolloutStatus replicate(ResourceResolver resourceResolver, RolloutItem targetItem, PageManager pageManager) {

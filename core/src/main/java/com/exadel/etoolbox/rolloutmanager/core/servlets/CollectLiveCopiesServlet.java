@@ -161,7 +161,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private boolean hasAutoTrigger(LiveCopy liveCopy) {
         return liveCopy.getRolloutConfigs().stream()
                 .map(RolloutConfig::getTrigger)
-                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION || trigger == RolloutManager.Trigger.ROLLOUT);
+                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION);
     }
 
     private String buildSyncPath(LiveRelationship relationship, String sourceSyncPath) {
