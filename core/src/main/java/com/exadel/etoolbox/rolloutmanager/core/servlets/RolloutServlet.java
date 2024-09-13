@@ -116,7 +116,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         LOG.debug("Should activate pages: {}", shouldActivate);
         List<RolloutStatus> activationStatuses = new ArrayList<>();
         if (shouldActivate) {
-            activationStatuses = pageReplicationService.replicateItems(request.getResourceResolver(), rolloutItems, request.getResourceResolver().adaptTo(PageManager.class));
+            activationStatuses = pageReplicationService.replicateItems(request.getResourceResolver(), rolloutItems, request.getResourceResolver().adaptTo(PageManager.class), isDeepRollout);
         }
 
         writeStatusesIfFailed(Stream.concat(rolloutStatuses.stream(), activationStatuses.stream())
