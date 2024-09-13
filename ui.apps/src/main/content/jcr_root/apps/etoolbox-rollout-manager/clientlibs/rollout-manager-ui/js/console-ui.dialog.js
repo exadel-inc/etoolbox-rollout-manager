@@ -227,7 +227,7 @@
     }
 
     function selectUnselectAll() {
-        $(CORAL_CHECKBOX_ITEM).prop('checked', !hasSelection());
+        $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', !hasSelection());
     }
 
     function validateSelection(hasSelection, submitBtn) {
@@ -247,7 +247,7 @@
 
     function onResolve($btn, path, deferred) {
         const shouldActivate = $btn.closest('[data-dialog-action]').data('dialogAction') === 'rolloutPublish';
-        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').prop('checked');
+        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').filter(':not([disabled])').prop('checked');
         const selectionJsonArray = [];
         $(CORAL_CHECKBOX_ITEM).each(function () {
             const checkbox = $(this);
