@@ -28,7 +28,7 @@
     'use strict';
 
     const INTERMEDIATE_ATTR = 'intermediate';
-    const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
+    const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]:not([disabled])';
 
     function parentIntermediateStateOn(parentCheckbox) {
         parentCheckbox.attr(INTERMEDIATE_ATTR, true);
@@ -79,6 +79,7 @@
                 childCheckboxes.removeAttr(INTERMEDIATE_ATTR);
             }
         }
+        childCheckboxes.filter(':not([disabled])').prop('checked', isChecked);
         childCheckboxes.prop('checked', isChecked);
     }
 

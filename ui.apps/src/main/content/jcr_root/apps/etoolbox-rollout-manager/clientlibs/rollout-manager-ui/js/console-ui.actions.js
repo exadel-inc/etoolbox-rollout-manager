@@ -16,7 +16,7 @@
  * EToolbox Rollout Manager clientlib.
  * 'Rollout' button and dialog actions definition.
  */
-(function (window, document, $, ERM, Granite) {
+(function (window, document, $, ns, Granite) {
     'use strict';
 
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
@@ -73,7 +73,7 @@
      * @returns {*}
      */
     function doItemsRollout(data, rolloutRequest) {
-        const logger = ERM.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
+        const logger = ns.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
         return $.Deferred()
             .resolve()
             .then(rolloutRequest(data, logger))
@@ -85,7 +85,7 @@
     const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
     const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const SUCCESS_MSG = Granite.I18n.get('Selected live copies successfully synchronized');
+    const SUCCESS_MSG = Granite.I18n.get('Completed');
 
     function getProcessingErrorMsg(xhr) {
         if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
@@ -108,7 +108,8 @@
                 data: {
                     _charset_: 'UTF-8',
                     selectionJsonArray: JSON.stringify(data.selectionJsonArray),
-                    isDeepRollout: data.isDeepRollout
+                    isDeepRollout: data.isDeepRollout,
+                    shouldActivate: data.shouldActivate
                 }
             }).fail((xhr) => {
                 logger.log(getProcessingErrorMsg(xhr), false);
@@ -128,7 +129,7 @@
             .then((liveCopiesJsonArray) => {
                 // Clears the wait mask once the dialog is loaded
                 foundationUi.clearWait();
-                ERM.showRolloutDialog(liveCopiesJsonArray, selectedPath)
+                ns.showRolloutDialog(liveCopiesJsonArray, selectedPath)
                     .then((data) => {
                         doItemsRollout(data, buildRolloutRequest);
                     });
@@ -153,4 +154,4 @@
             name: 'etoolbox.rollout-manager.rollout-active-condition',
             handler: onRolloutActiveCondition
         });
-})(window, document, Granite.$, Granite.ERM, Granite);
+})(window, document, Granite.$, window.erm = (window.erm || {}), Granite);

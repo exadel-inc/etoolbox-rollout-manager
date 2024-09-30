@@ -75,6 +75,7 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
     private static final String IS_NEW_JSON_FIELD = "isNew";
     private static final String HAS_ROLLOUT_TRIGGER_JSON_FIELD = "autoRolloutTrigger";
     private static final String LAST_ROLLED_OUT_JSON_FIELD = "lastRolledOut";
+    private static final String IS_DISABLED_JSON_FIELD = "disabled";
 
     @Reference
     private transient LiveRelationshipManager liveRelationshipManager;
@@ -137,11 +138,10 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
         String targetPath = buildTargetPath(relationship, syncPath);
 
         LiveCopy liveCopy = relationship.getLiveCopy();
-        if (liveCopy == null
-                || (StringUtils.isNotBlank(syncPath) && !liveCopy.isDeep())
-                || !relationshipCheckerService.isAvailableForSync(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver)) {
+        if (liveCopy == null || (StringUtils.isNotBlank(syncPath) && !liveCopy.isDeep())) {
             return JsonValue.EMPTY_JSON_OBJECT;
         }
+        boolean isDisabled = !relationshipCheckerService.isAvailableForSync(syncPath, targetPath, liveCopy.getExclusions(), resourceResolver);
 
         String liveCopyPath = liveCopy.getPath();
         boolean isNew = !resourceExists(resourceResolver, liveCopyPath + syncPath);
@@ -154,13 +154,14 @@ public class CollectLiveCopiesServlet extends SlingAllMethodsServlet {
                 .add(IS_NEW_JSON_FIELD, isNew)
                 .add(HAS_ROLLOUT_TRIGGER_JSON_FIELD, !isNew && hasAutoTrigger(liveCopy))
                 .add(LAST_ROLLED_OUT_JSON_FIELD, getStringDate(resourceResolver, liveCopyPath + syncPath))
+                .add(IS_DISABLED_JSON_FIELD, isDisabled)
                 .build();
     }
 
     private boolean hasAutoTrigger(LiveCopy liveCopy) {
         return liveCopy.getRolloutConfigs().stream()
                 .map(RolloutConfig::getTrigger)
-                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION || trigger == RolloutManager.Trigger.ROLLOUT);
+                .anyMatch(trigger -> trigger == RolloutManager.Trigger.MODIFICATION);
     }
 
     private String buildSyncPath(LiveRelationship relationship, String sourceSyncPath) {

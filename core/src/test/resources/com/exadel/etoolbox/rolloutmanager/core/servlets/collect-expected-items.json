@@ -11,11 +11,13 @@
         "liveCopies": [],
         "isNew": true,
         "autoRolloutTrigger": false,
-        "lastRolledOut":""
+        "lastRolledOut": "",
+        "disabled": false
       }
     ],
     "isNew": false,
     "autoRolloutTrigger": false,
-    "lastRolledOut":""
+    "lastRolledOut": "",
+    "disabled": false
   }
 ]

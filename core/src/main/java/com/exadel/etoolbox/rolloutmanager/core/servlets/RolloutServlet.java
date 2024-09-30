@@ -18,6 +18,9 @@ import com.day.cq.wcm.api.Page;
 import com.day.cq.wcm.api.PageManager;
 import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.RolloutManager;
+import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
+import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
+import com.exadel.etoolbox.rolloutmanager.core.services.PageReplicationService;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import javax.json.Json;
 import javax.servlet.Servlet;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +71,14 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
     private static final String SELECTION_JSON_ARRAY_PARAM = "selectionJsonArray";
     private static final String IS_DEEP_ROLLOUT_PARAM = "isDeepRollout";
+    private static final String SHOULD_ACTIVATE_PARAM = "shouldActivate";
     private static final String FAILED_TARGETS_RESPONSE_PARAM = "failedTargets";
 
     @Reference
     private transient RolloutManager rolloutManager;
+
+    @Reference
+    private transient PageReplicationService pageReplicationService;
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
@@ -103,7 +111,16 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         LOG.debug("Is deep rollout (include subpages): {}", isDeepRollout);
 
         List<RolloutStatus> rolloutStatuses = doItemsRollout(rolloutItems, pageManager, isDeepRollout);
-        writeStatusesIfFailed(rolloutStatuses, response);
+
+        boolean shouldActivate = ServletUtil.getRequestParamBoolean(request, SHOULD_ACTIVATE_PARAM);
+        LOG.debug("Should activate pages: {}", shouldActivate);
+        List<RolloutStatus> activationStatuses = new ArrayList<>();
+        if (shouldActivate) {
+            activationStatuses = pageReplicationService.replicateItems(request.getResourceResolver(), rolloutItems, request.getResourceResolver().adaptTo(PageManager.class));
+        }
+
+        writeStatusesIfFailed(Stream.concat(rolloutStatuses.stream(), activationStatuses.stream())
+                .collect(Collectors.toList()), response);
         LOG.debug("Rollout of selected items is completed in {} ms", sw.getTime(TimeUnit.MILLISECONDS));
     }
 
@@ -191,49 +208,5 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             LOG.error("Failed to map json to models", e);
         }
         return new RolloutItem[0];
-    }
-
-    private static class RolloutItem {
-        private String master;
-        private String target;
-        private int depth;
-        boolean autoRolloutTrigger;
-
-        public String getMaster() {
-            return master;
-        }
-
-        public String getTarget() {
-            return target;
-        }
-
-        public int getDepth() {
-            return depth;
-        }
-
-        public boolean isAutoRolloutTrigger() {
-            return autoRolloutTrigger;
-        }
-    }
-
-    private static class RolloutStatus {
-        private boolean isSuccess;
-        private final String target;
-
-        public RolloutStatus(String target) {
-            this.target = target;
-        }
-
-        public boolean isSuccess() {
-            return isSuccess;
-        }
-
-        public void setSuccess(boolean success) {
-            isSuccess = success;
-        }
-
-        public String getTarget() {
-            return target;
-        }
     }
 }

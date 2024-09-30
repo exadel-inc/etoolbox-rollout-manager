@@ -32,7 +32,6 @@
 }
 
 .rollout-manager-select-all {
-    float: right;
     font-size: small;
     min-width: 86px;
 }
@@ -58,7 +57,7 @@
 
 .rollout-manager-dialog .coral3-Dialog-wrapper {
     width: 800px;
-    height: 526px;
+    height: 566px;
 }
 
 .rollout-manager-dialog .coral3-Checkbox {
@@ -86,7 +85,7 @@
 
 .rollout-manager-nestedcheckboxlist-container {
     overflow-y: auto;
-    height: 246px;
+    height: 206px;
 }
 
 .rollout-manager-logger-dialog .coral3-Dialog-wrapper {
@@ -97,3 +96,11 @@
 .rollout-manager-dialog .rollout-manager-last-rollout-date {
     z-index: 2;
 }
+
+#rolloutButton:not([disabled]) {
+    filter: brightness(1.3);
+}
+
+/*.coral3-Accordion-label {*/
+/*    font-weight: normal;*/
+/*}*/

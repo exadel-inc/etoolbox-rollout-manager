@@ -16,10 +16,8 @@
  * EToolbox Rollout Manager clientlib.
  * Contains helper functions to showing the rollout process dialogs.
  */
-(function (window, document, $, Granite) {
+(function (document, $, Granite, ns) {
     'use strict';
-
-    const Utils = Granite.ERM = (Granite.ERM || {});
 
     const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
     const BASE_DIALOG_CLASS = 'rollout-manager-dialog';
@@ -103,11 +101,12 @@
             }
         };
     }
-    Utils.createLoggerDialog = createLoggerDialog;
+    ns.createLoggerDialog = createLoggerDialog;
 
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
@@ -134,13 +133,13 @@
     function appendTargetsHeader(sourceElement) {
         const span = $('<span>');
 
-        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
-
         const label = $('<h3 class="rollout-manager-targets-label">')
             .text(TARGET_PATHS_LABEL);
         label.appendTo(span);
+
+        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
+            .text(SELECT_ALL_LABEL);
+        selectAll.appendTo(span);
 
         span.appendTo(sourceElement);
     }
@@ -181,12 +180,12 @@
                   data-depth="${liveCopyJson.depth}"
                   data-auto-rollout="${liveCopyJson.autoRolloutTrigger}"
                   value="${liveCopyJson.path}">`
-            ).text(liveCopyJson.path);
+            ).text(liveCopyJson.path).attr('disabled', !!liveCopyJson.disabled);
         const lastRolledOutTimeAgo =
             $(`<i
-                title="${TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
+                title="${ns.TimeUtil.displayLastRolledOut(liveCopyJson.lastRolledOut)}"
                 class="rollout-manager-last-rollout-date">`
-            ).text(TimeUtil.timeSince(liveCopyJson.lastRolledOut));
+            ).text(ns.TimeUtil.timeSince(liveCopyJson.lastRolledOut));
         liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
             const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
@@ -228,7 +227,7 @@
     }
 
     function selectUnselectAll() {
-        $(CORAL_CHECKBOX_ITEM).prop('checked', !hasSelection());
+        $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', !hasSelection());
     }
 
     function validateSelection(hasSelection, submitBtn) {
@@ -246,8 +245,9 @@
         onCheckboxChange(submitBtn);
     }
 
-    function onResolve(path, deferred) {
-        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').prop('checked');
+    function onResolve($btn, path, deferred) {
+        const shouldActivate = $btn.closest('[data-dialog-action]').data('dialogAction') === 'rolloutPublish';
+        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').filter(':not([disabled])').prop('checked');
         const selectionJsonArray = [];
         $(CORAL_CHECKBOX_ITEM).each(function () {
             const checkbox = $(this);
@@ -258,7 +258,8 @@
         const data = {
             path,
             isDeepRollout,
-            selectionJsonArray
+            selectionJsonArray,
+            shouldActivate
         };
         deferred.resolve(data);
     }
@@ -285,8 +286,11 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
-        const $submitBtn = $('<button data-dialog-action is="coral-button" variant="primary" coral-close>')
+        const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
             .text(DIALOG_LABEL);
+        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
+            .text(ROLLOUT_AND_PUBLISH_LABEL);
+        $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
         appendTargetsHeader(dialog.content);
@@ -301,16 +305,16 @@
         initEventHandlers(
             dialog,
             deferred,
-            () => onCheckboxChange($submitBtn),
-            () => onSelectAllClick($submitBtn),
-            () => onResolve(selectedPath, deferred)
+            () => onCheckboxChange($submitBtn.add($rolloutBtn)),
+            () => onSelectAllClick($submitBtn.add($rolloutBtn)),
+            (e) => onResolve($(e.target), selectedPath, deferred)
         );
 
         dialog.show();
 
-        validateSelection(hasSelection(), $submitBtn);
+        validateSelection(hasSelection(), $submitBtn.add($rolloutBtn));
 
         return deferred.promise();
     }
-    Utils.showRolloutDialog = showRolloutDialog;
-})(window, document, Granite.$, Granite);
+    ns.showRolloutDialog = showRolloutDialog;
+})(document, Granite.$, Granite, (window.erm = (window.erm || {})));

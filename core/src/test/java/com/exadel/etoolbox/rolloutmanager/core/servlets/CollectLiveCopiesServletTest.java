@@ -63,6 +63,9 @@ class CollectLiveCopiesServletTest {
     private static final String EXPECTED_RESPONSE_JSON =
             "src/test/resources/com/exadel/etoolbox/rolloutmanager/core/servlets/collect-expected-items.json";
 
+    private static final String EXPECTED_EMPTY_RESPONSE_JSON =
+            "src/test/resources/com/exadel/etoolbox/rolloutmanager/core/servlets/collect-expected-items-with-no-valid-live-copy.json";
+
     private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
 
     @Mock
@@ -142,12 +145,13 @@ class CollectLiveCopiesServletTest {
     }
 
     @Test
-    void doPost_NotAvailableForRollout_EmptyArrayResponse() throws WCMException {
+    void doPost_NotAvailableForRollout_EmptyResponse() throws WCMException, IOException {
         createSourceResource();
 
         LiveRelationship relationship = mockSingleLiveRelationship(TEST_SOURCE_PATH);
 
         LiveCopy liveCopy = mock(LiveCopy.class);
+        when(liveCopy.getPath()).thenReturn(TEST_LIVE_COPY_PATH);
         when(relationship.getLiveCopy()).thenReturn(liveCopy);
         when(relationship.getSyncPath()).thenReturn(TEST_SYNC_PATH);
 
@@ -156,7 +160,10 @@ class CollectLiveCopiesServletTest {
                 .thenReturn(false);
 
         fixture.doPost(request, response);
-        assertEquals(JsonValue.EMPTY_JSON_ARRAY.toString(), response.getOutputAsString());
+
+        String expected = new String(Files.readAllBytes(Paths.get(EXPECTED_EMPTY_RESPONSE_JSON)))
+                .replaceAll("(\\r|\\n|\\t|\\s)", StringUtils.EMPTY);
+        assertEquals(expected, response.getOutputAsString());
     }
 
     @Test
