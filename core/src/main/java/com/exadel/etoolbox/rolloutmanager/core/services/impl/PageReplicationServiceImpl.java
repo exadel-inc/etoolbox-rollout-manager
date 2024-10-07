@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.Session;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,23 +75,23 @@ public class PageReplicationServiceImpl implements PageReplicationService {
     @Reference
     private Replicator replicator;
 
-    public List<RolloutStatus> replicateItems(ResourceResolver resourceResolver, RolloutItem[] items, PageManager pageManager) {
+    public List<RolloutStatus> replicateItems(ResourceResolver resourceResolver, RolloutItem[] items, PageManager pageManager, boolean isDeep) {
         return Arrays.stream(items)
                 .collect(Collectors.groupingBy(RolloutItem::getDepth))
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(Map.Entry::getValue)
-                .flatMap(sortedByDepthItems -> replicateSortedByDepthItems(resourceResolver, sortedByDepthItems, pageManager))
+                .flatMap(sortedByDepthItems -> replicateSortedByDepthItems(resourceResolver, sortedByDepthItems, pageManager, isDeep))
                 .collect(Collectors.toList());
     }
 
-    private Stream<RolloutStatus> replicateSortedByDepthItems(ResourceResolver resourceResolver, List<RolloutItem> items, PageManager pageManager) {
+    private Stream<RolloutStatus> replicateSortedByDepthItems(ResourceResolver resourceResolver, List<RolloutItem> items, PageManager pageManager, boolean isDeep) {
         ExecutorService executorService = Executors.newFixedThreadPool(config.poolSize());
         return items.stream()
                 .filter(item -> StringUtils.isNotBlank(item.getTarget()))
                 .filter(item -> !isBluePrintPage(item, resourceResolver))
-                .map(item -> CompletableFuture.supplyAsync(() -> replicate(resourceResolver, item, pageManager), executorService))
+                .map(item -> CompletableFuture.supplyAsync(() -> replicate(resourceResolver, item, pageManager, isDeep), executorService))
                 .collect(Collectors.toList())
                 .stream()
                 .map(CompletableFuture::join);
@@ -110,7 +111,7 @@ public class PageReplicationServiceImpl implements PageReplicationService {
         return hasRelationships;
     }
 
-    private RolloutStatus replicate(ResourceResolver resourceResolver, RolloutItem targetItem, PageManager pageManager) {
+    private RolloutStatus replicate(ResourceResolver resourceResolver, RolloutItem targetItem, PageManager pageManager, boolean isDeep) {
 
         String targetPath = targetItem.getTarget();
         RolloutStatus status = new RolloutStatus(targetPath);
@@ -123,12 +124,28 @@ public class PageReplicationServiceImpl implements PageReplicationService {
             return status;
         }
         try {
-            replicator.replicate(session, ReplicationActionType.ACTIVATE, targetPath);
+            if (isDeep) {
+                replicatePageAndChildren(session, targetPage.get());
+            } else {
+                replicator.replicate(session, ReplicationActionType.ACTIVATE, targetPath);
+            }
             status.setSuccess(true);
         } catch (ReplicationException ex) {
             status.setSuccess(false);
-            LOG.error("Exception during page replication", ex);
+            LOG.error("Exception during page replication: {}", targetPath, ex);
         }
         return status;
+    }
+
+    private void replicatePageAndChildren(Session session, Page page) {
+        try {
+            replicator.replicate(session, ReplicationActionType.ACTIVATE, page.getPath());
+            for (Iterator<Page> children = page.listChildren(); children.hasNext(); ) {
+                Page childPage = children.next();
+                replicatePageAndChildren(session, childPage);
+            }
+        } catch (Exception ex) {
+            LOG.error("Exception during page replication: {}", page.getPath(), ex);
+        }
     }
 }

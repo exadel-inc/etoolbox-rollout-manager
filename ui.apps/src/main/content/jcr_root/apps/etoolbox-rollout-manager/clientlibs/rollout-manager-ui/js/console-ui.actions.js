@@ -86,6 +86,7 @@
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
     const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
     const SUCCESS_MSG = Granite.I18n.get('Completed');
+    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
 
     function getProcessingErrorMsg(xhr) {
         if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
@@ -114,7 +115,7 @@
             }).fail((xhr) => {
                 logger.log(getProcessingErrorMsg(xhr), false);
             }).done(() => {
-                logger.log(SUCCESS_MSG, false);
+                data.shouldActivate ? logger.log(SUCCESS_REPLICATION_MSG, false) : logger.log(SUCCESS_MSG, false);
             });
         };
     }
