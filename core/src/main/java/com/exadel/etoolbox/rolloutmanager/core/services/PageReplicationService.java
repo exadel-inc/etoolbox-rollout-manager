@@ -26,5 +26,5 @@ import java.util.List;
  * the rollout manager tool.
  */
 public interface PageReplicationService {
-    List<RolloutStatus> replicateItems(ResourceResolver resourceResolver, RolloutItem[] items, PageManager pageManager);
+    List<RolloutStatus> replicateItems(ResourceResolver resourceResolver, RolloutItem[] items, PageManager pageManager, boolean isDeep);
 }
