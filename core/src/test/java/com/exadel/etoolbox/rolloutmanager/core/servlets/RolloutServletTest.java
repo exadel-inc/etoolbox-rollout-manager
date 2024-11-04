@@ -73,7 +73,7 @@ class RolloutServletTest {
             "/content/we-retail/ch/ca-es-ch-livecopy/experience"
     );
 
-    private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
+    private final AemContext context = new AemContext(ResourceResolverType.RESOURCERESOLVER_MOCK);
 
     @Mock
     private RolloutManager rolloutManager;

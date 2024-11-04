@@ -30,6 +30,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.servlets.annotations.SlingServletResourceTypes;
@@ -188,8 +190,16 @@ public class RolloutServlet extends SlingAllMethodsServlet {
             status.setSuccess(false);
             String message = String.format("Item rollout failed, master: %s, target: %s", masterPath, targetPath);
             LOG.error(message, e);
+            discardUnsavedChanges(masterPage.get());
         }
         return status;
+    }
+
+    private static void discardUnsavedChanges(Page masterPage) {
+        Optional.of(masterPage)
+                .map(page -> page.adaptTo(Resource.class))
+                .map(Resource::getResourceResolver)
+                .ifPresent(ResourceResolver::revert);
     }
 
     private RolloutManager.RolloutParams toRolloutParams(Page masterPage, String targetPath, boolean isDeep) {
