@@ -25,7 +25,7 @@
                         action="etoolbox.rollout-manager.show-references-dialog"
                         activeCondition="etoolbox.rollout-manager.rollout-active-condition"
                         activeSelectionCount="single"
-                        icon="alias"
+                        icon="etoolbox-rm-sites"
                         target=".cq-siteadmin-admin-childpages"
                         text="Rollout"
                         variant="actionBar">
