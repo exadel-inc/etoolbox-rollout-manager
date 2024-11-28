@@ -31,9 +31,12 @@
     padding: 0;
 }
 
-.rollout-manager-select-all {
-    font-size: small;
-    min-width: 86px;
+.rollout-manager-select-all .coral3-Checkbox-description {
+    color: #666;
+    font-size: 0.75rem;
+    padding-top: 0.15rem;
+    text-decoration: underline;
+    text-decoration-style: dashed;
 }
 
 .rollout-manager-coral-accordion-item-content {
@@ -56,8 +59,8 @@
 }
 
 .rollout-manager-dialog .coral3-Dialog-wrapper {
-    width: 800px;
     height: 566px;
+    width: 800px;
 }
 
 .rollout-manager-dialog .coral3-Checkbox {
@@ -85,7 +88,7 @@
 
 .rollout-manager-nestedcheckboxlist-container {
     overflow-y: auto;
-    height: 206px;
+    height: 246px;
 }
 
 .rollout-manager-logger-dialog .coral3-Dialog-wrapper {

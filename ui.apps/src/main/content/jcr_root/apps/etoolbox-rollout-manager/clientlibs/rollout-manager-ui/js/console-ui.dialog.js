@@ -137,9 +137,7 @@
             .text(TARGET_PATHS_LABEL);
         label.appendTo(span);
 
-        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
+        $(`<coral-checkbox class="rollout-manager-select-all">${SELECT_ALL_LABEL}</coral-checkbox>`).appendTo(span);
 
         span.appendTo(sourceElement);
     }
@@ -217,31 +215,44 @@
         };
     }
 
-    function changeSelectAllLabel(hasSelection) {
-        const selectAllEl = $('.rollout-manager-select-all');
-        selectAllEl.text(hasSelection ? UNSELECT_ALL_LABEL : SELECT_ALL_LABEL);
-    }
-
     function hasSelection() {
         return $(CORAL_CHECKBOX_ITEM + '[checked]').length > 0;
     }
 
-    function selectUnselectAll() {
-        $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', !hasSelection());
+    function isFullySelected() {
+        return $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').length === $(CORAL_CHECKBOX_ITEM + '[checked]').length;
     }
 
-    function validateSelection(hasSelection, submitBtn) {
+    function selectUnselectAll(checked) {
+        $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', checked);
+    }
+
+    function changeButtonState(hasSelection, submitBtn) {
         submitBtn.attr('disabled', !hasSelection);
     }
 
     function onCheckboxChange(submitBtn) {
-        const hasAnySelection = hasSelection();
-        changeSelectAllLabel(hasAnySelection);
-        validateSelection(hasAnySelection, submitBtn);
+        const $selectAll = $('.rollout-manager-select-all');
+        const $selectAllLabel = $selectAll.find('label');
+        if (hasSelection()) {
+            if (isFullySelected()) {
+                $selectAll.prop('checked', true).prop('indeterminate', false);
+            } else {
+                $selectAll.prop('checked', true).prop('indeterminate', true);
+            }
+            $selectAllLabel.text(UNSELECT_ALL_LABEL);
+            changeButtonState(true, submitBtn);
+        } else {
+            $selectAll.prop('checked', false).prop('indeterminate', false);
+            $selectAllLabel.text(SELECT_ALL_LABEL);
+            changeButtonState(false, submitBtn);
+        }
     }
 
     function onSelectAllClick(submitBtn) {
-        selectUnselectAll();
+        const $selectAll = $('.rollout-manager-select-all');
+        const allSelected = !!$selectAll.prop('checked');
+        selectUnselectAll(!allSelected);
         onCheckboxChange(submitBtn);
     }
 
@@ -312,7 +323,7 @@
 
         dialog.show();
 
-        validateSelection(hasSelection(), $submitBtn.add($rolloutBtn));
+        changeButtonState(hasSelection(), $submitBtn.add($rolloutBtn));
 
         return deferred.promise();
     }
