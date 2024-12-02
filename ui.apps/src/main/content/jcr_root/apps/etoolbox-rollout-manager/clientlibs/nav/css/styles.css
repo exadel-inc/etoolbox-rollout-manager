@@ -1,0 +1,19 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+coral-icon[icon="etoolbox-rm-sites"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xml:space='preserve' width='64' height='64' style='shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd' viewBox='0 0 5.922 5.922'%3E%3Ccircle cx='2.961' cy='2.961' r='2.961' style='fill:%23666'/%3E%3Cpath d='M3.314 4.77h.064a.22.22 0 0 0 .219-.22V2.571a.22.22 0 0 0-.219-.22H1.415a.22.22 0 0 0-.219.22v.063c0 .121.099.22.219.22h1.327L1.28 4.316a.251.251 0 0 0 .355.355l1.46-1.459V4.55c0 .121.098.22.219.22zm1.001-.548h.064a.22.22 0 0 0 .219-.219V1.565a.22.22 0 0 0-.219-.22H1.924a.22.22 0 0 0-.219.22v.063a.22.22 0 0 0 .219.219h2.172v2.156c0 .12.098.219.219.219z' style='fill:%23fff'/%3E%3C/svg%3E");    height: 1.2rem;
+    background-size: contain;
+    width: 1.2rem;
+}

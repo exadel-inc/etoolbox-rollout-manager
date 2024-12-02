@@ -27,7 +27,7 @@ The tool can be installed using the package or via building the project.
 1. Get the latest package version from https://github.com/exadel-inc/etoolbox-rollout-manager/releases
 2. Install the package _**etoolbox-rollout-manager.all-XX.zip**_ using the _Package Manager_
 3. Ensure that the bundle **_EToolbox Rollout Manager - Core (etoolbox-rollout-manager.core)_** is in _Active_ state.
-4. Ensure the nodes **_/content/etoolbox-rollout-manager/servlet_** and **_/apps/wcm/core/content/sites/jcr:content/actions/selection/rollout_** are present.
+4. Ensure the nodes **_/content/etoolbox/rollout-manager/servlet_** and **_/apps/wcm/core/content/sites/jcr:content/actions/selection/rollout_** are present.
 
 ### How to build
 
