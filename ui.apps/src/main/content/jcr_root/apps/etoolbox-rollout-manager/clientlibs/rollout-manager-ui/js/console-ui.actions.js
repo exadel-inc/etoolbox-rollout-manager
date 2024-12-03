@@ -19,7 +19,7 @@
 (function (window, document, $, ns, Granite) {
     'use strict';
 
-    const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox-rollout-manager/servlet/collect-live-copies';
+    const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
@@ -38,7 +38,7 @@
         });
     }
 
-    const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox-rollout-manager/servlet/blueprint-check';
+    const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox/rollout-manager/servlet/blueprint-check';
 
     /**
      * Checks if selected page has live relationships eligible for synchronization and thus can be rolled out.
@@ -82,7 +82,7 @@
             });
     }
 
-    const ROLLOUT_COMMAND = '/content/etoolbox-rollout-manager/servlet/rollout';
+    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
     const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
     const SUCCESS_MSG = Granite.I18n.get('Completed');
