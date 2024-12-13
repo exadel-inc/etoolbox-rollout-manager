@@ -49,22 +49,8 @@
                         <!-- /apps root -->
                         <filter><root>/apps</root></filter>
                         <filter><root>/apps/etoolbox-rollout-manager</root></filter>
+                        <filter><root>/apps/wcm/core/content/sites/jcr:content/actions/selection</root></filter>
 
-                        <!-- Common overlay roots -->
-                        <filter><root>/apps/sling</root></filter>
-                        <filter><root>/apps/cq</root></filter>
-                        <filter><root>/apps/dam</root></filter>
-                        <filter><root>/apps/wcm</root></filter>
-                        <filter><root>/apps/wcm/core</root></filter>
-                        <filter><root>/apps/wcm/core/content</root></filter>
-                        <filter><root>/apps/wcm/core/content/sites</root></filter>
-                        <filter><root>/apps/msm</root></filter>
-
-                        <!-- Immutable context-aware configurations -->
-                        <filter><root>/apps/settings</root></filter>
-
-                        <!-- DAM folder root, will be created via repoinit -->
-                        <filter><root>/content/dam/etoolbox-rollout-manager</root></filter>
 
                     </filters>
                 </configuration>
