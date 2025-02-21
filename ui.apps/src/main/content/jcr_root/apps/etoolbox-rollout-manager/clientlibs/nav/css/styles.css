@@ -13,7 +13,7 @@
  */
 
 coral-icon[icon="etoolbox-rm-sites"] {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xml:space='preserve' width='64' height='64' style='shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd' viewBox='0 0 5.922 5.922'%3E%3Ccircle cx='2.961' cy='2.961' r='2.961' style='fill:%23666'/%3E%3Cpath d='M3.314 4.77h.064a.22.22 0 0 0 .219-.22V2.571a.22.22 0 0 0-.219-.22H1.415a.22.22 0 0 0-.219.22v.063c0 .121.099.22.219.22h1.327L1.28 4.316a.251.251 0 0 0 .355.355l1.46-1.459V4.55c0 .121.098.22.219.22zm1.001-.548h.064a.22.22 0 0 0 .219-.219V1.565a.22.22 0 0 0-.219-.22H1.924a.22.22 0 0 0-.219.22v.063a.22.22 0 0 0 .219.219h2.172v2.156c0 .12.098.219.219.219z' style='fill:%23fff'/%3E%3C/svg%3E");    height: 1.2rem;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20xml:space='preserve'%20width='64'%20height='64'%20style='shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd'%20viewBox='0,0,5.922,5.922'%3E%3Ccircle%20cx='2.961'%20cy='2.961'%20r='2.961'%20style='fill:%23666'/%3E%3Cpath%20d='M3.314,4.77h.064a.22.22,0,0,0,.219-.22V2.571a.22.22,0,0,0-.219-.22H1.415a.22.22,0,0,0-.219.22v.063c0,.121.099.22.219.22h1.327L1.28,4.316a.251.251,0,0,0,.355.355l1.46-1.459V4.55c0,.121.098.22.219.22zm1.001-.548h.064a.22.22,0,0,0,.219-.219V1.565a.22.22,0,0,0-.219-.22H1.924a.22.22,0,0,0-.219.22v.063a.22.22,0,0,0,.219.219h2.172v2.156c0,.12.098.219.219.219z'%20style='fill:%23fff'/%3E%3C/svg%3E");    height: 1.2rem;
     background-size: contain;
     width: 1.2rem;
 }
