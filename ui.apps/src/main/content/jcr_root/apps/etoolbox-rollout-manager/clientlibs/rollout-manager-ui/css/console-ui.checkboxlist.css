@@ -55,7 +55,8 @@
     font-weight: normal;
 }
 
-.rollout-manager-dialog .coral3-Dialog-wrapper {
+.rollout-manager-dialog .coral3-Dialog-wrapper,
+.rollout-manager-dialog ._coral-Dialog {
     width: 800px;
     height: 566px;
 }
@@ -71,8 +72,8 @@
 
 .rollout-manager-dialog coral-checkbox-label {
     display: flex;
-    flex-grow: 1;
     justify-content: space-between;
+    text-transform: none;
 }
 
 .rollout-manager-dialog .coral3-Accordion-content {
@@ -83,7 +84,7 @@
     padding-right: 0;
 }
 
-.rollout-manager-nestedcheckboxlist-container {
+.coral3-Dialog-content .rollout-manager-nestedcheckboxlist-container {
     overflow-y: auto;
     height: 206px;
 }
@@ -99,6 +100,66 @@
 
 #rolloutButton:not([disabled]) {
     filter: brightness(1.3);
+}
+
+/* Cloud styles */
+.rollout-manager-dialog ._coral-Accordion-item {
+    border: 0;
+}
+
+.rollout-manager-dialog ._coral-Accordion-itemHeader {
+    padding-right: 0;
+}
+
+.rollout-manager-dialog ._coral-Accordion-itemContent {
+    padding-right: 0;
+}
+
+.rollout-manager-dialog coral-accordion-item-label {
+    width: 100%;
+}
+
+.rollout-manager-dialog ._coral-Checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.rollout-manager-dialog ._coral-Checkbox-label {
+    width: 100%;
+}
+
+.rollout-manager-dialog ._coral-Dialog-footer {
+    display: flex;
+}
+
+.rollout-manager-dialog ._coral-Checkbox-box {
+    margin: 0;
+}
+
+.rollout-manager-dialog ._coral-Accordion-itemHeading {
+    position: relative;
+}
+
+.rollout-manager-dialog ._coral-Checkbox {
+    margin-right: 0;
+}
+
+.rollout-manager-dialog ._coral-Dialog-content {
+    padding-right: 10px;
+}
+
+.rollout-manager-dialog ._coral-Checkbox-input {
+    width: 100%;
+}
+
+.rollout-manager-dialog ._coral-Accordion-itemIndicator {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.rollout-manager-dialog ._coral-Accordion-item.is-open > ._coral-Accordion-itemHeading > ._coral-Accordion-itemIndicator,
+._coral-Accordion-item.is-open > ._coral-Accordion-itemIndicator {
+    transform: translateY(-50%) rotate(90deg);
 }
 
 /*.coral3-Accordion-label {*/
