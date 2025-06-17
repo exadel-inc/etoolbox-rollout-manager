@@ -121,36 +121,28 @@
         const dialog = getBaseDialog();
         dialog.variant = 'notice';
         dialog.header.textContent = `${DIALOG_LABEL} ${path}`;
-        dialog.footer.innerHTML = ''; // Clean content
-        dialog.content.innerHTML = ''; // Clean content
-        const $cancelBtn = $('<button is="coral-button" variant="default" coral-close>')
-            .text(CANCEL_LABEL);
-        $cancelBtn.appendTo(dialog.footer);
-
+        dialog.footer.innerHTML = '';
+        dialog.content.innerHTML = '';
+        $('<button is="coral-button" variant="default" coral-close>')
+          .text(CANCEL_LABEL)
+          .appendTo(dialog.footer);
         return dialog;
     }
 
     function appendTargetsHeader(sourceElement) {
         const span = $('<span>');
-
-        const label = $('<h3 class="rollout-manager-targets-label">')
-            .text(TARGET_PATHS_LABEL);
-        label.appendTo(span);
-
-        const selectAll = $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-            .text(SELECT_ALL_LABEL);
-        selectAll.appendTo(span);
-
+        $('<h3 class="rollout-manager-targets-label">')
+          .text(TARGET_PATHS_LABEL)
+          .appendTo(span);
+        $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
+          .text(SELECT_ALL_LABEL)
+          .appendTo(span);
         span.appendTo(sourceElement);
     }
 
     function appendRolloutScope(sourceElement) {
-        const label = $('<h3>')
-            .text(ROLLOUT_SCOPE_LABEL);
-        const isDeepCheckbox = $('<coral-checkbox name="isDeepRollout">')
-            .text(INCLUDE_SUBPAGES_LABEL);
-        label.appendTo(sourceElement);
-        isDeepCheckbox.appendTo(sourceElement);
+        $('<h3>').text(ROLLOUT_SCOPE_LABEL).appendTo(sourceElement);
+        $('<coral-checkbox name="isDeepRollout">').text(INCLUDE_SUBPAGES_LABEL).appendTo(sourceElement);
     }
 
     function initNestedAccordion(currentCheckbox, liveCopiesJsonArray) {
@@ -166,7 +158,6 @@
         accordionItemContent.appendTo(accordionItem);
 
         accordionItem.appendTo(accordion);
-
         return accordion;
     }
 
@@ -188,24 +179,20 @@
             ).text(ns.TimeUtil.timeSince(liveCopyJson.lastRolledOut));
         liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
-            const accordion = initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies);
-            accordion.appendTo(liItem);
+            initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies).appendTo(liItem);
         } else {
-            liveCopyCheckbox.addClass('inner-checkbox-option');
-            liveCopyCheckbox.appendTo(liItem);
+            liveCopyCheckbox.addClass('inner-checkbox-option').appendTo(liItem);
         }
         return liItem;
     }
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
-        if (liveCopiesJsonArray.length > 0) {
-            const nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
-            liveCopiesJsonArray.forEach((liveCopyJson) => {
-                const liItem = jsonToCheckboxListItem(liveCopyJson);
-                liItem.appendTo(nestedList);
-            });
-            nestedList.appendTo(sourceElement);
-        }
+        if (!liveCopiesJsonArray.length) return;
+        const nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
+        liveCopiesJsonArray.forEach(liveCopyJson => {
+            jsonToCheckboxListItem(liveCopyJson).appendTo(nestedList);
+        });
+        nestedList.appendTo(sourceElement);
     }
 
     function checkBoxToJsonData(checkbox) {
@@ -218,8 +205,7 @@
     }
 
     function changeSelectAllLabel(hasSelection) {
-        const selectAllEl = $('.rollout-manager-select-all');
-        selectAllEl.text(hasSelection ? UNSELECT_ALL_LABEL : SELECT_ALL_LABEL);
+        $('.rollout-manager-select-all').text(hasSelection ? UNSELECT_ALL_LABEL : SELECT_ALL_LABEL);
     }
 
     function hasSelection() {
@@ -286,33 +272,28 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
-        const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>')
-            .text(DIALOG_LABEL);
-        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>')
-            .text(ROLLOUT_AND_PUBLISH_LABEL);
+        const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
+        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>').text(ROLLOUT_AND_PUBLISH_LABEL);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
         appendTargetsHeader(dialog.content);
-
-        const checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">');
-        checkboxListContainer.appendTo(dialog.content);
-
+        const checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">').appendTo(dialog.content);
         appendNestedCheckboxList(liveCopiesJsonArray, checkboxListContainer);
-
         appendRolloutScope(dialog.content);
 
+        const $actionBtns = $submitBtn.add($rolloutBtn);
+
         initEventHandlers(
-            dialog,
-            deferred,
-            () => onCheckboxChange($submitBtn.add($rolloutBtn)),
-            () => onSelectAllClick($submitBtn.add($rolloutBtn)),
-            (e) => onResolve($(e.target), selectedPath, deferred)
+          dialog,
+          deferred,
+          () => onCheckboxChange($actionBtns),
+          () => onSelectAllClick($actionBtns),
+          (e) => onResolve($(e.target), selectedPath, deferred)
         );
 
         dialog.show();
-
-        validateSelection(hasSelection(), $submitBtn.add($rolloutBtn));
+        validateSelection(hasSelection(), $actionBtns);
 
         return deferred.promise();
     }
