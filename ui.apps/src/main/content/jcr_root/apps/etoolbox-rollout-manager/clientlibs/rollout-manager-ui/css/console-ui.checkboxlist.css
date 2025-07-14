@@ -83,8 +83,7 @@
     }
 
     .coral3-Checkbox-description {
-        display: flex;
-        flex-grow: 1;
+        width: 100%;
     }
 
     coral-checkbox-label {
