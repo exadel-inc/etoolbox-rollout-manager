@@ -23,6 +23,7 @@
 
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
     const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process failed for path:');
+    const AJAX_TIMEOUT = 30000; // 30 seconds timeout
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
@@ -35,7 +36,8 @@
             const result = await $.ajax({
                 url: COLLECT_LIVE_COPIES_COMMAND,
                 type: 'POST',
-                data: { _charset_: 'UTF-8', path }
+                data: { _charset_: 'UTF-8', path },
+                timeout: AJAX_TIMEOUT
             });
 
             if (result) return result;
@@ -59,7 +61,8 @@
             const data = await $.ajax({
                 url: BLUEPRINT_CHECK_COMMAND,
                 type: 'POST',
-                data: { _charset_: 'UTF-8', path }
+                data: { _charset_: 'UTF-8', path },
+                timeout: AJAX_TIMEOUT
             });
             return data && data.isAvailableForRollout;
         } catch (e) {
@@ -117,7 +120,8 @@
                         selectionJsonArray: JSON.stringify(data.selectionJsonArray),
                         isDeepRollout: data.isDeepRollout,
                         shouldActivate: data.shouldActivate
-                    }
+                    },
+                    timeout: AJAX_TIMEOUT * 4 // Rollout operations may take longer
                 });
                 data.shouldActivate ? logger.log(SUCCESS_REPLICATION_MSG, false) : logger.log(SUCCESS_MSG, false);
             } catch (xhr) {
