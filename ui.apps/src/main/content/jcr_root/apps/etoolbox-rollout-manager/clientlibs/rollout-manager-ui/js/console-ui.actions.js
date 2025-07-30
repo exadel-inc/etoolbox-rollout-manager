@@ -22,7 +22,7 @@
     const foundationUi = $(window).adaptTo('foundation-ui');
 
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
-    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process failed for path: ');
+    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process failed for path:');
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
@@ -39,10 +39,11 @@
             });
 
             if (result) return result;
-            throw new Error(`${ROLLOUT_DIALOG_ERROR_MSG} : ${path}`);
         } catch (e) {
-            foundationUi.alert('Error', e.message, 'error');
+            // Handle the error below
         }
+
+        foundationUi.alert('Error', `${ROLLOUT_DIALOG_ERROR_MSG} ${path}`, 'error');
     }
 
     const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox/rollout-manager/servlet/blueprint-check';
