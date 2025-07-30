@@ -130,14 +130,14 @@
     }
 
     function appendTargetsHeader(sourceElement) {
-        const span = $('<span>');
+        const $span = $('<span>');
         $('<h3 class="rollout-manager-targets-label">')
             .text(TARGET_PATHS_LABEL)
-            .appendTo(span);
+            .appendTo($span);
         $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
             .text(SELECT_ALL_LABEL)
-            .appendTo(span);
-        span.appendTo(sourceElement);
+            .appendTo($span);
+        $span.appendTo(sourceElement);
     }
 
     function appendRolloutScope(sourceElement) {
@@ -146,23 +146,23 @@
     }
 
     function initNestedAccordion(currentCheckbox, liveCopiesJsonArray) {
-        const accordion = $('<coral-accordion variant="quiet">');
-        const accordionItem = $('<coral-accordion-item>');
-        const accordionItemLabel = $('<coral-accordion-item-label>');
+        const $accordion = $('<coral-accordion variant="quiet">');
+        const $accordionItem = $('<coral-accordion-item>');
+        const $accordionItemLabel = $('<coral-accordion-item-label>');
 
-        currentCheckbox.appendTo(accordionItemLabel);
-        accordionItemLabel.appendTo(accordionItem);
+        currentCheckbox.appendTo($accordionItemLabel);
+        $accordionItemLabel.appendTo($accordionItem);
 
-        const accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
-        appendNestedCheckboxList(liveCopiesJsonArray, accordionItemContent);
-        accordionItemContent.appendTo(accordionItem);
+        const $accordionItemContent = $('<coral-accordion-item-content class="rollout-manager-coral-accordion-item-content">');
+        appendNestedCheckboxList(liveCopiesJsonArray, $accordionItemContent);
+        $accordionItemContent.appendTo($accordionItem);
 
-        accordionItem.appendTo(accordion);
-        return accordion;
+        $accordionItem.appendTo($accordion);
+        return $accordion;
     }
 
     function jsonToCheckboxListItem(liveCopyJson) {
-        const liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
+        const $liItem = $('<li class="rollout-manager-nestedcheckboxlist-item">');
         const liveCopyCheckbox =
             $(`<coral-checkbox
                   coral-interactive
@@ -179,20 +179,20 @@
             ).text(ns.TimeUtil.timeSince(liveCopyJson.lastRolledOut));
         liveCopyCheckbox.append(lastRolledOutTimeAgo);
         if (liveCopyJson.liveCopies && liveCopyJson.liveCopies.length > 0) {
-            initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies).appendTo(liItem);
+            initNestedAccordion(liveCopyCheckbox, liveCopyJson.liveCopies).appendTo($liItem);
         } else {
-            liveCopyCheckbox.addClass('inner-checkbox-option').appendTo(liItem);
+            liveCopyCheckbox.addClass('inner-checkbox-option').appendTo($liItem);
         }
-        return liItem;
+        return $liItem;
     }
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (!liveCopiesJsonArray.length) return;
-        const nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
+        const $nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
         liveCopiesJsonArray.forEach(liveCopyJson => {
-            jsonToCheckboxListItem(liveCopyJson).appendTo(nestedList);
+            jsonToCheckboxListItem(liveCopyJson).appendTo($nestedList);
         });
-        nestedList.appendTo(sourceElement);
+        $nestedList.appendTo(sourceElement);
     }
 
     function checkBoxToJsonData(checkbox) {
@@ -236,9 +236,9 @@
         const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').filter(':not([disabled])').prop('checked');
         const selectionJsonArray = [];
         $(CORAL_CHECKBOX_ITEM).each(function () {
-            const checkbox = $(this);
-            if (checkbox.prop('checked')) {
-                selectionJsonArray.push(checkBoxToJsonData(checkbox));
+            const $checkbox = $(this);
+            if ($checkbox.prop('checked')) {
+                selectionJsonArray.push(checkBoxToJsonData($checkbox));
             }
         });
         const data = {
@@ -278,8 +278,8 @@
         $submitBtn.appendTo(dialog.footer);
 
         appendTargetsHeader(dialog.content);
-        const checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">').appendTo(dialog.content);
-        appendNestedCheckboxList(liveCopiesJsonArray, checkboxListContainer);
+        const $checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">').appendTo(dialog.content);
+        appendNestedCheckboxList(liveCopiesJsonArray, $checkboxListContainer);
         appendRolloutScope(dialog.content);
 
         const $actionBtns = $submitBtn.add($rolloutBtn);
