@@ -92,7 +92,7 @@
         dialog.show();
 
         return {
-            dialog: dialog,
+            dialog,
             finished: function () {
                 loggerDialogFinished(dialog, selectedPath, processingLabel);
             },
@@ -124,19 +124,19 @@
         dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
         $('<button is="coral-button" variant="default" coral-close>')
-          .text(CANCEL_LABEL)
-          .appendTo(dialog.footer);
+            .text(CANCEL_LABEL)
+            .appendTo(dialog.footer);
         return dialog;
     }
 
     function appendTargetsHeader(sourceElement) {
         const span = $('<span>');
         $('<h3 class="rollout-manager-targets-label">')
-          .text(TARGET_PATHS_LABEL)
-          .appendTo(span);
+            .text(TARGET_PATHS_LABEL)
+            .appendTo(span);
         $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-select-all">')
-          .text(SELECT_ALL_LABEL)
-          .appendTo(span);
+            .text(SELECT_ALL_LABEL)
+            .appendTo(span);
         span.appendTo(sourceElement);
     }
 
@@ -285,11 +285,11 @@
         const $actionBtns = $submitBtn.add($rolloutBtn);
 
         initEventHandlers(
-          dialog,
-          deferred,
-          () => onCheckboxChange($actionBtns),
-          () => onSelectAllClick($actionBtns),
-          (e) => onResolve($(e.target), selectedPath, deferred)
+            dialog,
+            deferred,
+            () => onCheckboxChange($actionBtns),
+            () => onSelectAllClick($actionBtns),
+            (e) => onResolve($(e.target), selectedPath, deferred)
         );
 
         dialog.show();

@@ -36,8 +36,8 @@
 
     function parentIntermediateStateOff(parentCheckbox) {
         const childCheckboxesChecked = parentCheckbox.closest('li')
-          .find('coral-accordion-item-content')
-          .find(CORAL_CHECKBOX_ITEM + '[checked]');
+            .find('coral-accordion-item-content')
+            .find(CORAL_CHECKBOX_ITEM + '[checked]');
         if (!childCheckboxesChecked?.length) {
             parentCheckbox.removeAttr(INTERMEDIATE_ATTR);
         }
@@ -70,11 +70,11 @@
     }
 
     $(document).off('change.rollout-manager')
-      .on('change.rollout-manager', CORAL_CHECKBOX_ITEM, function (e) {
-          e.stopPropagation();
-          const coralCheckbox = $(this);
-          const isChecked = coralCheckbox.prop('checked');
-          setCurrentAndChildrenState(coralCheckbox, isChecked);
-          setParentsState(coralCheckbox, isChecked);
-      });
+        .on('change.rollout-manager', CORAL_CHECKBOX_ITEM, function (e) {
+            e.stopPropagation();
+            const coralCheckbox = $(this);
+            const isChecked = coralCheckbox.prop('checked');
+            setCurrentAndChildrenState(coralCheckbox, isChecked);
+            setParentsState(coralCheckbox, isChecked);
+        });
 })(document, Granite.$);
