@@ -19,7 +19,10 @@
 (function (window, document, $, ns, Granite) {
     'use strict';
 
+    const foundationUi = $(window).adaptTo('foundation-ui');
+
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
+    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process failed for path: ');
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
@@ -27,12 +30,19 @@
      * @param path - path of the page selected in Sites
      * @returns {Promise}
      */
-    function collectLiveCopies(path) {
-        return $.ajax({
-            url: COLLECT_LIVE_COPIES_COMMAND,
-            type: 'POST',
-            data: { _charset_: 'UTF-8', path }
-        });
+    async function collectLiveCopies(path) {
+        try {
+            const result = await $.ajax({
+                url: COLLECT_LIVE_COPIES_COMMAND,
+                type: 'POST',
+                data: { _charset_: 'UTF-8', path }
+            });
+
+            if (result) return result;
+            throw new Error(`${ROLLOUT_DIALOG_ERROR_MSG} : ${path}`);
+        } catch (e) {
+            foundationUi.alert('Error', e.message, 'error');
+        }
     }
 
     const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox/rollout-manager/servlet/blueprint-check';
@@ -118,16 +128,16 @@
     /** Action handler for the 'Rollout' button */
     async function onShowRolloutDialog(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
-        const foundationUi = $(window).adaptTo('foundation-ui');
         foundationUi.wait();
+
+        const liveCopiesJsonArray = await collectLiveCopies(selectedPath);
+        foundationUi.clearWait();
+
         try {
-            const liveCopiesJsonArray = await collectLiveCopies(selectedPath);
-            foundationUi.clearWait();
             const data = await ns.showRolloutDialog(liveCopiesJsonArray, selectedPath);
             await doItemsRollout(data, buildRolloutRequest);
-        } catch (e) {
-            console.error('Failed to show rollout dialog', e);
-            foundationUi.clearWait();
+        } catch {
+            // The dialog is closed by user
         }
     }
 
