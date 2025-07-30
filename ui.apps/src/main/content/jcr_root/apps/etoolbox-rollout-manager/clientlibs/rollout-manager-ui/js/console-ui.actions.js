@@ -52,6 +52,7 @@
             });
             return data && data.isAvailableForRollout;
         } catch (e) {
+            console.error('Failed to check if page is available for rollout. Path: ', path, e);
             return false;
         }
     }
@@ -125,6 +126,7 @@
             const data = await ns.showRolloutDialog(liveCopiesJsonArray, selectedPath);
             await doItemsRollout(data, buildRolloutRequest);
         } catch (e) {
+            console.error('Failed to show rollout dialog', e);
             foundationUi.clearWait();
         }
     }
