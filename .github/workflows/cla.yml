@@ -31,11 +31,11 @@ jobs:
           PERSONAL_ACCESS_TOKEN : ${{ steps.app-token.outputs.token }}
         with:
           path-to-signatures: 'signatures/cla.json'
-          path-to-document: 'https://github.com/cla-assistant/github-action/blob/master/SAPCLA.md' # e.g. a CLA or a DCO document
+          path-to-document: 'https://github.com/exadel-inc/etoolbox-rollout-manager/blob/develop/CLA.md' # e.g. a CLA or a DCO document
 
           branch: 'history/cla'
-          allowlist: smiakchilo,liubou-masiuk,bot*
+          allowlist: bot*
 
-          signed-commit-message: 'chore: $contributorName has signed the CLA in #$pullRequestNo'
-          create-file-commit-message: 'chore: created file for storing CLA Signatures'
-          custom-notsigned-prcomment: 'Thank you for your submission, we really appreciate it. We ask that you sign our  <a href="https://github.com/exadel-inc/esl/blob/main/CLA.md">Contributor License Agreement</a> before we can accept your contribution. You can sign the CLA by just posting a Pull Request Comment same as the below format.'
+          signed-commit-message: '[Tech] @$contributorName has signed the CLA in #$pullRequestNo'
+          create-file-commit-message: '[Tech] created file for storing CLA Signatures'
+          custom-notsigned-prcomment: 'Thank you for your submission, we really appreciate it. We ask that you sign our  <a href="https://github.com/exadel-inc/etoolbox-rollout-manager/blob/develop/CLA.md">Contributor License Agreement</a> before we can accept your contribution. You can sign the CLA by just posting a Pull Request Comment same as the below format.'
