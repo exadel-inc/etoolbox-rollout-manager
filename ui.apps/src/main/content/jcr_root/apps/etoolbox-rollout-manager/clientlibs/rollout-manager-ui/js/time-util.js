@@ -55,25 +55,19 @@
      * @returns {string} A formatted string indicating the time difference.
      */
     ns.TimeUtil.timeSince = function (date) {
-        if (!date) {
-            return NOT_ROLLED_OUT_LABEL;
-        }
+        if (!date) return NOT_ROLLED_OUT_LABEL;
 
         const startDate = new Date(date);
         const now = new Date();
         const millisecondsBetween = now - startDate;
 
-        let result = '';
-        for (const timeUnit in Time) {
-            if (millisecondsBetween >= Time[timeUnit]) {
-                const time = Math.floor(millisecondsBetween / Time[timeUnit]);
-
-                result = time + ' ' + Granite.I18n.get(timeUnit.toLowerCase() + (time !== 1 ? PLURAL_SUFFIX : '')) + ' ' + TIME_AGO_LABEL;
-                break;
+        for (const [unit, ms] of Object.entries(Time)) {
+            if (millisecondsBetween >= ms) {
+                const time = Math.floor(millisecondsBetween / ms);
+                return `${time} ${Granite.I18n.get(unit.toLowerCase() + (time !== 1 ? PLURAL_SUFFIX : ''))} ${TIME_AGO_LABEL}`;
             }
         }
-
-        return result;
+        return '';
     };
 
     /**
@@ -82,9 +76,7 @@
      * @returns {string} A formatted timestamp string.
      */
     ns.TimeUtil.displayLastRolledOut = function (date) {
-        if (!date) {
-            return '';
-        }
+        if (!date) return '';
         return new Date(date).toLocaleString(undefined, TIME_FORMATTER_OPTIONS);
     };
 })(Granite.$, window.erm = (window.erm || {}));
