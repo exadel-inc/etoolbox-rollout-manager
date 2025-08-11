@@ -56,21 +56,19 @@
      * @param path - path of the page selected in Sites
      * @returns {Promise<boolean>}
      */
-    async function isAvailableForRollout(path) {
-        try {
-            const data = await $.ajax({
-                url: BLUEPRINT_CHECK_COMMAND,
-                type: 'POST',
-                data: { _charset_: 'UTF-8', path },
-                timeout: AJAX_TIMEOUT
-            });
-            return data && data.isAvailableForRollout;
-        } catch (e) {
-            console.error('Failed to check if page is available for rollout. Path: ', path, e);
-            return false;
-        }
+    function isAvailableForRollout(path) {
+        return $.ajax({
+            url: BLUEPRINT_CHECK_COMMAND,
+            type: 'POST',
+            data: { _charset_: 'UTF-8', path },
+            timeout: AJAX_TIMEOUT
+        })
+          .then(data => data && data.isAvailableForRollout)
+          .catch(e => {
+              console.error('Failed to check if page is available for rollout. Path: ', path, e);
+              return false;
+          })
     }
-
     const PROCESSING_LABEL = Granite.I18n.get('Processing');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
@@ -90,18 +88,23 @@
         }
     }
 
-    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
-    const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const SUCCESS_MSG = Granite.I18n.get('Completed');
-    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
+    const PROCESSING_ERROR_400_MSG = Granite.I18n.get('Rollout failed for the following paths:');
+    const PROCESSING_SERVER_MSG = Granite.I18n.get('This operation will take some time to complete. Check the target pages later to confirm the result.');
 
-    function getProcessingErrorMsg(xhr) {
+    function getRolloutStatusMessage(xhr) {
         if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
-            return `${PROCESSING_ERROR_FAILED_PATHS_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
+            return `${PROCESSING_ERROR_400_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
+        }
+        if ([503, 504, 522, 524].includes(xhr.status)) {
+            return PROCESSING_SERVER_MSG;
         }
         return PROCESSING_ERROR_MSG;
     }
+
+    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
+    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
+    const SUCCESS_MSG = Granite.I18n.get('Completed');
 
     /**
      * Builds a request to the servlet for rolling out items based on data collected in the Rollout dialog.
@@ -125,7 +128,7 @@
                 });
                 data.shouldActivate ? logger.log(SUCCESS_REPLICATION_MSG, false) : logger.log(SUCCESS_MSG, false);
             } catch (xhr) {
-                logger.log(getProcessingErrorMsg(xhr), false);
+                logger.log(getRolloutStatusMessage(xhr), false);
             }
         };
     }
@@ -147,9 +150,9 @@
     }
 
     /** Active condition for the 'Rollout' button */
-    async function onRolloutActiveCondition(name, el, config, collection, selections) {
+    function onRolloutActiveCondition(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
-        return await isAvailableForRollout(selectedPath);
+        return isAvailableForRollout(selectedPath);
     }
 
     // Init action handler for the 'Rollout' button
