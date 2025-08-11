@@ -56,21 +56,19 @@
      * @param path - path of the page selected in Sites
      * @returns {Promise<boolean>}
      */
-    async function isAvailableForRollout(path) {
-        try {
-            const data = await $.ajax({
-                url: BLUEPRINT_CHECK_COMMAND,
-                type: 'POST',
-                data: { _charset_: 'UTF-8', path },
-                timeout: AJAX_TIMEOUT
-            });
-            return data && data.isAvailableForRollout;
-        } catch (e) {
-            console.error('Failed to check if page is available for rollout. Path: ', path, e);
-            return false;
-        }
+    function isAvailableForRollout(path) {
+        return $.ajax({
+            url: BLUEPRINT_CHECK_COMMAND,
+            type: 'POST',
+            data: { _charset_: 'UTF-8', path },
+            timeout: AJAX_TIMEOUT
+        })
+          .then(data => data && data.isAvailableForRollout)
+          .catch(e => {
+              console.error('Failed to check if page is available for rollout. Path: ', path, e);
+              return false;
+          })
     }
-
     const PROCESSING_LABEL = Granite.I18n.get('Processing');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
@@ -152,9 +150,9 @@
     }
 
     /** Active condition for the 'Rollout' button */
-    async function onRolloutActiveCondition(name, el, config, collection, selections) {
+    function onRolloutActiveCondition(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
-        return await isAvailableForRollout(selectedPath);
+        return isAvailableForRollout(selectedPath);
     }
 
     // Init action handler for the 'Rollout' button
