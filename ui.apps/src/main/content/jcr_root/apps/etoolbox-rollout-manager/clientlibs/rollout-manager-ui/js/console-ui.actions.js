@@ -57,18 +57,22 @@
      * @returns {Promise<boolean>}
      */
     function isAvailableForRollout(path) {
-        return $.ajax({
+        let result = false;
+        $.ajax({
             url: BLUEPRINT_CHECK_COMMAND,
             type: 'POST',
-            data: { _charset_: 'UTF-8', path },
-            timeout: AJAX_TIMEOUT
-        })
-          .then(data => data && data.isAvailableForRollout)
-          .catch(e => {
-              console.error('Failed to check if page is available for rollout. Path: ', path, e);
-              return false;
-          })
+            async: false,
+            data: {
+                _charset_: 'UTF-8',
+                path
+            }
+        }).done((data) => {
+            result = data && data.isAvailableForRollout;
+        });
+        if (!result) console.error('Failed to check if page is available for rollout. Path: ', path, e);
+        return result;
     }
+
     const PROCESSING_LABEL = Granite.I18n.get('Processing');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
