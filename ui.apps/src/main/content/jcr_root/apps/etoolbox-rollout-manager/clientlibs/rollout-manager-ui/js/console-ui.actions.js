@@ -22,7 +22,7 @@
     const foundationUi = $(window).adaptTo('foundation-ui');
 
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
-    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process failed for path:');
+    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process cannot be performed for path:');
     const AJAX_TIMEOUT = 30000; // 30 seconds timeout
 
     /**
