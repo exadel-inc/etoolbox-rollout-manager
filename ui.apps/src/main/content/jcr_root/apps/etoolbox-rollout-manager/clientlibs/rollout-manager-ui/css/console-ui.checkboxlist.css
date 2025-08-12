@@ -12,16 +12,24 @@
  * limitations under the License.
  */
 
-.rollout-manager-nestedcheckboxlist .rollout-manager-nestedcheckboxlist {
-    padding-left: 0;
-}
+.rollout-manager-nestedcheckboxlist-item {
+    & > coral-checkbox {
+        margin: 0 0 0 1rem !important;
+    }
 
-.rollout-manager-nestedcheckboxlist-item > coral-checkbox {
-    margin: 0 0 0 1rem !important;
-}
+    & > coral-accordion {
+        border: none;
+    }
 
-.rollout-manager-nestedcheckboxlist-item > coral-accordion {
-    border: none;
+    .inner-checkbox-option {
+        padding-left:1rem;
+        height: max-content;
+        min-width:9rem;
+    }
+
+    label {
+        margin: 0 .1rem 0 .5rem;
+    }
 }
 
 .rollout-manager-nestedcheckboxlist {
@@ -29,6 +37,10 @@
     margin-bottom: 0;
     list-style: none;
     padding: 0;
+
+    .rollout-manager-nestedcheckboxlist {
+        padding-left: 0;
+    }
 }
 
 .rollout-manager-select-all {
@@ -40,50 +52,12 @@
     padding-bottom: 0;
 }
 
-.rollout-manager-nestedcheckboxlist-item .inner-checkbox-option {
-    padding-left:1rem;
-    height: max-content;
-    min-width:9rem;
-}
-
-.rollout-manager-nestedcheckboxlist-item label {
-    margin: 0 .1rem 0 .5rem;
-}
-
 .rollout-manager-new-label {
     color: limegreen;
     font-weight: normal;
 }
 
-.rollout-manager-dialog .coral3-Dialog-wrapper {
-    width: 800px;
-    height: 566px;
-}
-
-.rollout-manager-dialog .coral3-Checkbox {
-    display: flex;
-}
-
-.rollout-manager-dialog .coral3-Checkbox-description {
-    display: flex;
-    flex-grow: 1;
-}
-
-.rollout-manager-dialog coral-checkbox-label {
-    display: flex;
-    flex-grow: 1;
-    justify-content: space-between;
-}
-
-.rollout-manager-dialog .coral3-Accordion-content {
-    padding-right: 0;
-}
-
-.rollout-manager-dialog .coral3-Accordion-header {
-    padding-right: 0;
-}
-
-.rollout-manager-nestedcheckboxlist-container {
+.coral3-Dialog-content .rollout-manager-nestedcheckboxlist-container {
     overflow-y: auto;
     height: 206px;
 }
@@ -93,14 +67,104 @@
     height: auto;
 }
 
-.rollout-manager-dialog .rollout-manager-last-rollout-date {
-    z-index: 2;
-}
-
 #rolloutButton:not([disabled]) {
     filter: brightness(1.3);
 }
 
-/*.coral3-Accordion-label {*/
-/*    font-weight: normal;*/
-/*}*/
+.rollout-manager-dialog {
+    .coral3-Dialog-wrapper,
+    ._coral-Dialog {
+        width: 800px;
+        height: 566px;
+    }
+
+    .coral3-Checkbox {
+        display: flex;
+    }
+
+    .coral3-Checkbox-description {
+        width: 100%;
+    }
+
+    coral-checkbox-label {
+        display: flex;
+        justify-content: space-between;
+        text-transform: none;
+    }
+
+    .coral3-Accordion-content {
+        padding-right: 0;
+    }
+
+    .coral3-Accordion-header {
+        padding-right: 0;
+    }
+
+    .rollout-manager-last-rollout-date {
+        z-index: 2;
+    }
+}
+
+/* Cloud styles */
+.rollout-manager-dialog {
+    ._coral-Accordion-item {
+        border: 0;
+    }
+
+    ._coral-Accordion-itemHeader {
+        padding: 8px 0 8px 34px;
+    }
+
+    ._coral-Accordion-itemContent {
+        padding-right: 0;
+    }
+
+    coral-accordion-item-label,
+    ._coral-Accordion-itemHeader ._coral-Checkbox-label,
+    ._coral-Checkbox-label,
+    ._coral-Checkbox-input {
+        width: 100%;
+    }
+
+    ._coral-Checkbox {
+        display: flex;
+        align-items: center;
+    }
+
+    ._coral-Accordion-itemHeader ._coral-Checkbox-label {
+        font-weight: 700;
+    }
+
+    ._coral-Dialog-footer {
+        display: flex;
+    }
+
+    ._coral-Checkbox-box {
+        margin: 0;
+    }
+
+    ._coral-Checkbox {
+        margin-right: 0;
+    }
+
+    ._coral-Dialog-content {
+        padding-right: 10px;
+    }
+
+    ._coral-Accordion-itemHeading {
+        position: relative;
+    }
+
+    ._coral-Accordion-itemIndicator {
+        top: 19px;
+    }
+
+    ._coral-Accordion-item .rollout-manager-coral-accordion-item-content {
+        visibility: hidden;
+        height: 0;
+    }
+
+    ._coral-Accordion-item.is-open > .rollout-manager-coral-accordion-item-content {
+        height: auto;
+    }
+}

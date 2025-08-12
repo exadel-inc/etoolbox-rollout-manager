@@ -19,23 +19,33 @@
 (function (window, document, $, ns, Granite) {
     'use strict';
 
+    const foundationUi = $(window).adaptTo('foundation-ui');
+
     const COLLECT_LIVE_COPIES_COMMAND = '/content/etoolbox/rollout-manager/servlet/collect-live-copies';
+    const ROLLOUT_DIALOG_ERROR_MSG = Granite.I18n.get('Rollout process cannot be performed for path:');
+    const AJAX_TIMEOUT = 30000; // 30 seconds timeout
 
     /**
      * Retrieves data related to eligible for synchronization live copies as a json array. The data is
      * used for building 'Targets' tree in the UI dialog
      * @param path - path of the page selected in Sites
-     * @returns {*}
+     * @returns {Promise}
      */
-    function collectLiveCopies(path) {
-        return $.ajax({
-            url: COLLECT_LIVE_COPIES_COMMAND,
-            type: 'POST',
-            data: {
-                _charset_: 'UTF-8',
-                path
-            }
-        });
+    async function collectLiveCopies(path) {
+        try {
+            const result = await $.ajax({
+                url: COLLECT_LIVE_COPIES_COMMAND,
+                type: 'POST',
+                data: { _charset_: 'UTF-8', path },
+                timeout: AJAX_TIMEOUT
+            });
+
+            if (result) return result;
+        } catch (e) {
+            // Handle the error below
+        }
+
+        foundationUi.alert('Error', `${ROLLOUT_DIALOG_ERROR_MSG} ${path}`, 'error');
     }
 
     const BLUEPRINT_CHECK_COMMAND = '/content/etoolbox/rollout-manager/servlet/blueprint-check';
@@ -59,6 +69,7 @@
         }).done((data) => {
             result = data && data.isAvailableForRollout;
         });
+        if (!result) console.error('Failed to check if page is available for rollout. Path: ', path, e);
         return result;
     }
 
@@ -70,71 +81,76 @@
      *
      * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
      * @param rolloutRequest - {@link #buildRolloutRequest}
-     * @returns {*}
+     * @returns {Promise<void>}
      */
-    function doItemsRollout(data, rolloutRequest) {
+    async function doItemsRollout(data, rolloutRequest) {
         const logger = ns.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
-        return $.Deferred()
-            .resolve()
-            .then(rolloutRequest(data, logger))
-            .always(() => {
-                logger.finished();
-            });
+        try {
+            await rolloutRequest(data, logger)();
+        } finally {
+            logger.finished();
+        }
     }
 
-    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
-    const PROCESSING_ERROR_FAILED_PATHS_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const SUCCESS_MSG = Granite.I18n.get('Completed');
-    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
+    const PROCESSING_ERROR_400_MSG = Granite.I18n.get('Rollout failed for the following paths:');
+    const PROCESSING_SERVER_MSG = Granite.I18n.get('This operation will take some time to complete. Check the target pages later to confirm the result.');
 
-    function getProcessingErrorMsg(xhr) {
+    function getRolloutStatusMessage(xhr) {
         if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
-            return `${PROCESSING_ERROR_FAILED_PATHS_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
+            return `${PROCESSING_ERROR_400_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
+        }
+        if ([503, 504, 522, 524].includes(xhr.status)) {
+            return PROCESSING_SERVER_MSG;
         }
         return PROCESSING_ERROR_MSG;
     }
+
+    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
+    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
+    const SUCCESS_MSG = Granite.I18n.get('Completed');
 
     /**
      * Builds a request to the servlet for rolling out items based on data collected in the Rollout dialog.
      * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
      * @param logger - the logger dialog displaying progress of the rollout process
-     * @returns {function(): *}
+     * @returns {function(): Promise<void>}
      */
     function buildRolloutRequest(data, logger) {
-        return function () {
-            return $.ajax({
-                url: ROLLOUT_COMMAND,
-                type: 'POST',
-                data: {
-                    _charset_: 'UTF-8',
-                    selectionJsonArray: JSON.stringify(data.selectionJsonArray),
-                    isDeepRollout: data.isDeepRollout,
-                    shouldActivate: data.shouldActivate
-                }
-            }).fail((xhr) => {
-                logger.log(getProcessingErrorMsg(xhr), false);
-            }).done(() => {
+        return async function () {
+            try {
+                await $.ajax({
+                    url: ROLLOUT_COMMAND,
+                    type: 'POST',
+                    data: {
+                        _charset_: 'UTF-8',
+                        selectionJsonArray: JSON.stringify(data.selectionJsonArray),
+                        isDeepRollout: data.isDeepRollout,
+                        shouldActivate: data.shouldActivate
+                    },
+                    timeout: AJAX_TIMEOUT * 4 // Rollout operations may take longer
+                });
                 data.shouldActivate ? logger.log(SUCCESS_REPLICATION_MSG, false) : logger.log(SUCCESS_MSG, false);
-            });
+            } catch (xhr) {
+                logger.log(getRolloutStatusMessage(xhr), false);
+            }
         };
     }
 
     /** Action handler for the 'Rollout' button */
-    function onShowRolloutDialog(name, el, config, collection, selections) {
+    async function onShowRolloutDialog(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
-        const foundationUi = $(window).adaptTo('foundation-ui');
-        // Show a wait mask before the live copies data is fully collected
         foundationUi.wait();
-        collectLiveCopies(selectedPath)
-            .then((liveCopiesJsonArray) => {
-                // Clears the wait mask once the dialog is loaded
-                foundationUi.clearWait();
-                ns.showRolloutDialog(liveCopiesJsonArray, selectedPath)
-                    .then((data) => {
-                        doItemsRollout(data, buildRolloutRequest);
-                    });
-            });
+
+        const liveCopiesJsonArray = await collectLiveCopies(selectedPath);
+        foundationUi.clearWait();
+
+        try {
+            const data = await ns.showRolloutDialog(liveCopiesJsonArray, selectedPath);
+            await doItemsRollout(data, buildRolloutRequest);
+        } catch {
+            // The dialog is closed by user
+        }
     }
 
     /** Active condition for the 'Rollout' button */
