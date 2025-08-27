@@ -19,6 +19,8 @@ jobs:
             -   name: Use Node v${{ env.node-version }}
                 uses: actions/setup-node@v4
                 with:
+                    cache: 'npm'
+                    cache-dependency-path: 'ui.apps/package-lock.json'
                     node-version: ${{ env.node-version }}
                     cache: 'npm'
             -   name: Install NPM Dependencies
