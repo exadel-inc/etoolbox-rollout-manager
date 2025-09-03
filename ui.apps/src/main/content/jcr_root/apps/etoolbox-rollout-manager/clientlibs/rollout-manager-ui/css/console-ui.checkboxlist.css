@@ -148,7 +148,13 @@
     }
 
     ._coral-Dialog-content {
-        padding-right: 10px;
+        display: flex;
+        flex-flow: column;
+
+        .rollout-manager-nestedcheckboxlist-container {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
     }
 
     ._coral-Accordion-itemHeading {

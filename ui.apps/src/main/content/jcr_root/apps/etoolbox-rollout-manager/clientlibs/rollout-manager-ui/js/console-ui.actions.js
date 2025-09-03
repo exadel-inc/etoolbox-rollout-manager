@@ -171,4 +171,4 @@
             name: 'etoolbox.rollout-manager.rollout-active-condition',
             handler: onRolloutActiveCondition
         });
-})(window, document, Granite.$, window.erm = (window.erm || {}), Granite);
+})(window, document, Granite.$, window.ERM = (window.ERM || {}), Granite);
