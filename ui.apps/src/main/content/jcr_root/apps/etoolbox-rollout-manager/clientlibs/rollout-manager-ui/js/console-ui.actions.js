@@ -68,8 +68,9 @@
             }
         }).done((data) => {
             result = data && data.isAvailableForRollout;
+        }).fail(() => {
+            console.error('Failed to check if page is available for rollout. Path: ', path);
         });
-        if (!result) console.error('Failed to check if page is available for rollout. Path: ', path, e);
         return result;
     }
 
