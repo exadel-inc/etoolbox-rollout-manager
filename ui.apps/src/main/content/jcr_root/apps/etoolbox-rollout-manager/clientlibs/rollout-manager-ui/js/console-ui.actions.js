@@ -68,8 +68,9 @@
             }
         }).done((data) => {
             result = data && data.isAvailableForRollout;
+        }).fail(() => {
+            console.error('Failed to check if page is available for rollout. Path: ', path);
         });
-        if (!result) console.error('Failed to check if page is available for rollout. Path: ', path, e);
         return result;
     }
 
@@ -171,4 +172,4 @@
             name: 'etoolbox.rollout-manager.rollout-active-condition',
             handler: onRolloutActiveCondition
         });
-})(window, document, Granite.$, window.erm = (window.erm || {}), Granite);
+})(window, document, Granite.$, window.ERM = (window.ERM || {}), Granite);

@@ -298,4 +298,4 @@
         return deferred.promise();
     }
     ns.showRolloutDialog = showRolloutDialog;
-})(document, Granite.$, Granite, (window.erm = (window.erm || {})));
+})(document, Granite.$, Granite, (window.ERM = (window.ERM || {})));

@@ -79,4 +79,4 @@
         if (!date) return '';
         return new Date(date).toLocaleString(undefined, TIME_FORMATTER_OPTIONS);
     };
-})(Granite.$, window.erm = (window.erm || {}));
+})(Granite.$, window.ERM = (window.ERM || {}));
