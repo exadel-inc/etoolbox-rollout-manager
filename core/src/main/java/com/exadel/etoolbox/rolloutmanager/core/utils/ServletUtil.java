@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.exadel.etoolbox.rolloutmanager.core.servlets.util;
+package com.exadel.etoolbox.rolloutmanager.core.utils;
 
 import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 /**
- * Contains common methods for operating servlet request and response.
+ * Contains common methods for operating servlet request and response
  */
 public class ServletUtil {
     private static final Logger LOG = LoggerFactory.getLogger(ServletUtil.class);
@@ -60,18 +60,47 @@ public class ServletUtil {
     }
 
     /**
-     * Writes a json to response with UTF-8 encoding
+     * Gets int parameter value from {@link SlingHttpServletRequest}
+     *
+     * @param request - {@link SlingHttpServletRequest}
+     * @param param   - parameter name
+     * @return integer request parameter value
+     */
+    public static int getRequestParamInt(SlingHttpServletRequest request, String param) {
+        return Optional.ofNullable(request.getRequestParameter(param))
+                .map(RequestParameter::getString)
+                .filter(StringUtils::isNumeric)
+                .map(Integer::parseInt)
+                .orElse(0);
+    }
+
+    /**
+     * Writes a JSON to response with UTF-8 encoding
      *
      * @param response - {@link SlingHttpServletResponse}
-     * @param json - json to write
+     * @param json - JSON string to write
      */
     public static void writeJsonResponse(SlingHttpServletResponse response, String json) {
         response.setCharacterEncoding(CharEncoding.UTF_8);
         response.setContentType(ContentType.APPLICATION_JSON.getMimeType());
         try {
             response.getWriter().write(json);
+            response.getWriter().flush();
         } catch (IOException e) {
-            LOG.error("Failed to write json to response", e);
+            LOG.error("Failed to output JSON", e);
         }
+    }
+
+    /**
+     * Writes an error message to response as JSON
+     *
+     * @param response - {@link SlingHttpServletResponse}
+     * @param status - HTTP status code
+     * @param message - error message
+     */
+    public static void writeError(SlingHttpServletResponse response, int status, String message) {
+        response.setStatus(status);
+        response.addHeader("x-aem-error-pass", Boolean.TRUE.toString());
+        writeJsonResponse(response, "{\"error\":\"" + message + "\"}");
     }
 }
