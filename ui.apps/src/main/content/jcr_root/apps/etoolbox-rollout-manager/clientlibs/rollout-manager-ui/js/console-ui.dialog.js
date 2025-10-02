@@ -251,13 +251,11 @@
     }
 
     function initEventHandlers(dialog, deferred, onCheckboxChange, onSelectAllClick, onResolve) {
-        dialog.on('change', 'coral-checkbox', onCheckboxChange);
-        dialog.on('click', '.rollout-manager-select-all', onSelectAllClick);
-        dialog.on('click', '[data-dialog-action]', onResolve);
+        dialog.on('change.rollout', 'coral-checkbox', onCheckboxChange);
+        dialog.on('click.rollout', '.rollout-manager-select-all', onSelectAllClick);
+        dialog.on('click.rollout', '[data-dialog-action]', onResolve);
         dialog.on('coral-overlay:close', function () {
-            dialog.off('change', 'coral-checkbox', onCheckboxChange);
-            dialog.off('click', '.rollout-manager-select-all', onSelectAllClick);
-            dialog.off('click', '[data-dialog-action]', onResolve);
+            dialog.off('.rollout');
             deferred.reject();
         });
     }
