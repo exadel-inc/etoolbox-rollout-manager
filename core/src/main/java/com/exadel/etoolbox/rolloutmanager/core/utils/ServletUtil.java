@@ -23,6 +23,7 @@ import org.apache.sling.api.request.RequestParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.Session;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -73,6 +74,22 @@ public class ServletUtil {
                 .map(Integer::parseInt)
                 .orElse(0);
     }
+
+    /**
+     * Gets the ID of the current user from {@link SlingHttpServletRequest}
+     *
+     * @param request - {@link SlingHttpServletRequest}
+     * @return string value
+     */
+    public static String getUserId(SlingHttpServletRequest request) {
+        Session session = request.getResourceResolver().adaptTo(Session.class);
+        if (session == null) {
+            LOG.error("Could not retrieve the current user session");
+            return StringUtils.EMPTY;
+        }
+        return session.getUserID();
+    }
+
 
     /**
      * Writes a JSON to response with UTF-8 encoding

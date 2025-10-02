@@ -14,26 +14,20 @@
 
 package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
-import com.day.cq.wcm.api.Page;
-import com.day.cq.wcm.api.PageManager;
-import com.day.cq.wcm.api.WCMException;
-import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
-import com.exadel.etoolbox.rolloutmanager.core.services.PageReplicationService;
-import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.collections.CollectionUtils;
+import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
+import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
+import org.apache.sling.event.jobs.Job;
+import org.apache.sling.event.jobs.JobManager;
 import org.apache.sling.servlets.annotations.SlingServletResourceTypes;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -43,15 +37,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.json.Json;
 import javax.servlet.Servlet;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Performs rollout based on input json array. The 'isDeepRollout' request parameter defines if child pages should be
@@ -65,158 +53,51 @@ import java.util.stream.Stream;
         resourceTypes = "/apps/etoolbox-rollout-manager/rollout",
         methods = HttpConstants.METHOD_POST
 )
-@ServiceDescription("The servlet for collecting live copies")
+@ServiceDescription("Marshals on-demand rollout tasks")
 public class RolloutServlet extends SlingAllMethodsServlet {
     private static final Logger LOG = LoggerFactory.getLogger(RolloutServlet.class);
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String PARAM_IS_DEEP = "isDeepRollout";
+    private static final String PARAM_SELECTION_JSON_ARRAY = "selectionJsonArray";
+    private static final String PARAM_SHOULD_ACTIVATE = "shouldActivate";
 
-    private static final String SELECTION_JSON_ARRAY_PARAM = "selectionJsonArray";
-    private static final String IS_DEEP_ROLLOUT_PARAM = "isDeepRollout";
-    private static final String SHOULD_ACTIVATE_PARAM = "shouldActivate";
-    private static final String FAILED_TARGETS_RESPONSE_PARAM = "failedTargets";
-
-    @Reference
-    private transient RolloutManager rolloutManager;
+    static final String ERROR_MISSING_USER = "Cannot retrieve the current user";
+    private static final String ERROR_MISSING_PLAN = "Rollout plan is missing or invalid";
 
     @Reference
-    private transient PageReplicationService pageReplicationService;
+    private transient JobManager jobManager;
 
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
-        StopWatch sw = StopWatch.createStarted();
-        LOG.debug("Starting rollout of selected items");
-
-        String selectionJsonArray = ServletUtil.getRequestParamString(request, SELECTION_JSON_ARRAY_PARAM);
-        if (StringUtils.isBlank(selectionJsonArray)) {
-            response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("Selection json array is blank, rollout failed");
+        String rolloutPlanSource = ServletUtil.getRequestParamString(request, PARAM_SELECTION_JSON_ARRAY);
+        if (StringUtils.isBlank(rolloutPlanSource)) {
+            ServletUtil.writeError(response, HttpStatus.SC_BAD_REQUEST, ERROR_MISSING_PLAN);
             return;
         }
-        LOG.debug("Selection data: {}", selectionJsonArray);
+        LOG.debug("Received rollout plan: {}", rolloutPlanSource);
 
-        RolloutItem[] rolloutItems = jsonArrayToRolloutItems(selectionJsonArray);
+        RolloutItem[] rolloutItems = RolloutPlanUtil.getItems(rolloutPlanSource);
         if (ArrayUtils.isEmpty(rolloutItems)) {
-            response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("Rollout items array is empty, rollout failed. Selected live copies json: {}", selectionJsonArray);
+            ServletUtil.writeError(response, HttpStatus.SC_BAD_REQUEST, ERROR_MISSING_PLAN);
+            LOG.warn("Could not extract rollout plan items. Provided content was as follows: {}", rolloutPlanSource);
             return;
         }
 
-        PageManager pageManager = request.getResourceResolver().adaptTo(PageManager.class);
-        if (pageManager == null) {
-            response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            LOG.warn("Page Manager is null, rollout failed. Selected live copies json: {}", selectionJsonArray);
+        String userId = ServletUtil.getUserId(request);
+        if (StringUtils.isEmpty(userId)) {
+            ServletUtil.writeError(response, HttpStatus.SC_BAD_REQUEST, ERROR_MISSING_USER);
             return;
         }
 
-        boolean isDeepRollout = ServletUtil.getRequestParamBoolean(request, IS_DEEP_ROLLOUT_PARAM);
-        LOG.debug("Is deep rollout (include subpages): {}", isDeepRollout);
+        Map<String, Object> jobProperties = new HashMap<>();
+        jobProperties.put(RolloutExecutor.PROPERTY_ACTIVATE, ServletUtil.getRequestParamBoolean(request, PARAM_SHOULD_ACTIVATE));
+        jobProperties.put(RolloutExecutor.PROPERTY_DEEP, ServletUtil.getRequestParamBoolean(request, PARAM_IS_DEEP));
+        jobProperties.put(RolloutExecutor.PROPERTY_PLAN, rolloutPlanSource);
+        jobProperties.put(RolloutExecutor.PROPERTY_USER, userId);
+        Job job = jobManager.addJob(RolloutExecutor.TOPIC, jobProperties);
 
-        List<RolloutStatus> rolloutStatuses = doItemsRollout(rolloutItems, pageManager, isDeepRollout);
-
-        boolean shouldActivate = ServletUtil.getRequestParamBoolean(request, SHOULD_ACTIVATE_PARAM);
-        LOG.debug("Should activate pages: {}", shouldActivate);
-        List<RolloutStatus> activationStatuses = new ArrayList<>();
-        if (shouldActivate) {
-            activationStatuses = pageReplicationService.replicateItems(request.getResourceResolver(), rolloutItems, request.getResourceResolver().adaptTo(PageManager.class), isDeepRollout);
-        }
-
-        writeStatusesIfFailed(Stream.concat(rolloutStatuses.stream(), activationStatuses.stream())
-                .collect(Collectors.toList()), response);
-        LOG.debug("Rollout of selected items is completed in {} ms", sw.getTime(TimeUnit.MILLISECONDS));
+        response.setStatus(HttpStatus.SC_CREATED);
+        ServletUtil.writeJsonResponse(response, Json.createObjectBuilder().add("task", job.getId()).build().toString());
     }
 
-    private void writeStatusesIfFailed(List<RolloutStatus> rolloutStatuses, SlingHttpServletResponse response) {
-        List<String> failedTargets = rolloutStatuses.stream()
-                .filter(status -> !status.isSuccess())
-                .map(RolloutStatus::getTarget)
-                .collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(failedTargets)) {
-            LOG.debug("Rollout failed for the following targets: {}", failedTargets);
-            response.setStatus(HttpStatus.SC_BAD_REQUEST);
-            String jsonResponse = Json.createObjectBuilder()
-                    .add(FAILED_TARGETS_RESPONSE_PARAM, Json.createArrayBuilder(failedTargets))
-                    .build()
-                    .toString();
-            ServletUtil.writeJsonResponse(response, jsonResponse);
-        }
-    }
-
-    private List<RolloutStatus> doItemsRollout(RolloutItem[] items, PageManager pageManager, boolean isDeep) {
-        return Arrays.stream(items)
-                .collect(Collectors.groupingBy(RolloutItem::getDepth))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(Map.Entry::getValue)
-                .flatMap(sortedByDepthItems -> rolloutSortedByDepthItems(sortedByDepthItems, pageManager, isDeep))
-                .collect(Collectors.toList());
-    }
-
-    private Stream<RolloutStatus> rolloutSortedByDepthItems(List<RolloutItem> items, PageManager pageManager, boolean isDeep) {
-        return items.stream()
-                .filter(item -> !skipAutoTriggered(item))
-                .filter(item -> StringUtils.isNotBlank(item.getTarget()))
-                .map(item -> rollout(item, pageManager, isDeep));
-    }
-
-    private boolean skipAutoTriggered(RolloutItem item) {
-        boolean skipAutoTriggered = item.getDepth() != 0 && item.isAutoRolloutTrigger();
-        if (skipAutoTriggered) {
-            LOG.debug("Item rollout skipped due to auto trigger, master: {}, target: {}", item.getMaster(), item.getTarget());
-        }
-        return skipAutoTriggered;
-    }
-
-    private RolloutStatus rollout(RolloutItem targetItem, PageManager pageManager, boolean isDeep) {
-        String targetPath = targetItem.getTarget();
-        RolloutStatus status = new RolloutStatus(targetPath);
-
-        String masterPath = targetItem.getMaster();
-        Optional<Page> masterPage = Optional.ofNullable(pageManager.getPage(masterPath));
-        if (!masterPage.isPresent()) {
-            status.setSuccess(false);
-            LOG.warn("Rollout failed - master page is null, master page path: {}", masterPath);
-            return status;
-        }
-
-        RolloutManager.RolloutParams params = toRolloutParams(masterPage.get(), targetPath, isDeep);
-        try {
-            LOG.debug("Item rollout started, master: {}, target: {}", masterPath, targetPath);
-            rolloutManager.rollout(params);
-            status.setSuccess(true);
-            LOG.debug("Item rollout completed, master: {}, target: {}", masterPath, targetPath);
-        } catch (WCMException e) {
-            status.setSuccess(false);
-            String message = String.format("Item rollout failed, master: %s, target: %s", masterPath, targetPath);
-            LOG.error(message, e);
-            discardUnsavedChanges(masterPage.get());
-        }
-        return status;
-    }
-
-    private static void discardUnsavedChanges(Page masterPage) {
-        Optional.of(masterPage)
-                .map(page -> page.adaptTo(Resource.class))
-                .map(Resource::getResourceResolver)
-                .ifPresent(ResourceResolver::revert);
-    }
-
-    private RolloutManager.RolloutParams toRolloutParams(Page masterPage, String targetPath, boolean isDeep) {
-        RolloutManager.RolloutParams params = new RolloutManager.RolloutParams();
-        params.master = masterPage;
-        params.targets = new String[]{targetPath};
-        params.isDeep = isDeep;
-        params.trigger = RolloutManager.Trigger.ROLLOUT;
-        return params;
-    }
-
-    private RolloutItem[] jsonArrayToRolloutItems(String jsonArray) {
-        try {
-            return OBJECT_MAPPER.readValue(jsonArray, RolloutItem[].class);
-        } catch (IOException e) {
-            LOG.error("Failed to map json to models", e);
-        }
-        return new RolloutItem[0];
-    }
 }

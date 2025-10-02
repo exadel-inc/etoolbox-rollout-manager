@@ -40,7 +40,6 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.servlet.Servlet;
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -93,13 +92,12 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
     }
 
     private void outputAllTasks(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-        Principal principal = request.getUserPrincipal();
-        if (principal == null) {
+        String userId = ServletUtil.getUserId(request);
+        if (StringUtils.isEmpty(userId)) {
             ServletUtil.writeError(response, HttpStatus.SC_BAD_REQUEST, RolloutServlet.ERROR_MISSING_USER);
             LOG.warn(RolloutServlet.ERROR_MISSING_USER);
             return;
         }
-        String userId = principal.getName();
         List<String> jobIds = jobManager.findJobs(JobManager.QueryType.ACTIVE, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER)
                 .stream()
                 .filter(job -> userId.equals(job.getProperty(RolloutExecutor.PROPERTY_USER, String.class)))
