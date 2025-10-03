@@ -20,6 +20,9 @@ import org.apache.sling.event.jobs.consumer.JobExecutionContext;
 import org.apache.sling.event.jobs.consumer.JobExecutionResult;
 import org.apache.sling.event.jobs.consumer.JobExecutor;
 import org.apache.sling.jcr.api.SlingRepository;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -31,7 +34,10 @@ import javax.jcr.SimpleCredentials;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,12 +51,14 @@ import java.util.stream.Stream;
  */
 @Component(
         service = JobExecutor.class,
+        immediate = true,
         property = JobExecutor.PROPERTY_TOPICS + "=" + RolloutExecutor.TOPIC)
 public class RolloutExecutor implements JobExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(RolloutExecutor.class);
 
     public static final String TOPIC = "com/exadel/etoolbox/rolloutmanager/rollout";
+    private static final String QUEUE_CONFIG_PID = "org.apache.sling.event.jobs.QueueConfiguration";
 
     public static final String PROPERTY_ACTIVATE = "activate";
     public static final String PROPERTY_DEEP = "deep";
@@ -67,6 +75,9 @@ public class RolloutExecutor implements JobExecutor {
     private static final String COMMA_SPACE = ", ";
 
     @Reference
+    private transient ConfigurationAdmin configurationAdmin;
+
+    @Reference
     private transient PageReplicationService pageReplicationService;
 
     @Reference
@@ -77,6 +88,25 @@ public class RolloutExecutor implements JobExecutor {
 
     @Reference
     private transient SlingRepository repository;
+
+    @Activate
+    private void activate() {
+        try {
+            Configuration queueConfig = configurationAdmin.getFactoryConfiguration(
+                    QUEUE_CONFIG_PID,
+                    getClass().getName(),
+                    null);
+            Map<String, Object> queueProperties = new HashMap<>();
+            queueProperties.put("queue.keepJobs", true);
+            queueProperties.put("queue.name", getClass().getName());
+            queueProperties.put("queue.retries", 0);
+            queueProperties.put("queue.topics", new String[] { TOPIC });
+            queueProperties.put("queue.type", "ORDERED");
+            queueConfig.update(new Hashtable<>(queueProperties));
+        } catch (IOException e) {
+            LOG.error("Could initialize a queue configuration", e);
+        }
+    }
 
     /* ---------------
        Main processing
