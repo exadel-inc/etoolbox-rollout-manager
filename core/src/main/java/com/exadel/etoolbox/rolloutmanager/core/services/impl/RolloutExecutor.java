@@ -1,12 +1,15 @@
 package com.exadel.etoolbox.rolloutmanager.core.services.impl;
 
+import com.day.cq.replication.ReplicationActionType;
+import com.day.cq.replication.ReplicationException;
+import com.day.cq.replication.Replicator;
 import com.day.cq.wcm.api.Page;
 import com.day.cq.wcm.api.PageManager;
 import com.day.cq.wcm.api.WCMException;
+import com.day.cq.wcm.msm.api.LiveRelationshipManager;
 import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
-import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
-import com.exadel.etoolbox.rolloutmanager.core.services.PageReplicationService;
+import com.exadel.etoolbox.rolloutmanager.core.servlets.RolloutServlet;
 import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -20,6 +23,9 @@ import org.apache.sling.event.jobs.consumer.JobExecutionContext;
 import org.apache.sling.event.jobs.consumer.JobExecutionResult;
 import org.apache.sling.event.jobs.consumer.JobExecutor;
 import org.apache.sling.jcr.api.SlingRepository;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -31,43 +37,53 @@ import javax.jcr.SimpleCredentials;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Executes a rollout job asynchronously. The job is created in
- * {@link com.exadel.etoolbox.rolloutmanager.core.servlets.RolloutServlet}
+ * {@link RolloutServlet}
  */
 @Component(
         service = JobExecutor.class,
+        immediate = true,
         property = JobExecutor.PROPERTY_TOPICS + "=" + RolloutExecutor.TOPIC)
 public class RolloutExecutor implements JobExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(RolloutExecutor.class);
 
     public static final String TOPIC = "com/exadel/etoolbox/rolloutmanager/rollout";
+    private static final String QUEUE_CONFIG_PID = "org.apache.sling.event.jobs.QueueConfiguration";
 
     public static final String PROPERTY_ACTIVATE = "activate";
     public static final String PROPERTY_DEEP = "deep";
     public static final String PROPERTY_PLAN = "plan";
     public static final String PROPERTY_USER = "user";
-
     private static final String PROPERTY_RESULT = "result";
     private static final String PROPERTY_TYPE = "type";
+
+    private static final String EVENT_ROLLOUT = "rollout";
+    private static final String EVENT_ACTIVATION = "activation";
 
     private static final String ERROR_MISSING_USER = "User ID is missing";
     private static final String ERROR_MISSING_PLAN = "Rollout plan is missing";
     private static final String ERROR_NO_RESOLVER = "Could not retrieve a resource resolver";
 
     private static final String COMMA_SPACE = ", ";
+    @Reference
+    private transient ConfigurationAdmin configurationAdmin;
 
     @Reference
-    private transient PageReplicationService pageReplicationService;
+    private transient LiveRelationshipManager liveRelationshipManager;
 
     @Reference
     private transient RolloutManager rolloutManager;
@@ -76,7 +92,29 @@ public class RolloutExecutor implements JobExecutor {
     private transient ResourceResolverFactory resourceResolverFactory;
 
     @Reference
+    private transient Replicator replicator;
+
+    @Reference
     private transient SlingRepository repository;
+
+    @Activate
+    private void activate() {
+        try {
+            Configuration queueConfig = configurationAdmin.getFactoryConfiguration(
+                    QUEUE_CONFIG_PID,
+                    getClass().getName(),
+                    null);
+            Map<String, Object> queueProperties = new HashMap<>();
+            queueProperties.put("queue.keepJobs", true);
+            queueProperties.put("queue.name", getClass().getName());
+            queueProperties.put("queue.retries", 0);
+            queueProperties.put("queue.topics", new String[] { TOPIC });
+            queueProperties.put("queue.type", "ORDERED");
+            queueConfig.update(new Hashtable<>(queueProperties));
+        } catch (IOException e) {
+            LOG.error("Could initialize a queue configuration", e);
+        }
+    }
 
     /* ---------------
        Main processing
@@ -113,33 +151,176 @@ public class RolloutExecutor implements JobExecutor {
     private JobExecutionResult process(Job job, JobExecutionContext context, ResourceResolver resolver, String plan) {
         boolean isDeep = job.getProperty(PROPERTY_DEEP, Boolean.class);
         boolean shouldActivate = job.getProperty(PROPERTY_ACTIVATE, Boolean.class);
-        PageManager pageManager = resolver.adaptTo(PageManager.class);
         RolloutItem[] rolloutItems = RolloutPlanUtil.getItems(plan);
-        // Rollout
-        List<RolloutStatus> rolloutStatuses = organizeAndRolloutAll(rolloutItems, pageManager, isDeep, context);
-        List<RolloutStatus> failedRollouts = rolloutStatuses.stream()
-                .filter(status -> !status.isSuccess())
-                .collect(Collectors.toList());
-        if (!failedRollouts.isEmpty()) {
-            LOG.warn(
-                    "Rollout failed for {} item(-s): {}",
-                    failedRollouts.size(),
-                    failedRollouts.stream().map(RolloutStatus::getTarget).collect(Collectors.joining(COMMA_SPACE)));
+
+        RolloutProcessing processing = new RolloutProcessing(context, resolver, isDeep, shouldActivate);
+        if (processing.getPageManager() == null) {
+            String message = "Could not retrieve a page manager";
+            LOG.error(message);
+            return context.result().message(message).failed();
         }
-        // Activation
-        if (shouldActivate) {
-            List<RolloutStatus> activationStatuses = pageReplicationService.replicateItems(resolver, rolloutItems, pageManager, isDeep);
-            List<RolloutStatus> failedActivations = activationStatuses.stream()
-                    .filter(status -> !status.isSuccess())
+        if (processing.getSession() == null) {
+            String message = "Could not retrieve a JCR session";
+            LOG.error(message);
+            return context.result().message(message).failed();
+        }
+        processing.processAll(rolloutItems);
+
+        StringBuilder result = new StringBuilder("Completed");
+        if (!processing.getFailedRollouts().isEmpty()) {
+            result.append(". Could not perform rollout to the following path(-s): ")
+                    .append(String.join(COMMA_SPACE, processing.getFailedRollouts()));
+        }
+        if (!processing.getFailedActivations().isEmpty()) {
+            result.append(". Could not activate the following path(-s): ")
+                    .append(String.join(COMMA_SPACE, processing.getFailedActivations()));
+        }
+        return context.result().message(result.toString()).succeeded();
+    }
+
+    /* ----------------------------
+       Rollout and activation logic
+       ---------------------------- */
+
+    private class RolloutProcessing {
+        private final JobExecutionContext context;
+        private final PageManager pageManager;
+        private final ResourceResolver resolver;
+        private final Session session;
+        private final boolean isDeep;
+        private final boolean shouldActivate;
+
+        private final List<String> failedActivations = new ArrayList<>();
+        private final List<String> failedRollouts = new ArrayList<>();
+
+        RolloutProcessing(JobExecutionContext context, ResourceResolver resolver, boolean isDeep, boolean shouldActivate) {
+            this.context = context;
+            this.resolver = resolver;
+            this.pageManager = resolver.adaptTo(PageManager.class);
+            this.session = resolver.adaptTo(Session.class);
+            this.isDeep = isDeep;
+            this.shouldActivate = shouldActivate;
+        }
+
+        public List<String> getFailedActivations() {
+            return failedActivations;
+        }
+
+        public List<String> getFailedRollouts() {
+            return failedRollouts;
+        }
+
+        public PageManager getPageManager() {
+            return pageManager;
+        }
+
+        public Session getSession() {
+            return session;
+        }
+
+        void processAll(RolloutItem[] items) {
+            List<List<RolloutItem>> groupsSortedByDepth = Arrays.stream(items)
+                    .collect(Collectors.groupingBy(RolloutItem::getDepth))
+                    .entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
-            if (!failedActivations.isEmpty()) {
-                LOG.warn(
-                        "Activation failed for {} item(-s): {}",
-                        failedActivations.size(),
-                        failedActivations.stream().map(RolloutStatus::getTarget).collect(Collectors.joining(COMMA_SPACE)));
+            logTargets(
+                    context,
+                    groupsSortedByDepth.stream()
+                            .flatMap(List::stream)
+                            .map(RolloutItem::getTarget)
+                            .filter(StringUtils::isNotBlank)
+                            .collect(Collectors.toList()));
+            groupsSortedByDepth.forEach(this::processGroup);
+        }
+
+        private void processGroup(List<RolloutItem> items) {
+            for (RolloutItem item : items) {
+                if (StringUtils.isBlank(item.getTarget())) {
+                    LOG.debug("Rollout skipped because the target path is blank for master {}", item.getMaster());
+                    continue;
+                }
+                boolean successfullyRolledOut = rolloutOne(item);
+                if (successfullyRolledOut && shouldActivate) {
+                    if (isBlueprint(item, liveRelationshipManager, resolver)) {
+                        LOG.debug("Activation skipped because the target is a blueprint page: {}", item.getTarget());
+                    } else {
+                        activateOne(item);
+                    }
+                }
             }
         }
-        return context.result().succeeded();
+
+        private boolean rolloutOne(RolloutItem item) {
+            String targetPath = item.getTarget();
+
+            String masterPath = item.getMaster();
+            Page masterPage = pageManager.getPage(masterPath);
+            if (masterPage == null) {
+                LOG.warn("Rollout failed: master page is missing at {}", masterPath);
+                logEvent(context, EVENT_ROLLOUT, targetPath, "Source page is missing");
+                return false;
+            }
+
+            // We don't do forced rollout for the paths that auto-trigger a rollout by themselves,
+            // but we report such paths as "rollout done" to keep the user calm
+            if (isAutoTrigger(item)) {
+                LOG.debug(
+                        "Rollout from {} to {} skipped because an automatic rollout is triggered at this path",
+                        item.getMaster(),
+                        item.getTarget());
+                logEvent(context, EVENT_ROLLOUT, targetPath);
+                return true;
+            }
+
+            RolloutManager.RolloutParams params = createRolloutParams(masterPage, targetPath, isDeep);
+            try {
+                LOG.debug("Rollout from {} to {} started", masterPath, targetPath);
+                rolloutManager.rollout(params);
+                LOG.debug("Rollout from {} to {} finished", masterPath, targetPath);
+                logEvent(context, EVENT_ROLLOUT, targetPath);
+                return true;
+            } catch (WCMException e) {
+                LOG.error("Rollout from {} to {} failed", masterPath, targetPath, e);
+                logEvent(context, EVENT_ROLLOUT, targetPath, e.getMessage());
+                failedRollouts.add(targetPath);
+                discardUnsavedChanges(masterPage);
+            }
+            return false;
+        }
+
+        private void activateOne(RolloutItem item) {
+            String targetPath = item.getTarget();
+            Page page = pageManager.getPage(targetPath);
+            if (page == null) {
+                LOG.warn("Activation skipped: page is missing at {}", targetPath);
+                logEvent(context, EVENT_ACTIVATION, targetPath, "Page is missing");
+                failedActivations.add(targetPath);
+                return;
+            }
+            activateOne(page);
+        }
+
+        private void activateOne(Page page) {
+            try {
+                LOG.debug("Activating {}", page.getPath());
+                replicator.replicate(session, ReplicationActionType.ACTIVATE, page.getPath());
+                logEvent(context, EVENT_ACTIVATION, page.getPath());
+            } catch (ReplicationException e) {
+                LOG.error("Activation of {} failed", page.getPath(), e);
+                logEvent(context, EVENT_ACTIVATION, page.getPath(), e.getMessage());
+                failedActivations.add(page.getPath());
+                return;
+            }
+            if (isDeep) {
+                for (Iterator<Page> children = page.listChildren(); children.hasNext(); ) {
+                    Page childPage = children.next();
+                    activateOne(childPage);
+                }
+            }
+        }
     }
 
     /* ----------------
@@ -156,103 +337,9 @@ public class RolloutExecutor implements JobExecutor {
         return resourceResolverFactory.getResourceResolver(authMap);
     }
 
-    /* -------------
-       Rollout logic
-       ------------- */
-
-    private List<RolloutStatus> organizeAndRolloutAll(
-            RolloutItem[] items,
-            PageManager pageManager,
-            boolean isDeep,
-            JobExecutionContext context) {
-
-        List<List<RolloutItem>> groupsSortedByDepth = Arrays.stream(items)
-                .collect(Collectors.groupingBy(RolloutItem::getDepth))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
-
-        logTargets(
-                context,
-                groupsSortedByDepth.stream()
-                        .flatMap(List::stream)
-                        .map(RolloutItem::getTarget)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList()));
-
-        return groupsSortedByDepth
-                .stream()
-                .flatMap(group -> rolloutGroup(group, pageManager, isDeep, context))
-                .collect(Collectors.toList());
-    }
-
-    private Stream<RolloutStatus> rolloutGroup(
-            List<RolloutItem> items,
-            PageManager pageManager,
-            boolean isDeep,
-            JobExecutionContext context) {
-
-        return items.stream()
-                .filter(item -> StringUtils.isNotBlank(item.getTarget()))
-                .map(item -> rolloutOne(item, pageManager, isDeep, context));
-    }
-
-    private RolloutStatus rolloutOne(
-            RolloutItem targetItem,
-            PageManager pageManager,
-            boolean isDeep,
-            JobExecutionContext context) {
-
-        String targetPath = targetItem.getTarget();
-        RolloutStatus status = new RolloutStatus(targetPath);
-
-        if (isAutoTriggered(targetItem)) {
-            status.setSuccess(true);
-            logTarget(context, targetPath);
-            return status;
-        }
-
-        String masterPath = targetItem.getMaster();
-        Page masterPage = pageManager.getPage(masterPath);
-        if (masterPage == null) {
-            status.setSuccess(false);
-            LOG.warn("Rollout failed: master page is missing at {}", masterPath);
-            logTarget(context, targetPath, "Page is missing");
-            return status;
-        }
-
-        RolloutManager.RolloutParams params = createRolloutParams(masterPage, targetPath, isDeep);
-        try {
-            LOG.debug("Rollout from {} to {} started", masterPath, targetPath);
-            rolloutManager.rollout(params);
-            status.setSuccess(true);
-            LOG.debug("Rollout from {} to {} finished", masterPath, targetPath);
-            logTarget(context, targetPath);
-        } catch (WCMException e) {
-            status.setSuccess(false);
-            LOG.error("Rollout from {} to {} failed", masterPath, targetPath, e);
-            logTarget(context, targetPath, e.getMessage());
-            discardUnsavedChanges(masterPage);
-        }
-        return status;
-    }
-
     /* ------------------
        Rollout item logic
        ------------------ */
-
-    private static boolean isAutoTriggered(RolloutItem item) {
-        boolean result = item.getDepth() != 0 && item.isAutoRolloutTrigger();
-        if (result) {
-            LOG.debug(
-                    "Rollout from {} to {} skipped because an automatic rollout is triggered at this path",
-                    item.getMaster(),
-                    item.getTarget());
-        }
-        return result;
-    }
 
     private static RolloutManager.RolloutParams createRolloutParams(Page masterPage, String targetPath, boolean isDeep) {
         RolloutManager.RolloutParams params = new RolloutManager.RolloutParams();
@@ -261,6 +348,22 @@ public class RolloutExecutor implements JobExecutor {
         params.isDeep = isDeep;
         params.trigger = RolloutManager.Trigger.ROLLOUT;
         return params;
+    }
+
+    private static boolean isAutoTrigger(RolloutItem item) {
+        return item.getDepth() != 0 && item.isAutoRolloutTrigger();
+    }
+
+    private static boolean isBlueprint(
+            RolloutItem item,
+            LiveRelationshipManager relationshipManager,
+            ResourceResolver resolver) {
+        try {
+            return relationshipManager.getLiveRelationships(resolver.getResource(item.getTarget()), null, null).hasNext();
+        } catch (WCMException e) {
+            LOG.debug("Could not retrieve live relationships for {}", item.getTarget(), e);
+        }
+        return false;
     }
 
     /* ----------------
@@ -289,13 +392,13 @@ public class RolloutExecutor implements JobExecutor {
         context.log("{0}", message);
     }
 
-    private static void logTarget(JobExecutionContext context, String target) {
-        logTarget(context, target, null);
+    private static void logEvent(JobExecutionContext context, String type, String target) {
+        logEvent(context, type, target, null);
     }
 
-    private static void logTarget(JobExecutionContext context, String target, String errorMessage) {
+    private static void logEvent(JobExecutionContext context, String type, String target, String errorMessage) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add(PROPERTY_TYPE, "target")
+                .add(PROPERTY_TYPE, type)
                 .add("path", target);
         if (StringUtils.isNotEmpty(errorMessage)) {
             builder.add(PROPERTY_RESULT, "error");
