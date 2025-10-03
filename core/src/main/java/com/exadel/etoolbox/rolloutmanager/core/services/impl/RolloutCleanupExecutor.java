@@ -12,8 +12,10 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Component(
         service = JobConsumer.class,
@@ -24,10 +26,12 @@ public class RolloutCleanupExecutor implements JobConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(RolloutCleanupExecutor.class);
 
     static final String TOPIC = "com/exadel/etoolbox/rolloutmanager/rollout/cleanup";
-    private static final String CRON_EXPRESSION = "0 */10 * * * ?"; // Every 10 minutes
 
     private static final int NO_LIMIT = 0;
     private static final Map<String,Object>[] NO_FILTER = null;
+
+    private static final int JOB_GRACE_PERIOD = 10; // minutes
+    private static final String CRON_EXPRESSION = "0 */" + JOB_GRACE_PERIOD + " * * * ?";
 
     @Reference
     private transient JobManager jobManager;
@@ -37,6 +41,10 @@ public class RolloutCleanupExecutor implements JobConsumer {
     @Activate
     private void activate() {
         LOG.info("Starting RolloutExecutor job cleanup task. Cron expression is {}", CRON_EXPRESSION);
+        jobManager.getScheduledJobs()
+                .stream()
+                .filter(job -> TOPIC.equals(job.getJobTopic()))
+                .forEach(ScheduledJobInfo::unschedule);
         jobInfo = jobManager.createJob(TOPIC).schedule().cron(CRON_EXPRESSION).add();
     }
 
@@ -51,8 +59,17 @@ public class RolloutCleanupExecutor implements JobConsumer {
 
     @Override
     public JobResult process(Job job) {
+        long cutoff = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(JOB_GRACE_PERIOD);
         Collection<Job> jobs = jobManager.findJobs(JobManager.QueryType.HISTORY, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER);
-        jobs.forEach(match -> jobManager.removeJobById(match.getId()));
+        jobs.stream()
+                .filter(j -> {
+                    Calendar finished = j.getFinishedDate();
+                    return finished != null && finished.getTimeInMillis() < cutoff;
+                })
+                .forEach(j -> {
+                    LOG.debug("Found a stale RolloutExecutor job ID={}, removing it", j.getId());
+                    jobManager.removeJobById(j.getId());
+                });
         return JobResult.OK;
     }
 }
