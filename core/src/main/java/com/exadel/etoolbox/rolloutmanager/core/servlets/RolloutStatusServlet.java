@@ -140,12 +140,17 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
         }
         if (
-                (jobState == Job.JobState.ERROR || jobState == Job.JobState.GIVEN_UP || jobState == Job.JobState.DROPPED)
+                (jobState == Job.JobState.ERROR
+                        || jobState == Job.JobState.GIVEN_UP
+                        || jobState == Job.JobState.DROPPED
+                        || jobState == Job.JobState.STOPPED)
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("error", job.getResultMessage());
+        } else if (jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
+        ) {
+            output.put("result", job.getResultMessage());
         }
-        output.put(PROPERTY_STATUS, job.getJobState().toString());
 
         String[] log = job.getProgressLog();
         int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
