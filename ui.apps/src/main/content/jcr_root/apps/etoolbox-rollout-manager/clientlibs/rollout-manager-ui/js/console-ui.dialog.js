@@ -107,8 +107,8 @@
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
-    const EXPAND_All = Granite.I18n.get('Expand All');
-    const COLLAPSE_All = Granite.I18n.get('Collapse All');
+    const EXPAND_ALL = Granite.I18n.get('Expand All');
+    const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect All');
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
@@ -141,8 +141,8 @@
             .appendTo($span);
         $span.appendTo(sourceElement);
         $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-expand">')
-          .text(COLLAPSE_All)
-          .appendTo($span);
+            .text(COLLAPSE_ALL)
+            .appendTo($span);
         $span.appendTo(sourceElement);
     }
 
@@ -239,11 +239,11 @@
 
     function onExpandButtonClick() {
         const $expandBtn = $('.rollout-manager-expand');
-        const isExpand = $expandBtn.text() === EXPAND_All;
+        const isExpand = $expandBtn.text() === EXPAND_ALL;
         $('coral-accordion-item').each(function () {
             this.selected = isExpand;
         });
-        $expandBtn.text(isExpand ? COLLAPSE_All : EXPAND_All);
+        $expandBtn.text(isExpand ? COLLAPSE_ALL : EXPAND_ALL);
     }
 
     function onResolve($btn, path, deferred) {
