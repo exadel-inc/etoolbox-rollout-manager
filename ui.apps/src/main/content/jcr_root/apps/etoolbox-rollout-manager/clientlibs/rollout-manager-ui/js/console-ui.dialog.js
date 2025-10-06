@@ -214,8 +214,8 @@
         return $(CORAL_CHECKBOX_ITEM + '[checked]').length > 0;
     }
 
-    function updateButtonState(hasSelection, submitBtn) {
-        submitBtn.attr('disabled', !hasSelection);
+    function validateDialog(actionBtns) {
+        actionBtns.attr('disabled', !hasSelection());
     }
 
     function isAllSelected() {
@@ -227,7 +227,7 @@
         $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', !checked);
     }
 
-    function onCheckboxChange(submitBtn) {
+    function onCheckboxChange(actionBtns) {
         const $selectAll = $(CHECKBOX_SELECT_ALL);
         const $selectAllLabel = $selectAll.find('label');
         const allSelected = isAllSelected();
@@ -239,14 +239,14 @@
         });
 
         $selectAllLabel.text(allSelected ? UNSELECT_ALL_LABEL : SELECT_ALL_LABEL);
-        updateButtonState(hasAnySelection, submitBtn);
+        validateDialog(actionBtns);
     }
 
-    function onSelectAllClick(submitBtn) {
+    function onSelectAllClick(actionBtns) {
         const $selectAll = $(CHECKBOX_SELECT_ALL);
         const isAllSelected = $selectAll.prop('checked');
         toggleSelectAll(isAllSelected);
-        onCheckboxChange(submitBtn);
+        onCheckboxChange(actionBtns);
     }
 
     function onExpandButtonClick() {
@@ -320,7 +320,7 @@
         );
 
         dialog.show();
-        updateButtonState(hasSelection(), $actionBtns);
+        validateDialog($actionBtns);
 
         return deferred.promise();
     }
