@@ -29,6 +29,7 @@
 
     const INTERMEDIATE_ATTR = 'intermediate';
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]:not([disabled])';
+    const NESTED_LIST_ROOT = '[data-rm-nested-checkbox-list]';
 
     function parentIntermediateStateOn(parentCheckbox) {
         parentCheckbox.attr(INTERMEDIATE_ATTR, true).prop('checked', true);
@@ -69,12 +70,13 @@
         childCheckboxes.filter(':not([disabled])').prop('checked', isChecked);
     }
 
-    $(document).off('change.rollout-manager')
-        .on('change.rollout-manager', CORAL_CHECKBOX_ITEM, function (e) {
+    $(document).off('change.rm-nested-list')
+        .on('change.rm-nested-list', NESTED_LIST_ROOT + ' ' + CORAL_CHECKBOX_ITEM, function (e) {
             e.stopPropagation();
             const $coralCheckbox = $(this);
             const isChecked = $coralCheckbox.prop('checked');
             setCurrentAndChildrenState($coralCheckbox, isChecked);
             setParentsState($coralCheckbox, isChecked);
+            $coralCheckbox.closest(NESTED_LIST_ROOT).trigger('treechange');
         });
 })(document, Granite.$);
