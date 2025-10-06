@@ -140,7 +140,7 @@
             .text(SELECT_ALL_LABEL)
             .appendTo($span);
         $span.appendTo(sourceElement);
-        $('<a is="coral-anchorbutton" variant="quiet" class="rollout-manager-expand">')
+        $('<button is="coral-button" variant="quiet" class="rollout-manager-expand">')
             .text(COLLAPSE_ALL)
             .appendTo($span);
         $span.appendTo(sourceElement);
