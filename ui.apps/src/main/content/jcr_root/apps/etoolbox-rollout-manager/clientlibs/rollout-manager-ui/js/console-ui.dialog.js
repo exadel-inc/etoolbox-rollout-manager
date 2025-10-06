@@ -194,7 +194,7 @@
 
     function appendNestedCheckboxList(liveCopiesJsonArray, sourceElement) {
         if (!liveCopiesJsonArray.length) return;
-        const $nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rollout-manager-nestedcheckboxlist-disconnected="false">');
+        const $nestedList = $('<ul class="rollout-manager-nestedcheckboxlist" data-rm-nested-checkbox-list>');
         liveCopiesJsonArray.forEach(liveCopyJson => {
             jsonToCheckboxListItem(liveCopyJson).appendTo($nestedList);
         });
@@ -227,7 +227,7 @@
         $(CORAL_CHECKBOX_ITEM).filter(':not([disabled])').prop('checked', !checked);
     }
 
-    function onCheckboxChange(actionBtns) {
+    function onTreeChange(actionBtns) {
         const $selectAll = $(CHECKBOX_SELECT_ALL);
         const $selectAllLabel = $selectAll.find('label');
         const allSelected = isAllSelected();
@@ -246,7 +246,7 @@
         const $selectAll = $(CHECKBOX_SELECT_ALL);
         const isAllSelected = $selectAll.prop('checked');
         toggleSelectAll(isAllSelected);
-        onCheckboxChange(actionBtns);
+        onTreeChange(actionBtns);
     }
 
     function onExpandButtonClick() {
@@ -275,16 +275,13 @@
         deferred.resolve(data);
     }
 
-    function initEventHandlers(dialog, deferred, onCheckboxChange, onSelectAllClick, onResolve) {
-        dialog.on('change', 'coral-checkbox', onCheckboxChange);
-        dialog.on('click', CHECKBOX_SELECT_ALL, onSelectAllClick);
-        dialog.on('click', '.rollout-manager-expand', onExpandButtonClick);
-        dialog.on('click', '[data-dialog-action]', onResolve);
-        dialog.on('coral-overlay:close', function () {
-            dialog.off('change', 'coral-checkbox', onCheckboxChange);
-            dialog.off('click', CHECKBOX_SELECT_ALL, onSelectAllClick);
-            dialog.off('click', '.rollout-manager-expand', onExpandButtonClick);
-            dialog.off('click', '[data-dialog-action]', onResolve);
+    function initEventHandlers(dialog, deferred, onTreeChange, onSelectAllClick, onResolve) {
+        dialog.on('treechange.rm-dialog', onTreeChange);
+        dialog.on('click.rm-dialog', CHECKBOX_SELECT_ALL, onSelectAllClick);
+        dialog.on('click.rm-dialog', '.rollout-manager-expand', onExpandButtonClick);
+        dialog.on('click.rm-dialog', '[data-dialog-action]', onResolve);
+        dialog.one('coral-overlay:close', function () {
+            dialog.off('.rm-dialog');
             deferred.reject();
         });
     }
@@ -312,9 +309,9 @@
         const $actionBtns = $submitBtn.add($rolloutBtn);
 
         initEventHandlers(
-            dialog,
+            $(dialog),
             deferred,
-            () => onCheckboxChange($actionBtns),
+            () => onTreeChange($actionBtns),
             () => onSelectAllClick($actionBtns),
             (e) => onResolve($(e.target), selectedPath, deferred)
         );
