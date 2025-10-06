@@ -240,9 +240,7 @@
     function onExpandButtonClick() {
         const $expandBtn = $('.rollout-manager-expand');
         const isExpand = $expandBtn.text() === EXPAND_ALL;
-        $('coral-accordion-item').each(function () {
-            this.selected = isExpand;
-        });
+        $('coral-accordion-item').prop('selected', isExpand);
         $expandBtn.text(isExpand ? COLLAPSE_ALL : EXPAND_ALL);
     }
 
