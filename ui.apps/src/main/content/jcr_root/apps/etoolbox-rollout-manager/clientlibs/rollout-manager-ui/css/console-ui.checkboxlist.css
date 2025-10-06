@@ -43,9 +43,10 @@
     }
 }
 
-.rollout-manager-select-all {
+.rollout-manager-select-all,
+.rollout-manager-expand {
     font-size: small;
-    min-width: 86px;
+    min-width: 100px;
 }
 
 .rollout-manager-coral-accordion-item-content {
@@ -75,7 +76,7 @@
     .coral3-Dialog-wrapper,
     ._coral-Dialog {
         width: 800px;
-        height: 566px;
+        height: 70vh;
     }
 
     .coral3-Checkbox {
@@ -163,14 +164,5 @@
 
     ._coral-Accordion-itemIndicator {
         top: 19px;
-    }
-
-    ._coral-Accordion-item .rollout-manager-coral-accordion-item-content {
-        visibility: hidden;
-        height: 0;
-    }
-
-    ._coral-Accordion-item.is-open > .rollout-manager-coral-accordion-item-content {
-        height: auto;
     }
 }

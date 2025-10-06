@@ -107,8 +107,10 @@
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
-    const SELECT_ALL_LABEL = Granite.I18n.get('Select all');
-    const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect all');
+    const EXPAND_ALL = Granite.I18n.get('Expand All');
+    const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
+    const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
+    const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect All');
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
@@ -136,6 +138,10 @@
             .appendTo($span);
         $(`<coral-checkbox class="rollout-manager-select-all">${SELECT_ALL_LABEL}</coral-checkbox>`).appendTo($span);
         $span.appendTo(sourceElement);
+        $('<button is="coral-button" variant="quiet" class="rollout-manager-expand">')
+            .text(COLLAPSE_ALL)
+            .appendTo($span);
+        $span.appendTo(sourceElement);
     }
 
     function appendRolloutScope(sourceElement) {
@@ -145,7 +151,7 @@
 
     function initNestedAccordion(currentCheckbox, liveCopiesJsonArray) {
         const $accordion = $('<coral-accordion variant="quiet">');
-        const $accordionItem = $('<coral-accordion-item>');
+        const $accordionItem = $('<coral-accordion-item selected>');
         const $accordionItemLabel = $('<coral-accordion-item-label>');
 
         currentCheckbox.appendTo($accordionItemLabel);
@@ -240,6 +246,13 @@
         onCheckboxChange(submitBtn);
     }
 
+    function onExpandButtonClick() {
+        const $expandBtn = $('.rollout-manager-expand');
+        const isExpand = $expandBtn.text() === EXPAND_ALL;
+        $('coral-accordion-item').prop('selected', isExpand);
+        $expandBtn.text(isExpand ? COLLAPSE_ALL : EXPAND_ALL);
+    }
+
     function onResolve($btn, path, deferred) {
         const shouldActivate = $btn.closest('[data-dialog-action]').data('dialogAction') === 'rolloutPublish';
         const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').filter(':not([disabled])').prop('checked');
@@ -262,10 +275,12 @@
     function initEventHandlers(dialog, deferred, onCheckboxChange, onSelectAllClick, onResolve) {
         dialog.on('change', 'coral-checkbox', onCheckboxChange);
         dialog.on('click', '.rollout-manager-select-all', onSelectAllClick);
+        dialog.on('click', '.rollout-manager-expand', onExpandButtonClick);
         dialog.on('click', '[data-dialog-action]', onResolve);
         dialog.on('coral-overlay:close', function () {
             dialog.off('change', 'coral-checkbox', onCheckboxChange);
             dialog.off('click', '.rollout-manager-select-all', onSelectAllClick);
+            dialog.off('click', '.rollout-manager-expand', onExpandButtonClick);
             dialog.off('click', '[data-dialog-action]', onResolve);
             deferred.reject();
         });
