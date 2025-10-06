@@ -28,7 +28,7 @@
     }
 
     label {
-        margin: 0 .1rem 0 .5rem;
+        margin-inline: .5rem .1rem;
     }
 }
 
@@ -45,8 +45,11 @@
 
 .rollout-manager-select-all,
 .rollout-manager-expand {
-    font-size: small;
     min-width: 100px;
+}
+
+.rollout-manager-toolbar {
+    display: flex;
 }
 
 .rollout-manager-coral-accordion-item-content {
@@ -120,11 +123,19 @@
         padding-right: 0;
     }
 
+    .rollout-manager-select-all ._coral-Checkbox-label {
+        font-weight: 700;
+    }
+
     coral-accordion-item-label,
     ._coral-Accordion-itemHeader ._coral-Checkbox-label,
     ._coral-Checkbox-label,
     ._coral-Checkbox-input {
         width: 100%;
+    }
+
+    ._coral-Checkbox-label {
+        margin-top: 0;
     }
 
     ._coral-Checkbox {
