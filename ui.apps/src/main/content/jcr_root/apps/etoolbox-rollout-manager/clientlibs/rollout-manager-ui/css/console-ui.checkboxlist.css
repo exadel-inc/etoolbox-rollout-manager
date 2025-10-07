@@ -28,7 +28,7 @@
     }
 
     label {
-        margin: 0 .1rem 0 .5rem;
+        margin-inline: .5rem .1rem;
     }
 }
 
@@ -43,9 +43,13 @@
     }
 }
 
-.rollout-manager-select-all {
-    font-size: small;
-    min-width: 86px;
+.rollout-manager-select-all,
+.rollout-manager-expand {
+    min-width: 100px;
+}
+
+.rollout-manager-toolbar {
+    display: flex;
 }
 
 .rollout-manager-coral-accordion-item-content {
@@ -75,7 +79,7 @@
     .coral3-Dialog-wrapper,
     ._coral-Dialog {
         width: 800px;
-        height: 566px;
+        height: 70vh;
     }
 
     .coral3-Checkbox {
@@ -119,11 +123,19 @@
         padding-right: 0;
     }
 
+    .rollout-manager-select-all ._coral-Checkbox-label {
+        font-weight: 700;
+    }
+
     coral-accordion-item-label,
     ._coral-Accordion-itemHeader ._coral-Checkbox-label,
     ._coral-Checkbox-label,
     ._coral-Checkbox-input {
         width: 100%;
+    }
+
+    ._coral-Checkbox-label {
+        margin-top: 0;
     }
 
     ._coral-Checkbox {
@@ -163,14 +175,5 @@
 
     ._coral-Accordion-itemIndicator {
         top: 19px;
-    }
-
-    ._coral-Accordion-item .rollout-manager-coral-accordion-item-content {
-        visibility: hidden;
-        height: 0;
-    }
-
-    ._coral-Accordion-item.is-open > .rollout-manager-coral-accordion-item-content {
-        height: auto;
     }
 }
