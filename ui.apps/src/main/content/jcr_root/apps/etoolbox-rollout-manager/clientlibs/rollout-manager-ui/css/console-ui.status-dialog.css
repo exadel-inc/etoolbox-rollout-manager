@@ -1,0 +1,36 @@
+.rollout-manager-logger-dialog {
+    ._coral-Dialog-content {
+        display: block;
+    }
+
+    .rollout-logs-list {
+        margin-bottom: 0;
+        list-style: none;
+        padding: 0;
+
+        ._coral-Checkbox-label {
+            width: auto;
+            margin-top: 0;
+            line-height: inherit;
+        }
+
+        .rollout-log-item-error {
+            ._coral-Checkbox-box:before {
+                border-color: red;
+            }
+
+            ._coral-Checkbox-checkmark {
+                color: red;
+            }
+        }
+
+        .rollout-activation-status {
+            margin-left: 10px;
+            color: #1473e6;
+            &.error {
+                color: red;
+            }
+        }
+    }
+}
+

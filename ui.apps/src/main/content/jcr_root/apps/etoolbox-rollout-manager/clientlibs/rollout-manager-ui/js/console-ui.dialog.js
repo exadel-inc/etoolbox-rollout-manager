@@ -42,13 +42,18 @@
 
     // Logger dialog related constants
     const CLOSE_LABEL = Granite.I18n.get('Close');
-    const FINISHED_LABEL = Granite.I18n.get('Rollout');
+    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Was sent to publish');
+    const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
+    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
-    function loggerDialogFinished(dialog, selectedPath, processingLabel) {
+    function loggerDialogFinished(dialog, waitIcon, statusText) {
+        dialog.content.removeChild(waitIcon);
+        dialog.querySelector('.rollout-processing-label').innerHTML = statusText;
+    }
+
+    function loggerDialogUpdated(dialog) {
+       $('<span class="rollout-processing-label">').text(ROLLOUT_IN_PROGRESS_LABEL).appendTo(dialog.content);
         dialog.closable = 'on';
-        dialog.header.textContent = `${FINISHED_LABEL} ${selectedPath}`;
-        processingLabel.remove();
-
         const closeBtn = new Coral.Button();
         closeBtn.variant = 'primary';
         closeBtn.label.textContent = CLOSE_LABEL;
@@ -59,11 +64,37 @@
         dialog.footer.appendChild(closeBtn);
     }
 
-    function insertLogItem(dialog, message, safe) {
-        const logItem = document.createElement('div');
-        logItem.className = 'rollout-manager-log-item';
-        logItem[safe ? 'textContent' : 'innerHTML'] = message;
-        dialog.content.insertAdjacentElement('beforeend', logItem);
+    function updateLog(dialog, message) {
+        if (message.type !== 'rollout' && message.type !== 'activation') return;
+        const rolloutItems = $(dialog).find('.rollout-log-item');
+        const itemToUpdate = rolloutItems.filter((i, item) => item.value === message.path);
+
+        if (message.type === 'rollout') {
+            itemToUpdate.prop('checked', message.result === 'success');
+            itemToUpdate.toggleClass('rollout-log-item-error', message.result === 'error');
+        }
+
+        if (message.type === 'activation') {
+            if (itemToUpdate.find('.rollout-activation-status').length) return;
+            $(`<i class="rollout-activation-status ${message.result === 'error' ? 'error' : ''}">`).text(`${message.result === 'success' ? PUBLISH_SUCCESS_MSG : PUBLISH_ERROR_MSG}`).appendTo(itemToUpdate);
+        }
+    }
+
+    function createLogItem(message) {
+        const $checkbox = $(`<coral-checkbox class="rollout-log-item" value="${message}">`).text(message);
+        return $('<li>').append($checkbox);
+    }
+
+    function createLogList(dialog, message) {
+        if (message.type !== 'targets') return;
+        const $logList = $(`<ul class="rollout-logs-list">`);
+        message.items.forEach(item => createLogItem(item).appendTo($logList));
+        $logList.appendTo(dialog.content);
+    }
+
+    function rolloutLog(dialog, message) {
+        if (!dialog.content.querySelector('.rollout-logs-list')) createLogList(dialog, message);
+        updateLog(dialog, message);
     }
 
     /**
@@ -74,30 +105,29 @@
      * @method finished
      * @method log
      */
-    function createLoggerDialog(title, processingMsg, selectedPath) {
+    function createLoggerDialog() {
         const dialog = getBaseDialog();
         dialog.variant = 'default';
-        dialog.header.textContent = title;
-        dialog.header.insertBefore(new Coral.Wait(), dialog.header.firstChild);
-        dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
+        dialog.footer.innerHTML = '';
+        const waitIcon = new Coral.Wait().set({size: 'S'});
+        dialog.content.appendChild(waitIcon);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         dialog.closable = 'off';
-
-        const processingLabel = document.createElement('p');
-        processingLabel.textContent = processingMsg;
-        dialog.content.append(processingLabel);
 
         document.body.appendChild(dialog);
         dialog.show();
 
         return {
             dialog,
-            finished: function () {
-                loggerDialogFinished(dialog, selectedPath, processingLabel);
+            finished: function (statusText) {
+                loggerDialogFinished(dialog, waitIcon, statusText);
             },
-            log: function (message, safe) {
-                insertLogItem(dialog, message, safe);
+            update: function () {
+                loggerDialogUpdated(dialog);
+            },
+            log: function (message) {
+                rolloutLog(dialog, message)
             }
         };
     }
