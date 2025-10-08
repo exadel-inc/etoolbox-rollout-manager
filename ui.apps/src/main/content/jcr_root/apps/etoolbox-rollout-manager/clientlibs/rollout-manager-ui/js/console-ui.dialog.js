@@ -123,7 +123,7 @@
             finished: function (statusText) {
                 loggerDialogFinished(dialog, waitIcon, statusText);
             },
-            update: function () {
+            unblocked: function () {
                 loggerDialogUpdated(dialog);
             },
             log: function (message) {

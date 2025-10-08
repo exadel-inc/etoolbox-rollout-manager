@@ -29,9 +29,9 @@
         const logger = ns.createLoggerDialog();
         try {
             const response = await buildRolloutRequest(data);
-            logger.update();
+            logger.unblocked();
             if (response.task) {
-                await updateStatusInfo(response.task, 0)(logger);
+                await createStatusUpdater(logger)(response.task);
                 logger.finished(data.shouldActivate ? SUCCESS_REPLICATION_MSG : SUCCESS_MSG);
             }
         }  catch(e) {
@@ -59,24 +59,23 @@
         }
     }
 
-    function updateStatusInfo(taskId, offset) {
-        return async function(logger) {
+    function createStatusUpdater(logger) {
+        return async function(taskId, offset = 0) {
             try {
-                let counter = offset || 0;
                 const response = await getStatusInfo(taskId, offset);
 
                 if (response.error) return new Error(`${response.error}`);
 
-                if (response.messages.length) {
-                    counter = response.messages.reduce((total, msg) => {
+                if (response.messages && response.messages.length) {
+                    offset = response.messages.reduce((total, msg) => {
                         logger.log(msg);
                         return msg.id > total ? msg.id : total;
-                    }, counter);
+                    }, offset);
                 }
 
                 if (response.status === 'inactive') return response.result;
                 await promisifyTimeout(2000);
-                await updateStatusInfo(taskId, counter)(logger);
+                await createStatusUpdater(logger)(taskId, offset);
             } catch (e) {
                 throw new Error(e);
             }
