@@ -127,6 +127,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             Map<String, Object> output = new HashMap<>();
             output.put(PROPERTY_ID, jobId);
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
+            response.setStatus(HttpStatus.SC_NOT_FOUND);
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
@@ -147,7 +148,8 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("error", job.getResultMessage());
-        } else if (jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
+        } else if (
+                jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("result", job.getResultMessage());
         }
