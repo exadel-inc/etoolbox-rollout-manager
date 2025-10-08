@@ -107,10 +107,9 @@
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
-    const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Confirm Rollout and Publish');
+    const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Warning: Publishing action');
     const CONFIRMATION_MESSAGE = Granite.I18n.get(
-        `You are about to roll out and publish pages at the same time.<br>
-        Please review your selection before proceeding.<br><br>
+        `You are about to publish page(s) after rollout.<br><br>
         Continue?`);
     const EXPAND_ALL = Granite.I18n.get('Expand All');
     const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
