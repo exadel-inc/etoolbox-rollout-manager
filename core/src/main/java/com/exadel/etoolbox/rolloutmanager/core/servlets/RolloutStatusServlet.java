@@ -16,6 +16,7 @@ package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
 import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.ThrottledLogger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,6 +41,7 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.servlet.Servlet;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Reports status of rollout tasks
@@ -127,6 +130,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             Map<String, Object> output = new HashMap<>();
             output.put(PROPERTY_ID, jobId);
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
+            response.setStatus(HttpStatus.SC_NOT_FOUND);
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
@@ -147,12 +151,18 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("error", job.getResultMessage());
-        } else if (jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
+        } else if (
+                jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("result", job.getResultMessage());
         }
 
-        String[] log = job.getProgressLog();
+        String[] log = Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
+                .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
+                            ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
+                            : Stream.of(entry))
+                .filter(StringUtils::isNotBlank)
+                .toArray(String[]::new);
         int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
         if (ArrayUtils.isEmpty(log) || offset >= log.length) {
             output.put(PROPERTY_MESSAGES, Collections.emptyList());
