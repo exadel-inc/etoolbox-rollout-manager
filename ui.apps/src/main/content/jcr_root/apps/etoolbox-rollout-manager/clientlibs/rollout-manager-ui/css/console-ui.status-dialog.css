@@ -1,5 +1,5 @@
 .rollout-manager-logger-dialog {
-    ._coral-Dialog-content {
+    &.rollout-manager-dialog coral-dialog-content {
         display: block;
     }
 
@@ -8,18 +8,18 @@
         list-style: none;
         padding: 0;
 
-        ._coral-Checkbox-label {
+        .rollout-log-item > label {
             width: auto;
             margin-top: 0;
             line-height: inherit;
         }
 
         .rollout-log-item-error {
-            ._coral-Checkbox-box:before {
+            input:checked + span:before {
                 border-color: red;
             }
 
-            ._coral-Checkbox-checkmark {
+            svg {
                 color: red;
             }
         }
