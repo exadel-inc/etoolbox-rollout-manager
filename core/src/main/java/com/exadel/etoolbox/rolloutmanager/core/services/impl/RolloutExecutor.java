@@ -11,6 +11,7 @@ import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.RolloutServlet;
 import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.ThrottledLogger;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.sling.api.resource.LoginException;
@@ -79,6 +80,7 @@ public class RolloutExecutor implements JobExecutor {
     private static final String ERROR_NO_RESOLVER = "Could not retrieve a resource resolver";
 
     private static final String COMMA_SPACE = ", ";
+
     @Reference
     private transient ConfigurationAdmin configurationAdmin;
 
@@ -153,29 +155,31 @@ public class RolloutExecutor implements JobExecutor {
         boolean shouldActivate = job.getProperty(PROPERTY_ACTIVATE, Boolean.class);
         RolloutItem[] rolloutItems = RolloutPlanUtil.getItems(plan);
 
-        RolloutProcessing processing = new RolloutProcessing(context, resolver, isDeep, shouldActivate);
-        if (processing.getPageManager() == null) {
-            String message = "Could not retrieve a page manager";
-            LOG.error(message);
-            return context.result().message(message).failed();
-        }
-        if (processing.getSession() == null) {
-            String message = "Could not retrieve a JCR session";
-            LOG.error(message);
-            return context.result().message(message).failed();
-        }
-        processing.processAll(rolloutItems);
+        try (ThrottledLogger logger = new ThrottledLogger(context)) {
+            RolloutProcessing processing = new RolloutProcessing(resolver, isDeep, shouldActivate, logger);
+            if (processing.getPageManager() == null) {
+                String message = "Could not retrieve a page manager";
+                LOG.error(message);
+                return context.result().message(message).failed();
+            }
+            if (processing.getSession() == null) {
+                String message = "Could not retrieve a JCR session";
+                LOG.error(message);
+                return context.result().message(message).failed();
+            }
+            processing.processAll(rolloutItems);
 
-        StringBuilder result = new StringBuilder("Completed");
-        if (!processing.getFailedRollouts().isEmpty()) {
-            result.append(". Could not perform rollout to the following path(-s): ")
-                    .append(String.join(COMMA_SPACE, processing.getFailedRollouts()));
+            StringBuilder result = new StringBuilder("Completed");
+            if (!processing.getFailedRollouts().isEmpty()) {
+                result.append(". Could not perform rollout to the following path(-s): ")
+                        .append(String.join(COMMA_SPACE, processing.getFailedRollouts()));
+            }
+            if (!processing.getFailedActivations().isEmpty()) {
+                result.append(". Could not activate the following path(-s): ")
+                        .append(String.join(COMMA_SPACE, processing.getFailedActivations()));
+            }
+            return context.result().message(result.toString()).succeeded();
         }
-        if (!processing.getFailedActivations().isEmpty()) {
-            result.append(". Could not activate the following path(-s): ")
-                    .append(String.join(COMMA_SPACE, processing.getFailedActivations()));
-        }
-        return context.result().message(result.toString()).succeeded();
     }
 
     /* ----------------------------
@@ -183,7 +187,7 @@ public class RolloutExecutor implements JobExecutor {
        ---------------------------- */
 
     private class RolloutProcessing {
-        private final JobExecutionContext context;
+        private final ThrottledLogger logger;
         private final PageManager pageManager;
         private final ResourceResolver resolver;
         private final Session session;
@@ -193,13 +197,17 @@ public class RolloutExecutor implements JobExecutor {
         private final List<String> failedActivations = new ArrayList<>();
         private final List<String> failedRollouts = new ArrayList<>();
 
-        RolloutProcessing(JobExecutionContext context, ResourceResolver resolver, boolean isDeep, boolean shouldActivate) {
-            this.context = context;
+        RolloutProcessing(
+                ResourceResolver resolver,
+                boolean isDeep,
+                boolean shouldActivate,
+                ThrottledLogger logger) {
             this.resolver = resolver;
             this.pageManager = resolver.adaptTo(PageManager.class);
             this.session = resolver.adaptTo(Session.class);
             this.isDeep = isDeep;
             this.shouldActivate = shouldActivate;
+            this.logger = logger;
         }
 
         public List<String> getFailedActivations() {
@@ -227,7 +235,7 @@ public class RolloutExecutor implements JobExecutor {
                     .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
             logTargets(
-                    context,
+                    logger,
                     groupsSortedByDepth.stream()
                             .flatMap(List::stream)
                             .map(RolloutItem::getTarget)
@@ -260,7 +268,7 @@ public class RolloutExecutor implements JobExecutor {
             Page masterPage = pageManager.getPage(masterPath);
             if (masterPage == null) {
                 LOG.warn("Rollout failed: master page is missing at {}", masterPath);
-                logEvent(context, EVENT_ROLLOUT, targetPath, "Source page is missing");
+                logEvent(logger, EVENT_ROLLOUT, targetPath, "Source page is missing");
                 return false;
             }
 
@@ -271,7 +279,7 @@ public class RolloutExecutor implements JobExecutor {
                         "Rollout from {} to {} skipped because an automatic rollout is triggered at this path",
                         item.getMaster(),
                         item.getTarget());
-                logEvent(context, EVENT_ROLLOUT, targetPath);
+                logEvent(logger, EVENT_ROLLOUT, targetPath);
                 return true;
             }
 
@@ -280,11 +288,11 @@ public class RolloutExecutor implements JobExecutor {
                 LOG.debug("Rollout from {} to {} started", masterPath, targetPath);
                 rolloutManager.rollout(params);
                 LOG.debug("Rollout from {} to {} finished", masterPath, targetPath);
-                logEvent(context, EVENT_ROLLOUT, targetPath);
+                logEvent(logger, EVENT_ROLLOUT, targetPath);
                 return true;
             } catch (WCMException e) {
                 LOG.error("Rollout from {} to {} failed", masterPath, targetPath, e);
-                logEvent(context, EVENT_ROLLOUT, targetPath, e.getMessage());
+                logEvent(logger, EVENT_ROLLOUT, targetPath, e.getMessage());
                 failedRollouts.add(targetPath);
                 discardUnsavedChanges(masterPage);
             }
@@ -296,7 +304,7 @@ public class RolloutExecutor implements JobExecutor {
             Page page = pageManager.getPage(targetPath);
             if (page == null) {
                 LOG.warn("Activation skipped: page is missing at {}", targetPath);
-                logEvent(context, EVENT_ACTIVATION, targetPath, "Page is missing");
+                logEvent(logger, EVENT_ACTIVATION, targetPath, "Page is missing");
                 failedActivations.add(targetPath);
                 return;
             }
@@ -307,10 +315,10 @@ public class RolloutExecutor implements JobExecutor {
             try {
                 LOG.debug("Activating {}", page.getPath());
                 replicator.replicate(session, ReplicationActionType.ACTIVATE, page.getPath());
-                logEvent(context, EVENT_ACTIVATION, page.getPath());
+                logEvent(logger, EVENT_ACTIVATION, page.getPath());
             } catch (ReplicationException e) {
                 LOG.error("Activation of {} failed", page.getPath(), e);
-                logEvent(context, EVENT_ACTIVATION, page.getPath(), e.getMessage());
+                logEvent(logger, EVENT_ACTIVATION, page.getPath(), e.getMessage());
                 failedActivations.add(page.getPath());
                 return;
             }
@@ -381,7 +389,7 @@ public class RolloutExecutor implements JobExecutor {
        Logging
        ------- */
 
-    private static void logTargets(JobExecutionContext context, List<String> targets) {
+    private static void logTargets(ThrottledLogger logger, List<String> targets) {
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
         targets.forEach(arrayBuilder::add);
         String message = Json.createObjectBuilder()
@@ -389,14 +397,14 @@ public class RolloutExecutor implements JobExecutor {
                 .add("items", arrayBuilder.build())
                 .build()
                 .toString();
-        context.log("{0}", message);
+        logger.log(message);
     }
 
-    private static void logEvent(JobExecutionContext context, String type, String target) {
-        logEvent(context, type, target, null);
+    private static void logEvent(ThrottledLogger logger, String type, String target) {
+        logEvent(logger, type, target, null);
     }
 
-    private static void logEvent(JobExecutionContext context, String type, String target, String errorMessage) {
+    private static void logEvent(ThrottledLogger logger, String type, String target, String errorMessage) {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add(PROPERTY_TYPE, type)
                 .add("path", target);
@@ -407,6 +415,6 @@ public class RolloutExecutor implements JobExecutor {
             builder.add(PROPERTY_RESULT, "success");
         }
         String message = builder.build().toString();
-        context.log("{0}", message);
+        logger.log(message);
     }
 }
