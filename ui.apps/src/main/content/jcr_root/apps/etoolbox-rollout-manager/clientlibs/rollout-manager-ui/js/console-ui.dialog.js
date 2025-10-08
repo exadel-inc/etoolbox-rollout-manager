@@ -109,10 +109,9 @@
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
     const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Confirm Rollout and Publish');
     const CONFIRMATION_MESSAGE = Granite.I18n.get(
-        `You are about to roll out changes and publish them to the selected targets.<br>
-        This action will make the updated content immediately available on the live site.<br>
-        Please review your selection carefully before proceeding.<br><br>
-        Do you want to continue?`);
+        `You are about to roll out and publish pages at the same time.<br>
+        Please review your selection before proceeding.<br><br>
+        Continue?`);
     const EXPAND_ALL = Granite.I18n.get('Expand All');
     const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
@@ -268,9 +267,15 @@
      * Calls onConfirm callback if the user confirms.
      */
     function showConfirmRolloutPublishDialog(onConfirm) {
-        const dialog = new Coral.Dialog();
-        dialog.header.textContent = ROLLOUT_AND_PUBLISH_CONFIRMATION;
-        dialog.content.innerHTML = CONFIRMATION_MESSAGE;
+        const dialog = new Coral.Dialog().set({
+            variant: 'error',
+            header: {
+                textContent: ROLLOUT_AND_PUBLISH_CONFIRMATION
+            },
+            content: {
+                innerHTML: CONFIRMATION_MESSAGE
+            }
+        });
 
         $('<button is="coral-button" variant="default" coral-close>')
             .text(CANCEL_LABEL)
@@ -285,13 +290,14 @@
         dialog.show();
     }
 
+    function getSelectionJsonArray() {
+        return $(CORAL_CHECKBOX_ITEM + '[checked]').map(function () {
+            return checkBoxToJsonData($(this));
+        }).get();
+    };
+
     function onResolve($btn, path, deferred) {
         const action = $btn.data('dialogAction');
-        const getSelectionJsonArray = () => {
-            return $(CORAL_CHECKBOX_ITEM + '[checked]').map(function () {
-                return checkBoxToJsonData($(this));
-            }).get();
-        };
         const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]:not([disabled])').prop('checked');
         const resolveData = (shouldActivate) => {
             deferred.resolve({
