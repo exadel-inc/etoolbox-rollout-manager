@@ -94,6 +94,7 @@
         display: flex;
         justify-content: space-between;
         text-transform: none;
+        gap: 10px;
     }
 
     .coral3-Accordion-content {
@@ -105,6 +106,7 @@
     }
 
     .rollout-manager-last-rollout-date {
+        flex: none;
         z-index: 2;
     }
 }
@@ -152,7 +154,7 @@
     }
 
     ._coral-Checkbox-box {
-        margin: 0;
+        align-self: flex-start;
     }
 
     ._coral-Checkbox {

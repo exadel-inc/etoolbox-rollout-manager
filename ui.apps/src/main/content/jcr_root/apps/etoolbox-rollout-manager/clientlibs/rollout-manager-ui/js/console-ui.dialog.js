@@ -107,6 +107,10 @@
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
+    const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Warning: Publishing action');
+    const CONFIRMATION_MESSAGE = Granite.I18n.get(
+        `You are about to publish page(s) after rollout.<br><br>
+        Continue?`);
     const EXPAND_ALL = Granite.I18n.get('Expand All');
     const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
@@ -114,6 +118,7 @@
     const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
+
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const CHECKBOX_SELECT_ALL = '.rollout-manager-select-all';
     const MASTER_DATA_ATTR = 'master';
@@ -256,23 +261,57 @@
         $expandBtn.text(isExpand ? COLLAPSE_ALL : EXPAND_ALL);
     }
 
-    function onResolve($btn, path, deferred) {
-        const shouldActivate = $btn.closest('[data-dialog-action]').data('dialogAction') === 'rolloutPublish';
-        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]').filter(':not([disabled])').prop('checked');
-        const selectionJsonArray = [];
-        $(CORAL_CHECKBOX_ITEM).each(function () {
-            const $checkbox = $(this);
-            if ($checkbox.prop('checked')) {
-                selectionJsonArray.push(checkBoxToJsonData($checkbox));
+    /**
+     * Displays a confirmation dialog for rollout and publish action.
+     * Calls onConfirm callback if the user confirms.
+     */
+    function showConfirmRolloutPublishDialog(onConfirm) {
+        const dialog = new Coral.Dialog().set({
+            variant: 'error',
+            header: {
+                textContent: ROLLOUT_AND_PUBLISH_CONFIRMATION
+            },
+            content: {
+                innerHTML: CONFIRMATION_MESSAGE
             }
         });
-        const data = {
-            path,
-            isDeepRollout,
-            selectionJsonArray,
-            shouldActivate
+
+        $('<button is="coral-button" variant="default" coral-close>')
+            .text(CANCEL_LABEL)
+            .appendTo(dialog.footer);
+
+        $('<button is="coral-button" variant="primary" coral-close>')
+            .text(ROLLOUT_AND_PUBLISH_LABEL)
+            .appendTo(dialog.footer)
+            .on('click', () => onConfirm());
+
+        document.body.appendChild(dialog);
+        dialog.show();
+    }
+
+    function getSelectionJsonArray() {
+        return $(CORAL_CHECKBOX_ITEM + '[checked]').map(function () {
+            return checkBoxToJsonData($(this));
+        }).get();
+    };
+
+    function onResolve($btn, path, deferred) {
+        const action = $btn.data('dialogAction');
+        const isDeepRollout = $('coral-checkbox[name="isDeepRollout"]:not([disabled])').prop('checked');
+        const resolveData = (shouldActivate) => {
+            deferred.resolve({
+                path,
+                isDeepRollout,
+                selectionJsonArray: getSelectionJsonArray(),
+                shouldActivate
+            });
         };
-        deferred.resolve(data);
+
+        if (action === 'rolloutPublish') {
+            showConfirmRolloutPublishDialog(() => resolveData(true));
+        } else {
+            resolveData(false);
+        }
     }
 
     function initEventHandlers(dialog, deferred, onTreeChange, onSelectAllClick, onResolve) {
@@ -297,7 +336,7 @@
 
         const dialog = initRolloutDialog(selectedPath);
         const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
-        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary" coral-close>').text(ROLLOUT_AND_PUBLISH_LABEL);
+        const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary">').text(ROLLOUT_AND_PUBLISH_LABEL);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
