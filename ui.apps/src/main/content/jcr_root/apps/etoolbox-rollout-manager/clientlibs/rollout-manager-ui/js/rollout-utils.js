@@ -24,6 +24,7 @@
     const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
     const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
+    const STATUS_UPDATE_INTERVAL = 5000;
 
     async function doItemsRollout(data) {
         const logger = ns.createLoggerDialog();
@@ -73,8 +74,8 @@
                     }, offset);
                 }
 
-                if (response.status === 'inactive') return response.result;
-                await promisifyTimeout(2000);
+                if (response.status === 'inactive') return;
+                await promisifyTimeout(STATUS_UPDATE_INTERVAL);
                 await createStatusUpdater(logger)(taskId, offset);
             } catch (e) {
                 throw new Error(e);
