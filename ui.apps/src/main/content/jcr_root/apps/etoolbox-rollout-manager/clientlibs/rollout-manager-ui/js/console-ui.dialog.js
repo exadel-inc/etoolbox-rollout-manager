@@ -137,16 +137,18 @@
         return dialog;
     }
 
-    function appendTargetsHeader(sourceElement) {
+    function appendTargetsHeader(sourceElement, hasNestedItems) {
         const $div = $('<div>');
         $('<h3>')
             .text(TARGET_PATHS_LABEL)
             .appendTo($div);
         const $toolbar = $('<div class="rollout-manager-toolbar">');
         $(`<coral-checkbox class="rollout-manager-select-all">${SELECT_ALL_LABEL}</coral-checkbox>`).appendTo($toolbar);
-        $('<button is="coral-button" variant="quiet" class="rollout-manager-expand">')
-            .text(COLLAPSE_ALL)
-            .appendTo($toolbar);
+        if (hasNestedItems) {
+            $('<button is="coral-button" variant="quiet" class="rollout-manager-expand">')
+                .text(COLLAPSE_ALL)
+                .appendTo($toolbar);
+        }
         $toolbar.appendTo($div);
         $div.appendTo(sourceElement);
     }
@@ -340,7 +342,8 @@
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
-        appendTargetsHeader(dialog.content);
+        const hasNestedItems = liveCopiesJsonArray.some(item => item.liveCopies && item.liveCopies.length > 0);
+        appendTargetsHeader(dialog.content, hasNestedItems);
         const $checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">').appendTo(dialog.content);
         appendNestedCheckboxList(liveCopiesJsonArray, $checkboxListContainer);
         appendRolloutScope(dialog.content);
