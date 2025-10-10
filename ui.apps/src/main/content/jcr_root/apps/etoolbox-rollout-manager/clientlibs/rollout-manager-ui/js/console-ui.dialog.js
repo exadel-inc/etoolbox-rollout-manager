@@ -66,18 +66,40 @@
 
     function updateLog(dialog, message) {
         if (message.type !== 'rollout' && message.type !== 'activation') return;
-        const rolloutItems = $(dialog).find('.rollout-log-item');
-        const itemToUpdate = rolloutItems.filter((i, item) => item.value === message.path);
+        const itemToUpdate = $(dialog)
+            .find('.rollout-log-item')
+            .filter((i, item) => item.value === message.path)
+            .first();
+        if (!itemToUpdate.length) return;
 
-        if (message.type === 'rollout') {
-            itemToUpdate.prop('checked', message.result === 'success');
-            itemToUpdate.toggleClass('rollout-log-item-error', message.result === 'error');
-        }
+        const {type, result} = message;
+        switch (type) {
+            case 'rollout':
+                handleRollout(itemToUpdate, result);
+                break;
 
-        if (message.type === 'activation') {
-            if (itemToUpdate.find('.rollout-activation-status').length) return;
-            $(`<i class="rollout-activation-status ${message.result === 'error' ? 'error' : ''}">`).text(`${message.result === 'success' ? PUBLISH_SUCCESS_MSG : PUBLISH_ERROR_MSG}`).appendTo(itemToUpdate);
+            case 'activation':
+                handleActivation(itemToUpdate, result);
+                break;
         }
+    }
+
+    function handleRollout(item, result) {
+        item.prop('checked', result === 'success');
+        item.toggleClass('rollout-log-item-error', result === 'error');
+    }
+
+    function handleActivation(item, result) {
+        if (item.find('.rollout-activation-status').length) return;
+
+        const isError = result === 'error';
+        const message = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
+
+        $('<i>')
+            .addClass('rollout-activation-status')
+            .toggleClass('error', isError)
+            .text(message)
+            .appendTo(item);
     }
 
     function createLogItem(message) {
