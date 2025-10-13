@@ -23,7 +23,7 @@
     const CHECK_STATUS_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout/status';
     const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
     const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
-    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
+    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed because of');
     const STATUS_UPDATE_INTERVAL = 5000;
 
     async function doItemsRollout(data) {
@@ -36,7 +36,7 @@
                 logger.finished(data.shouldActivate ? SUCCESS_REPLICATION_MSG : SUCCESS_MSG);
             }
         }  catch(e) {
-            logger.finished(`${PROCESSING_ERROR_MSG} because of ${e.message}`);
+            logger.finished(PROCESSING_ERROR_MSG + ' ' + e);
         }
     }
     ns.doItemsRollout = doItemsRollout;
@@ -56,7 +56,7 @@
                 data
             });
         } catch (e) {
-            console.error('[Rollout]: error while starting rollout:', e);
+            throw new Error(e.responseJSON.error);
         }
     }
 
@@ -65,7 +65,7 @@
             try {
                 const response = await getStatusInfo(taskId, offset);
 
-                if (response.error) return new Error(`${response.error}`);
+                if (response.error) throw new Error(`${response.error}`);
 
                 if (response.messages && response.messages.length) {
                     offset = response.messages.reduce((total, msg) => {
@@ -78,7 +78,7 @@
                 await promisifyTimeout(STATUS_UPDATE_INTERVAL);
                 await createStatusUpdater(logger)(taskId, offset);
             } catch (e) {
-                throw new Error(e);
+               throw e;
             }
         }
     }
@@ -88,7 +88,7 @@
             const url = `${CHECK_STATUS_COMMAND}?task=${taskId}` + (offset ? `&offset=${offset}` : '');
             return await $.ajax({url});
         } catch (e) {
-            console.error('[Rollout]: error while getting rollout status:', e);
+            throw new Error(e.responseJSON.error || 'Job was not found');
         }
     }
 
