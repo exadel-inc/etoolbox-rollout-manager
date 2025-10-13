@@ -46,22 +46,19 @@
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
+    function isLoggerDialog(dialog) {
+        return dialog.classList.contains(LOGGER_DIALOG_CLASS);
+    }
+
     function loggerDialogFinished(dialog, waitIcon, statusText) {
+        if (!isLoggerDialog(dialog)) return;
         dialog.content.removeChild(waitIcon);
         dialog.querySelector('.rollout-processing-label').innerHTML = statusText;
     }
 
     function loggerDialogUpdated(dialog) {
-       $('<span class="rollout-processing-label">').text(ROLLOUT_IN_PROGRESS_LABEL).appendTo(dialog.content);
-        dialog.closable = 'on';
-        const closeBtn = new Coral.Button();
-        closeBtn.variant = 'primary';
-        closeBtn.label.textContent = CLOSE_LABEL;
-        closeBtn.on('click', function () {
-            dialog.hide();
-        });
-
-        dialog.footer.appendChild(closeBtn);
+        if (!isLoggerDialog(dialog)) return;
+        dialog.querySelector('.rollout-processing-label').innerHTML = ROLLOUT_IN_PROGRESS_LABEL;
     }
 
     function updateLog(dialog, message) {
@@ -115,6 +112,7 @@
     }
 
     function rolloutLog(dialog, message) {
+        if (!isLoggerDialog(dialog)) return;
         if (!dialog.content.querySelector('.rollout-logs-list')) createLogList(dialog, message);
         updateLog(dialog, message);
     }
@@ -134,11 +132,19 @@
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({size: 'S'});
         dialog.content.appendChild(waitIcon);
+        $('<span class="rollout-processing-label">').appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
-        dialog.closable = 'off';
+        const closeBtn = new Coral.Button();
+        closeBtn.variant = 'primary';
+        closeBtn.label.textContent = CLOSE_LABEL;
+        closeBtn.on('click', function () {
+            dialog.hide();
+        });
 
+        dialog.footer.appendChild(closeBtn);
         document.body.appendChild(dialog);
         dialog.show();
+        dialog.closable = 'on';
 
         return {
             dialog,
