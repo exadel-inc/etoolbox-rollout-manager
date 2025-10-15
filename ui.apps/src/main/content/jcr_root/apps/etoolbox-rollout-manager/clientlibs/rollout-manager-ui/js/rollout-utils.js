@@ -74,9 +74,12 @@
                     }, offset);
                 }
 
-                if (response.status === 'inactive') return;
-                await promisifyTimeout(STATUS_UPDATE_INTERVAL);
-                await createStatusUpdater(logger)(taskId, offset);
+                if (!response.status) {
+                    throw new Error('Wrong response from the server');
+                } else if (response.status === 'active') {
+                    await promisifyTimeout(STATUS_UPDATE_INTERVAL);
+                    await createStatusUpdater(logger)(taskId, offset);
+                }
             } catch (e) {
                throw e;
             }
