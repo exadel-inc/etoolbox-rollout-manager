@@ -88,7 +88,9 @@
 
     async function getStatusInfo(taskId, offset) {
         try {
-            const url = `${CHECK_STATUS_COMMAND}?task=${taskId}` + (offset ? `&offset=${offset}` : '');
+            const params = new URLSearchParams({task: taskId});
+            if (offset) params.append('offset', offset);
+            const url = `${CHECK_STATUS_COMMAND}?${params}`;
             return await $.ajax({url});
         } catch (e) {
             throw new Error(e.responseJSON.error || 'Job was not found');

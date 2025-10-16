@@ -53,12 +53,12 @@
     function loggerDialogFinished(dialog, waitIcon, statusText) {
         if (!isLoggerDialog(dialog)) return;
         dialog.content.removeChild(waitIcon);
-        dialog.querySelector('.rollout-processing-label').innerHTML = statusText;
+        dialog.querySelector('.rollout-processing-label').textContent = statusText;
     }
 
     function loggerDialogUpdated(dialog) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-label').innerHTML = ROLLOUT_IN_PROGRESS_LABEL;
+        dialog.querySelector('.rollout-processing-label').textContent = ROLLOUT_IN_PROGRESS_LABEL;
     }
 
     function updateLog(dialog, message) {
