@@ -32,7 +32,7 @@
             const response = await buildRolloutRequest(data);
             logger.unblocked();
             if (response.task) {
-                await createStatusUpdater(logger)(response.task);
+                await createStatusUpdater(logger, response.task);
                 logger.finished(data.shouldActivate ? SUCCESS_REPLICATION_MSG : SUCCESS_MSG);
             }
         }  catch(e) {
@@ -60,29 +60,24 @@
         }
     }
 
-    function createStatusUpdater(logger) {
-        return async function statusUpdater(taskId, offset = 0) {
-            try {
-                const response = await getStatusInfo(taskId, offset);
+    async function createStatusUpdater(logger, taskId) {
+        let response = {status: 'active'};
+        let offset = 0;
+        while (response.status === 'active') {
+            response = await getStatusInfo(taskId, offset);
 
-                if (response.error) throw new Error(`${response.error}`);
+            if (response.error) throw new Error(`${response.error}`);
 
-                if (response.messages && response.messages.length) {
-                    offset = response.messages.reduce((total, msg) => {
-                        logger.log(msg);
-                        return msg.id > total ? msg.id : total;
-                    }, offset);
-                }
-
-                if (!response.status) {
-                    throw new Error('Wrong response from the server');
-                } else if (response.status === 'active') {
-                    await promisifyTimeout(STATUS_UPDATE_INTERVAL);
-                    await statusUpdater(taskId, offset);
-                }
-            } catch (e) {
-               throw e;
+            if (response.messages && response.messages.length) {
+                offset = response.messages.reduce((total, msg) => {
+                    logger.log(msg);
+                    return msg.id > total ? msg.id : total;
+                }, offset);
             }
+
+            if (!response.status) throw new Error('Wrong response from the server');
+
+            await promisifyTimeout(STATUS_UPDATE_INTERVAL);
         }
     }
 
