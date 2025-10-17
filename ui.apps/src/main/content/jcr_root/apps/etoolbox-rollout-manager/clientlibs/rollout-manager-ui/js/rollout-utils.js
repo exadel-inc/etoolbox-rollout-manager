@@ -61,7 +61,7 @@
     }
 
     function createStatusUpdater(logger) {
-        return async function(taskId, offset = 0) {
+        return async function statusUpdater(taskId, offset = 0) {
             try {
                 const response = await getStatusInfo(taskId, offset);
 
@@ -78,7 +78,7 @@
                     throw new Error('Wrong response from the server');
                 } else if (response.status === 'active') {
                     await promisifyTimeout(STATUS_UPDATE_INTERVAL);
-                    await createStatusUpdater(logger)(taskId, offset);
+                    await statusUpdater(taskId, offset);
                 }
             } catch (e) {
                throw e;
