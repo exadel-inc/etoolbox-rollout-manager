@@ -69,7 +69,7 @@
             .first();
         if (!itemToUpdate.length) return;
 
-        const {type, result} = message;
+        const { type, result } = message;
         switch (type) {
             case 'rollout':
                 handleRollout(itemToUpdate, result);
@@ -106,7 +106,7 @@
 
     function createLogList(dialog, message) {
         if (message.type !== 'targets') return;
-        const $logList = $(`<ul class="rollout-logs-list">`);
+        const $logList = $('<ul class="rollout-logs-list">');
         message.items.forEach(item => createLogItem(item).appendTo($logList));
         $logList.appendTo(dialog.content);
     }
@@ -130,7 +130,7 @@
         dialog.variant = 'default';
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
-        const waitIcon = new Coral.Wait().set({size: 'S'});
+        const waitIcon = new Coral.Wait().set({ size: 'S' });
         dialog.content.appendChild(waitIcon);
         $('<span class="rollout-processing-label">').appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);

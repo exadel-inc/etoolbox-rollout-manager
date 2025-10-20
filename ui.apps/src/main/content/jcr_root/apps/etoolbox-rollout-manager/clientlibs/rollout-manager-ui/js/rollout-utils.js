@@ -35,7 +35,7 @@
                 await createStatusUpdater(logger, response.task);
                 logger.finished(data.shouldActivate ? SUCCESS_REPLICATION_MSG : SUCCESS_MSG);
             }
-        }  catch(e) {
+        } catch (e) {
             logger.finished(PROCESSING_ERROR_MSG + ' ' + e);
         }
     }
@@ -61,7 +61,7 @@
     }
 
     async function createStatusUpdater(logger, taskId) {
-        let response = {status: 'active'};
+        let response = { status: 'active' };
         let offset = 0;
         while (response.status === 'active') {
             response = await getStatusInfo(taskId, offset);
@@ -83,10 +83,10 @@
 
     async function getStatusInfo(taskId, offset) {
         try {
-            const params = new URLSearchParams({task: taskId});
+            const params = new URLSearchParams({ task: taskId });
             if (offset) params.append('offset', offset);
             const url = `${CHECK_STATUS_COMMAND}?${params}`;
-            return await $.ajax({url});
+            return await $.ajax({ url });
         } catch (e) {
             throw new Error(e.responseJSON.error || 'Job was not found');
         }
@@ -95,5 +95,4 @@
     function promisifyTimeout(interval) {
         return new Promise((resolve) => setTimeout(resolve, interval));
     }
-
 })(Granite.$, window.ERM = (window.ERM || {}), Granite);
