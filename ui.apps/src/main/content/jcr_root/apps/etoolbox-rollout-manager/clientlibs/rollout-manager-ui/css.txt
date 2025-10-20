@@ -1,3 +1,4 @@
 #base=css
 
 console-ui.checkboxlist.css
+console-ui.status-dialog.css
