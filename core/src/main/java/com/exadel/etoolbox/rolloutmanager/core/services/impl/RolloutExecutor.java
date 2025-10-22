@@ -20,6 +20,8 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.event.jobs.Job;
+import org.apache.sling.event.jobs.JobManager;
+import org.apache.sling.event.jobs.ScheduledJobInfo;
 import org.apache.sling.event.jobs.consumer.JobExecutionContext;
 import org.apache.sling.event.jobs.consumer.JobExecutionResult;
 import org.apache.sling.event.jobs.consumer.JobExecutor;
@@ -38,7 +40,6 @@ import javax.jcr.SimpleCredentials;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,14 +64,23 @@ public class RolloutExecutor implements JobExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(RolloutExecutor.class);
 
     public static final String TOPIC = "com/exadel/etoolbox/rolloutmanager/rollout";
+
+    private static final String CLEANUP_TOPIC = "org/apache/sling/event/impl/jobs/tasks/HistoryCleanUpTask";
+    private static final int CLEANUP_THRESHOLD_HOURS = 12;
+    private static final int CLEANUP_THRESHOLD_MINS = 60 * CLEANUP_THRESHOLD_HOURS;
+    private static final String CLEANUP_CRON_EXPRESSION = "0 0 0/" + CLEANUP_THRESHOLD_HOURS + " * * ?";
+
     private static final String QUEUE_CONFIG_PID = "org.apache.sling.event.jobs.QueueConfiguration";
 
     public static final String PROPERTY_ACTIVATE = "activate";
+    private static final String PROPERTY_AGE = "age";
     public static final String PROPERTY_DEEP = "deep";
+    private static final String PROPERTY_INITIATOR = "initiator";
     public static final String PROPERTY_PLAN = "plan";
-    public static final String PROPERTY_USER = "user";
     private static final String PROPERTY_RESULT = "result";
+    private static final String PROPERTY_TOPIC = "topic";
     private static final String PROPERTY_TYPE = "type";
+    public static final String PROPERTY_USER = "user";
 
     private static final String EVENT_ROLLOUT = "rollout";
     private static final String EVENT_ACTIVATION = "activation";
@@ -88,6 +98,9 @@ public class RolloutExecutor implements JobExecutor {
     private transient LiveRelationshipManager liveRelationshipManager;
 
     @Reference
+    private transient JobManager jobManager;
+
+    @Reference
     private transient RolloutManager rolloutManager;
 
     @Reference
@@ -99,23 +112,52 @@ public class RolloutExecutor implements JobExecutor {
     @Reference
     private transient SlingRepository repository;
 
+    /* --------------
+       Initialization
+       -------------- */
+
+
     @Activate
     private void activate() {
+        provideQueue();
+        provideCleanupTask();
+    }
+
+    private void provideQueue() {
         try {
             Configuration queueConfig = configurationAdmin.getFactoryConfiguration(
-                    QUEUE_CONFIG_PID,
-                    getClass().getName(),
-                    null);
+                QUEUE_CONFIG_PID,
+                getClass().getName(),
+                null);
             Map<String, Object> queueProperties = new HashMap<>();
             queueProperties.put("queue.keepJobs", true);
-            queueProperties.put("queue.name", getClass().getName());
+            queueProperties.put("queue.name", RolloutExecutor.class.getName());
             queueProperties.put("queue.retries", 0);
             queueProperties.put("queue.topics", new String[] { TOPIC });
             queueProperties.put("queue.type", "ORDERED");
             queueConfig.update(new Hashtable<>(queueProperties));
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.error("Could initialize a queue configuration", e);
         }
+    }
+
+    private void provideCleanupTask() {
+        jobManager.getScheduledJobs()
+            .stream()
+            .filter(job ->
+                CLEANUP_TOPIC.equals(job.getJobTopic())
+                    && RolloutExecutor.class.getName().equals(job.getJobProperties().get(PROPERTY_INITIATOR)))
+            .forEach(ScheduledJobInfo::unschedule);
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(PROPERTY_INITIATOR, RolloutExecutor.class.getName());
+        properties.put(PROPERTY_TOPIC, TOPIC.replace('/', '.'));
+        properties.put(PROPERTY_AGE, CLEANUP_THRESHOLD_MINS);
+        jobManager
+            .createJob(CLEANUP_TOPIC)
+            .properties(properties)
+            .schedule()
+            .cron(CLEANUP_CRON_EXPRESSION)
+            .add();
     }
 
     /* ---------------
