@@ -21,7 +21,7 @@ import com.day.cq.wcm.msm.api.LiveRelationshipManager;
 import com.day.cq.wcm.msm.api.RolloutConfig;
 import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
-import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;

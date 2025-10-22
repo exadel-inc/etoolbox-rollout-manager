@@ -18,7 +18,7 @@ import com.day.cq.wcm.api.WCMException;
 import com.day.cq.wcm.msm.api.LiveRelationship;
 import com.day.cq.wcm.msm.api.LiveRelationshipManager;
 import com.exadel.etoolbox.rolloutmanager.core.services.RelationshipCheckerService;
-import com.exadel.etoolbox.rolloutmanager.core.servlets.util.ServletUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -67,7 +67,7 @@ public class BlueprintCheckServlet extends SlingAllMethodsServlet {
     @Override
     protected void doPost(final SlingHttpServletRequest request, final SlingHttpServletResponse response) {
         StopWatch sw = StopWatch.createStarted();
-        LOG.debug("Starting blue print check for the selected page");
+        LOG.debug("Starting blueprint check for the selected page");
 
         String path = ServletUtil.getRequestParamString(request, PATH_REQUEST_PARAM);
         if (StringUtils.isBlank(path)) {

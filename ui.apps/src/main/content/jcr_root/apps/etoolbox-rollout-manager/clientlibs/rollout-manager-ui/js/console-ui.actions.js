@@ -74,70 +74,6 @@
         return result;
     }
 
-    const PROCESSING_LABEL = Granite.I18n.get('Processing');
-    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
-
-    /**
-     * Performs rollout based on data collected in the Rollout dialog.
-     *
-     * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
-     * @param rolloutRequest - {@link #buildRolloutRequest}
-     * @returns {Promise<void>}
-     */
-    async function doItemsRollout(data, rolloutRequest) {
-        const logger = ns.createLoggerDialog(PROCESSING_LABEL, ROLLOUT_IN_PROGRESS_LABEL, data.path);
-        try {
-            await rolloutRequest(data, logger)();
-        } finally {
-            logger.finished();
-        }
-    }
-
-    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed');
-    const PROCESSING_ERROR_400_MSG = Granite.I18n.get('Rollout failed for the following paths:');
-    const PROCESSING_SERVER_MSG = Granite.I18n.get('This operation will take some time to complete. Check the target pages later to confirm the result.');
-
-    function getRolloutStatusMessage(xhr) {
-        if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.failedTargets) {
-            return `${PROCESSING_ERROR_400_MSG}<br/><br/>${xhr.responseJSON.failedTargets.join('<br/>')}`;
-        }
-        if ([503, 504, 522, 524].includes(xhr.status)) {
-            return PROCESSING_SERVER_MSG;
-        }
-        return PROCESSING_ERROR_MSG;
-    }
-
-    const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
-    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
-    const SUCCESS_MSG = Granite.I18n.get('Completed');
-
-    /**
-     * Builds a request to the servlet for rolling out items based on data collected in the Rollout dialog.
-     * @param data - selected live copies data and isDeepRollout param retrieved from the Rollout dialog
-     * @param logger - the logger dialog displaying progress of the rollout process
-     * @returns {function(): Promise<void>}
-     */
-    function buildRolloutRequest(data, logger) {
-        return async function () {
-            try {
-                await $.ajax({
-                    url: ROLLOUT_COMMAND,
-                    type: 'POST',
-                    data: {
-                        _charset_: 'UTF-8',
-                        selectionJsonArray: JSON.stringify(data.selectionJsonArray),
-                        isDeepRollout: data.isDeepRollout,
-                        shouldActivate: data.shouldActivate
-                    },
-                    timeout: AJAX_TIMEOUT * 4 // Rollout operations may take longer
-                });
-                data.shouldActivate ? logger.log(SUCCESS_REPLICATION_MSG, false) : logger.log(SUCCESS_MSG, false);
-            } catch (xhr) {
-                logger.log(getRolloutStatusMessage(xhr), false);
-            }
-        };
-    }
-
     /** Action handler for the 'Rollout' button */
     async function onShowRolloutDialog(name, el, config, collection, selections) {
         const selectedPath = selections[0].dataset.foundationCollectionItemId;
@@ -148,7 +84,7 @@
 
         try {
             const data = await ns.showRolloutDialog(liveCopiesJsonArray, selectedPath);
-            await doItemsRollout(data, buildRolloutRequest);
+            await ns.doItemsRollout(data);
         } catch {
             // The dialog is closed by user
         }

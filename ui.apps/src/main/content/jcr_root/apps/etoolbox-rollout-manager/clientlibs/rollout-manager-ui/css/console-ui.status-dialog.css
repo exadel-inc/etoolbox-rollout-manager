@@ -1,0 +1,36 @@
+.rollout-manager-logger-dialog {
+    &.rollout-manager-dialog coral-dialog-content {
+        display: block;
+    }
+
+    .rollout-logs-list {
+        margin-bottom: 0;
+        list-style: none;
+        padding: 0;
+
+        .rollout-log-item > label {
+            width: auto;
+            margin-top: 0;
+            line-height: inherit;
+        }
+
+        .rollout-log-item-error {
+            input:checked + span:before {
+                border-color: red;
+            }
+
+            svg {
+                color: red;
+            }
+        }
+
+        .rollout-activation-status {
+            margin-left: 10px;
+            color: #1473e6;
+            &.error {
+                color: red;
+            }
+        }
+    }
+}
+

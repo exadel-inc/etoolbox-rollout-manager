@@ -42,28 +42,79 @@
 
     // Logger dialog related constants
     const CLOSE_LABEL = Granite.I18n.get('Close');
-    const FINISHED_LABEL = Granite.I18n.get('Rollout');
+    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Was sent to publish');
+    const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
+    const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
-    function loggerDialogFinished(dialog, selectedPath, processingLabel) {
-        dialog.closable = 'on';
-        dialog.header.textContent = `${FINISHED_LABEL} ${selectedPath}`;
-        processingLabel.remove();
-
-        const closeBtn = new Coral.Button();
-        closeBtn.variant = 'primary';
-        closeBtn.label.textContent = CLOSE_LABEL;
-        closeBtn.on('click', function () {
-            dialog.hide();
-        });
-
-        dialog.footer.appendChild(closeBtn);
+    function isLoggerDialog(dialog) {
+        return dialog.classList.contains(LOGGER_DIALOG_CLASS);
     }
 
-    function insertLogItem(dialog, message, safe) {
-        const logItem = document.createElement('div');
-        logItem.className = 'rollout-manager-log-item';
-        logItem[safe ? 'textContent' : 'innerHTML'] = message;
-        dialog.content.insertAdjacentElement('beforeend', logItem);
+    function loggerDialogFinished(dialog, waitIcon, statusText) {
+        if (!isLoggerDialog(dialog)) return;
+        dialog.content.removeChild(waitIcon);
+        dialog.querySelector('.rollout-processing-label').textContent = statusText;
+    }
+
+    function loggerDialogUpdated(dialog) {
+        if (!isLoggerDialog(dialog)) return;
+        dialog.querySelector('.rollout-processing-label').textContent = ROLLOUT_IN_PROGRESS_LABEL;
+    }
+
+    function updateLog(dialog, message) {
+        if (message.type !== 'rollout' && message.type !== 'activation') return;
+        const itemToUpdate = $(dialog)
+            .find('.rollout-log-item')
+            .filter((i, item) => item.value === message.path)
+            .first();
+        if (!itemToUpdate.length) return;
+
+        const { type, result } = message;
+        switch (type) {
+            case 'rollout':
+                handleRollout(itemToUpdate, result);
+                break;
+
+            case 'activation':
+                handleActivation(itemToUpdate, result);
+                break;
+        }
+    }
+
+    function handleRollout(item, result) {
+        item.prop('checked', result === 'success');
+        item.toggleClass('rollout-log-item-error', result === 'error');
+    }
+
+    function handleActivation(item, result) {
+        if (item.find('.rollout-activation-status').length) return;
+
+        const isError = result === 'error';
+        const message = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
+
+        $('<i>')
+            .addClass('rollout-activation-status')
+            .toggleClass('error', isError)
+            .text(message)
+            .appendTo(item);
+    }
+
+    function createLogItem(message) {
+        const $checkbox = $(`<coral-checkbox class="rollout-log-item" value="${message}">`).text(message);
+        return $('<li>').append($checkbox);
+    }
+
+    function createLogList(dialog, message) {
+        if (message.type !== 'targets') return;
+        const $logList = $('<ul class="rollout-logs-list">');
+        message.items.forEach(item => createLogItem(item).appendTo($logList));
+        $logList.appendTo(dialog.content);
+    }
+
+    function rolloutLog(dialog, message) {
+        if (!isLoggerDialog(dialog)) return;
+        if (!dialog.content.querySelector('.rollout-logs-list')) createLogList(dialog, message);
+        updateLog(dialog, message);
     }
 
     /**
@@ -74,30 +125,37 @@
      * @method finished
      * @method log
      */
-    function createLoggerDialog(title, processingMsg, selectedPath) {
+    function createLoggerDialog() {
         const dialog = getBaseDialog();
         dialog.variant = 'default';
-        dialog.header.textContent = title;
-        dialog.header.insertBefore(new Coral.Wait(), dialog.header.firstChild);
-        dialog.footer.innerHTML = '';
         dialog.content.innerHTML = '';
+        dialog.footer.innerHTML = '';
+        const waitIcon = new Coral.Wait().set({ size: 'S' });
+        dialog.content.appendChild(waitIcon);
+        $('<span class="rollout-processing-label">').appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
-        dialog.closable = 'off';
+        const closeBtn = new Coral.Button();
+        closeBtn.variant = 'primary';
+        closeBtn.label.textContent = CLOSE_LABEL;
+        closeBtn.on('click', function () {
+            dialog.hide();
+        });
 
-        const processingLabel = document.createElement('p');
-        processingLabel.textContent = processingMsg;
-        dialog.content.append(processingLabel);
-
+        dialog.footer.appendChild(closeBtn);
         document.body.appendChild(dialog);
         dialog.show();
+        dialog.closable = 'on';
 
         return {
             dialog,
-            finished: function () {
-                loggerDialogFinished(dialog, selectedPath, processingLabel);
+            finished: function (statusText) {
+                loggerDialogFinished(dialog, waitIcon, statusText);
             },
-            log: function (message, safe) {
-                insertLogItem(dialog, message, safe);
+            unblocked: function () {
+                loggerDialogUpdated(dialog);
+            },
+            log: function (message) {
+                rolloutLog(dialog, message)
             }
         };
     }

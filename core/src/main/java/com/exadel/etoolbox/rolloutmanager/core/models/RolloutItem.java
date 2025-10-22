@@ -14,6 +14,7 @@
 
 package com.exadel.etoolbox.rolloutmanager.core.models;
 
+@SuppressWarnings("unused")
 public class RolloutItem {
     private String master;
     private String target;
