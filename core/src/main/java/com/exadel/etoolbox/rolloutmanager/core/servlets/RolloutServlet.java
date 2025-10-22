@@ -61,6 +61,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
     private static final String PARAM_SELECTION_JSON_ARRAY = "selectionJsonArray";
     private static final String PARAM_SHOULD_ACTIVATE = "shouldActivate";
 
+    private static final String ERROR_COULD_NOT_CREATE = "Could not create a rollout task";
     static final String ERROR_MISSING_USER = "Cannot retrieve the current user";
     private static final String ERROR_MISSING_PLAN = "Rollout plan is missing or invalid";
 
@@ -95,9 +96,13 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         jobProperties.put(RolloutExecutor.PROPERTY_PLAN, rolloutPlanSource);
         jobProperties.put(RolloutExecutor.PROPERTY_USER, userId);
         Job job = jobManager.addJob(RolloutExecutor.TOPIC, jobProperties);
+        if (job == null) {
+            ServletUtil.writeError(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, ERROR_COULD_NOT_CREATE);
+            LOG.error(ERROR_COULD_NOT_CREATE);
+            return;
+        }
 
         response.setStatus(HttpStatus.SC_CREATED);
         ServletUtil.writeJsonResponse(response, Json.createObjectBuilder().add("task", job.getId()).build().toString());
     }
-
 }
