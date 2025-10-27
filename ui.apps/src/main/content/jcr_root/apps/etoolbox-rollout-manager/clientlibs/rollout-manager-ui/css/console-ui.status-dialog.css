@@ -14,14 +14,13 @@
             line-height: inherit;
         }
 
-        .rollout-log-item-error {
-            input:checked + span:before {
-                border-color: red;
-            }
-
-            svg {
-                color: red;
-            }
+        .rollout-icon-status {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+            vertical-align: text-top;
+            fill: #464646;
         }
 
         .rollout-activation-status {
@@ -33,4 +32,3 @@
         }
     }
 }
-

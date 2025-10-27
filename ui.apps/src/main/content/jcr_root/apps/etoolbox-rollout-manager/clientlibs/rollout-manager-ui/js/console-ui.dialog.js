@@ -65,7 +65,7 @@
         if (message.type !== 'rollout' && message.type !== 'activation') return;
         const itemToUpdate = $(dialog)
             .find('.rollout-log-item')
-            .filter((i, item) => item.value === message.path)
+            .filter((i, item) => $(item).text() === message.path)
             .first();
         if (!itemToUpdate.length) return;
 
@@ -82,8 +82,8 @@
     }
 
     function handleRollout(item, result) {
-        item.prop('checked', result === 'success');
-        item.toggleClass('rollout-log-item-error', result === 'error');
+        const $statusIcon = result === 'success'? renderIcon() : renderErrorIcon();
+        item.find('.rollout-icon-status').append($statusIcon)
     }
 
     function handleActivation(item, result) {
@@ -99,9 +99,19 @@
             .appendTo(item);
     }
 
+    function renderIcon() {
+        return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='M15.656,3.8625l-.7275-.5665a.5.5,0,0,0-.7.0875L7.411,12.1415,4.0875,8.8355a.5.5,0,0,0-.707,0L2.718,9.5a.5.5,0,0,0,0,.707l4.463,4.45a.5.5,0,0,0,.75-.0465L15.7435,4.564A.5.5,0,0,0,15.656,3.8625Z'/></svg>");
+    }
+
+     function renderErrorIcon() {
+        return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='M13.2425,3.343,9,7.586,4.7575,3.343a.5.5,0,0,0-.707,0L3.343,4.05a.5.5,0,0,0,0,.707L7.586,9,3.343,13.2425a.5.5,0,0,0,0,.707l.707.7075a.5.5,0,0,0,.707,0L9,10.414l4.2425,4.243a.5.5,0,0,0,.707,0l.7075-.707a.5.5,0,0,0,0-.707L10.414,9l4.243-4.2425a.5.5,0,0,0,0-.707L13.95,3.343a.5.5,0,0,0-.70711-.00039Z'/></svg>");
+     }
+
     function createLogItem(message) {
-        const $checkbox = $(`<coral-checkbox class="rollout-log-item" value="${message}">`).text(message);
-        return $('<li>').append($checkbox);
+        const $item = $('<li class="rollout-log-item">').text(message);
+        const $span = $('<span class="rollout-icon-status">');
+        $item.prepend($span);
+        return $item;
     }
 
     function createLogList(dialog, message) {
