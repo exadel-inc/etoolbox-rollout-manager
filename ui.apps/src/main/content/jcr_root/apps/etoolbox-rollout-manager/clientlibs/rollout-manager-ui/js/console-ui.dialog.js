@@ -42,7 +42,7 @@
 
     // Logger dialog related constants
     const CLOSE_LABEL = Granite.I18n.get('Close');
-    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Was sent to publish');
+    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Publishing started');
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
@@ -82,8 +82,11 @@
     }
 
     function handleRollout(item, result) {
+        const status = item.find('.rollout-icon-status');
+        if (status.hasClass('updated')) return
         const $statusIcon = result === 'success'? renderIcon() : renderErrorIcon();
-        item.find('.rollout-icon-status').append($statusIcon)
+        status.append($statusIcon);
+        status.addClass('updated');
     }
 
     function handleActivation(item, result) {
@@ -140,6 +143,7 @@
         dialog.variant = 'default';
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
+    //    dialog.header
         const waitIcon = new Coral.Wait().set({ size: 'S' });
         dialog.content.appendChild(waitIcon);
         $('<span class="rollout-processing-label">').appendTo(dialog.content);
