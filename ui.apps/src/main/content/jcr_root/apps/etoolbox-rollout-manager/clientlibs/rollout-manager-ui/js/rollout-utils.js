@@ -23,7 +23,7 @@
     const CHECK_STATUS_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout/status';
     const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
     const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
-    const PROCESSING_ERROR_MSG = Granite.I18n.get('Rollout failed because of');
+    const PROCESSING_ERROR_MSG = Granite.I18n.get('Failed because of');
     const STATUS_UPDATE_INTERVAL = 5000;
 
     async function doItemsRollout(data) {

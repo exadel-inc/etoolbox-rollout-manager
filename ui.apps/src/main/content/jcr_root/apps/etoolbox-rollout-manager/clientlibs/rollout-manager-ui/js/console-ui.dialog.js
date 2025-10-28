@@ -50,15 +50,14 @@
         return dialog.classList.contains(LOGGER_DIALOG_CLASS);
     }
 
-    function loggerDialogFinished(dialog, waitIcon, statusText) {
+    function loggerDialogFinished(dialog, statusText) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.content.removeChild(waitIcon);
         dialog.querySelector('.rollout-processing-label').textContent = statusText;
     }
 
     function loggerDialogUpdated(dialog) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-label').textContent = ROLLOUT_IN_PROGRESS_LABEL;
+        dialog.querySelector('.rollout-processing-label').innerHTML += ROLLOUT_IN_PROGRESS_LABEL;
     }
 
     function updateLog(dialog, message) {
@@ -107,7 +106,7 @@
     }
 
      function renderErrorIcon() {
-        return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='M13.2425,3.343,9,7.586,4.7575,3.343a.5.5,0,0,0-.707,0L3.343,4.05a.5.5,0,0,0,0,.707L7.586,9,3.343,13.2425a.5.5,0,0,0,0,.707l.707.7075a.5.5,0,0,0,.707,0L9,10.414l4.2425,4.243a.5.5,0,0,0,.707,0l.7075-.707a.5.5,0,0,0,0-.707L10.414,9l4.243-4.2425a.5.5,0,0,0,0-.707L13.95,3.343a.5.5,0,0,0-.70711-.00039Z'/></svg>");
+        return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='m15.7 3.9-.8-.6a1 1 0 0 0-.7 0l-6.8 8.8-3.3-3.3a1 1 0 0 0-.7 0l-.7.7a1 1 0 0 0 0 .7l4.5 4.5a1 1 0 0 0 .7 0l7.8-10.1a1 1 0 0 0 0-.7'/></svg>");
      }
 
     function createLogItem(message) {
@@ -143,10 +142,8 @@
         dialog.variant = 'default';
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
-    //    dialog.header
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        dialog.content.appendChild(waitIcon);
-        $('<span class="rollout-processing-label">').appendTo(dialog.content);
+        $('<span class="rollout-processing-label">').append(waitIcon).appendTo(dialog.header);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
         closeBtn.variant = 'primary';
@@ -163,7 +160,7 @@
         return {
             dialog,
             finished: function (statusText) {
-                loggerDialogFinished(dialog, waitIcon, statusText);
+                loggerDialogFinished(dialog, statusText);
             },
             unblocked: function () {
                 loggerDialogUpdated(dialog);

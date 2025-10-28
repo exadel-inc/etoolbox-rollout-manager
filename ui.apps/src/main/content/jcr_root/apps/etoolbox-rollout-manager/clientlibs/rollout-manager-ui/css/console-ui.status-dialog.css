@@ -1,4 +1,13 @@
 .rollout-manager-logger-dialog {
+    coral-dialog-header {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rollout-processing-label {
+        font-weight: 500;
+    }
+
     &.rollout-manager-dialog coral-dialog-content {
         display: block;
     }
