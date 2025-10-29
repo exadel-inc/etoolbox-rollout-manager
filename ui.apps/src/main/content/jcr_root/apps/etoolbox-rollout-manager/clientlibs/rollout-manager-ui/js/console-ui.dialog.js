@@ -82,8 +82,8 @@
 
     function handleRollout(item, result) {
         const status = item.find('.rollout-icon-status');
-        if (status.hasClass('updated')) return
-        const $statusIcon = result === 'success'? renderIcon() : renderErrorIcon();
+        if (status.hasClass('updated')) return;
+        const $statusIcon = result === 'success' ? renderIcon() : renderErrorIcon();
         status.append($statusIcon);
         status.addClass('updated');
     }
@@ -105,9 +105,9 @@
         return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='M15.656,3.8625l-.7275-.5665a.5.5,0,0,0-.7.0875L7.411,12.1415,4.0875,8.8355a.5.5,0,0,0-.707,0L2.718,9.5a.5.5,0,0,0,0,.707l4.463,4.45a.5.5,0,0,0,.75-.0465L15.7435,4.564A.5.5,0,0,0,15.656,3.8625Z'/></svg>");
     }
 
-     function renderErrorIcon() {
+    function renderErrorIcon() {
         return $("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'><path d='m15.7 3.9-.8-.6a1 1 0 0 0-.7 0l-6.8 8.8-3.3-3.3a1 1 0 0 0-.7 0l-.7.7a1 1 0 0 0 0 .7l4.5 4.5a1 1 0 0 0 .7 0l7.8-10.1a1 1 0 0 0 0-.7'/></svg>");
-     }
+    }
 
     function createLogItem(message) {
         const $item = $('<li class="rollout-log-item">').text(message);
@@ -166,7 +166,7 @@
                 loggerDialogUpdated(dialog);
             },
             log: function (message) {
-                rolloutLog(dialog, message)
+                rolloutLog(dialog, message);
             }
         };
     }

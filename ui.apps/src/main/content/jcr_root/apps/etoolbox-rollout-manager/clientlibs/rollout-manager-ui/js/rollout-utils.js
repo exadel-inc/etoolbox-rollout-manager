@@ -47,7 +47,7 @@
             selectionJsonArray: JSON.stringify(dialogData.selectionJsonArray),
             isDeepRollout: dialogData.isDeepRollout,
             shouldActivate: dialogData.shouldActivate
-        }
+        };
 
         try {
             return await $.ajax({
