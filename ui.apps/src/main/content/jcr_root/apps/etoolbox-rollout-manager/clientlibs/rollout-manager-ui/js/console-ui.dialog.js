@@ -81,11 +81,10 @@
     }
 
     function handleRollout(item, result) {
-        const status = item.find('.rollout-icon-status');
-        if (status.hasClass('updated')) return;
-        const $statusIcon = result === 'success' ? renderIcon() : renderErrorIcon();
-        status.append($statusIcon);
-        status.addClass('updated');
+        const $icon = item.find('coral-icon');
+        if ($icon.hasClass('updated')) return;
+        $icon[0].set('icon', result === 'success' ? 'checkmark' : 'close');
+        $icon.addClass('updated');
     }
 
     function handleActivation(item, result) {
@@ -101,18 +100,10 @@
             .appendTo(item);
     }
 
-    function renderIcon() {
-        return new Coral.Icon().set({ icon: 'checkmark' });
-    }
-
-    function renderErrorIcon() {
-        return new Coral.Icon().set({ icon: 'close' });
-    }
-
     function createLogItem(message) {
         const $item = $('<li class="rollout-log-item">').text(message);
-        const $span = $('<span class="rollout-icon-status">');
-        $item.prepend($span);
+        const $icon = new Coral.Icon();
+        $item.prepend($icon);
         return $item;
     }
 
