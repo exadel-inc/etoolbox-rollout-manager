@@ -110,10 +110,6 @@
         z-index: 2;
     }
 
-    .rollout-manager-header {
-        margin-block: 0 0.5em;
-    }
-
     .rollout-manager-no-matches {
         margin-top: 1em;
         font-style: italic;

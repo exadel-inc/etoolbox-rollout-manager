@@ -173,11 +173,10 @@
     const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect All');
-    const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
     const NO_MATCHES_LABEL = Granite.I18n.get('No matches found');
-    const SEARCH_TARGET_LABEL = Granite.I18n.get('Search target paths...');
+    const SEARCH_TARGET_LABEL = Granite.I18n.get('Filter targets...');
 
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const CHECKBOX_SELECT_ALL = '.rollout-manager-select-all';
@@ -200,17 +199,15 @@
     function appendTargetsHeader(sourceElement, hasNestedItems, onSearchInput) {
         const $div = $('<div>');
 
-        $('<h3 class="rollout-manager-header">')
-            .text(TARGET_PATHS_LABEL)
-            .appendTo($div);
-
-        $('<coral-search class="rollout-manager-search"></coral-search>')
-            .attr('placeholder', SEARCH_TARGET_LABEL)
-            .on('coral-search:input', function (e) {
-                onSearchInput && onSearchInput(e.target.value);
-            })
-            .on('coral-search:clear', () => onSearchInput && onSearchInput(''))
-            .appendTo($div);
+        if (onSearchInput) {
+            $('<coral-search class="rollout-manager-search"></coral-search>')
+                .attr('placeholder', SEARCH_TARGET_LABEL)
+                .on('coral-search:input', function (e) {
+                    onSearchInput(e.target.value);
+                })
+                .on('coral-search:clear', () => onSearchInput(''))
+                .appendTo($div);
+        }
 
         const $toolbar = $('<div class="rollout-manager-toolbar">');
         $(`<coral-checkbox class="rollout-manager-select-all">${SELECT_ALL_LABEL}</coral-checkbox>`).appendTo($toolbar);
