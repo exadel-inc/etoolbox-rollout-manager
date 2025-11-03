@@ -109,10 +109,24 @@
         flex: none;
         z-index: 2;
     }
+
+    .rollout-manager-no-matches {
+        margin-top: 1em;
+        font-style: italic;
+    }
 }
 
 /* Cloud styles */
 .rollout-manager-dialog {
+    .rollout-manager-search,
+    ._coral-Search-input {
+        width: 100%;
+    }
+
+    .rollout-manager-search {
+        margin-bottom: 1em;
+    }
+
     ._coral-Accordion-item {
         border: 0;
     }
@@ -151,6 +165,7 @@
 
     ._coral-Dialog-footer {
         display: flex;
+        padding-top: 0;
     }
 
     ._coral-Checkbox-box {

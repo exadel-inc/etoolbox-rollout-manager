@@ -155,7 +155,7 @@
                 loggerDialogUpdated(dialog);
             },
             log: function (message) {
-                rolloutLog(dialog, message)
+                rolloutLog(dialog, message);
             }
         };
     }
@@ -173,9 +173,10 @@
     const COLLAPSE_ALL = Granite.I18n.get('Collapse All');
     const SELECT_ALL_LABEL = Granite.I18n.get('Select All');
     const UNSELECT_ALL_LABEL = Granite.I18n.get('Unselect All');
-    const TARGET_PATHS_LABEL = Granite.I18n.get('Target paths');
     const ROLLOUT_SCOPE_LABEL = Granite.I18n.get('Rollout scope');
     const INCLUDE_SUBPAGES_LABEL = Granite.I18n.get('Include subpages');
+    const NO_MATCHES_LABEL = Granite.I18n.get('No matches found');
+    const SEARCH_TARGET_LABEL = Granite.I18n.get('Filter targets...');
 
     const CORAL_CHECKBOX_ITEM = 'coral-checkbox[name="liveCopyProperties[]"]';
     const CHECKBOX_SELECT_ALL = '.rollout-manager-select-all';
@@ -195,11 +196,19 @@
         return dialog;
     }
 
-    function appendTargetsHeader(sourceElement, hasNestedItems) {
+    function appendTargetsHeader(sourceElement, hasNestedItems, onSearchInput) {
         const $div = $('<div>');
-        $('<h3>')
-            .text(TARGET_PATHS_LABEL)
-            .appendTo($div);
+
+        if (onSearchInput) {
+            $('<coral-search class="rollout-manager-search"></coral-search>')
+                .attr('placeholder', SEARCH_TARGET_LABEL)
+                .on('coral-search:input', function (e) {
+                    onSearchInput(e.target.value);
+                })
+                .on('coral-search:clear', () => onSearchInput(''))
+                .appendTo($div);
+        }
+
         const $toolbar = $('<div class="rollout-manager-toolbar">');
         $(`<coral-checkbox class="rollout-manager-select-all">${SELECT_ALL_LABEL}</coral-checkbox>`).appendTo($toolbar);
         if (hasNestedItems) {
@@ -208,6 +217,7 @@
                 .appendTo($toolbar);
         }
         $toolbar.appendTo($div);
+
         $div.appendTo(sourceElement);
     }
 
@@ -353,7 +363,7 @@
         return $(CORAL_CHECKBOX_ITEM + '[checked]').map(function () {
             return checkBoxToJsonData($(this));
         }).get();
-    };
+    }
 
     function onResolve($btn, path, deferred) {
         const action = $btn.data('dialogAction');
@@ -386,6 +396,28 @@
     }
 
     /**
+     * Filters the live copies tree based on the search term
+     * @param liveCopies - the live copies tree to filter
+     * @param searchTerm - the search term to filter by
+     * @returns {Array} - the filtered live copies tree
+     */
+    function filterLiveCopiesTree(liveCopies, searchTerm) {
+        if (!searchTerm) return liveCopies;
+        const term = searchTerm.toLowerCase();
+
+        const filterNode = ({ path, liveCopies: children = [], ...rest }) => {
+            const pathMatch = path && path.toLowerCase().includes(term);
+            const filteredChildren = (children.length > 0) ? children.map(filterNode).filter(Boolean) : [];
+            if (pathMatch || filteredChildren.length > 0) {
+                return { path, liveCopies: filteredChildren, ...rest };
+            }
+            return null;
+        };
+
+        return liveCopies.map(filterNode).filter(Boolean);
+    }
+
+    /**
      * Shows the dialog with the checkbox tree of live copy paths for the selected page path
      * @param liveCopiesJsonArray - the json array containing data related to live copies for the selected page
      * @param selectedPath - path of the selected page
@@ -400,10 +432,31 @@
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
+        let currentFilter = '';
+        let filteredLiveCopies = liveCopiesJsonArray;
         const hasNestedItems = liveCopiesJsonArray.some(item => item.liveCopies && item.liveCopies.length > 0);
-        appendTargetsHeader(dialog.content, hasNestedItems);
+
+        // Render tree with filter
+        function renderTree() {
+            const $checkboxListContainer = $(dialog.content).find('.rollout-manager-nestedcheckboxlist-container');
+            $checkboxListContainer.empty();
+            if (!filteredLiveCopies.length) {
+                $('<div class="rollout-manager-no-matches">').text(NO_MATCHES_LABEL).appendTo($checkboxListContainer);
+            } else {
+                appendNestedCheckboxList(filteredLiveCopies, $checkboxListContainer);
+            }
+        }
+
+        function handleSearchInput(searchTerm) {
+            currentFilter = searchTerm;
+            filteredLiveCopies = filterLiveCopiesTree(liveCopiesJsonArray, currentFilter);
+            renderTree();
+            onTreeChange($actionBtns);
+        }
+
+        appendTargetsHeader(dialog.content, hasNestedItems, handleSearchInput);
         const $checkboxListContainer = $('<div class="rollout-manager-nestedcheckboxlist-container">').appendTo(dialog.content);
-        appendNestedCheckboxList(liveCopiesJsonArray, $checkboxListContainer);
+        appendNestedCheckboxList(filteredLiveCopies, $checkboxListContainer);
         appendRolloutScope(dialog.content);
 
         const $actionBtns = $submitBtn.add($rolloutBtn);
