@@ -42,7 +42,7 @@
 
     // Logger dialog related constants
     const CLOSE_LABEL = Granite.I18n.get('Close');
-    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Was sent to publish');
+    const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Publishing started');
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
 
@@ -50,22 +50,21 @@
         return dialog.classList.contains(LOGGER_DIALOG_CLASS);
     }
 
-    function loggerDialogFinished(dialog, waitIcon, statusText) {
+    function loggerDialogFinished(dialog, statusText) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.content.removeChild(waitIcon);
         dialog.querySelector('.rollout-processing-label').textContent = statusText;
     }
 
     function loggerDialogUpdated(dialog) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-label').textContent = ROLLOUT_IN_PROGRESS_LABEL;
+        dialog.querySelector('.rollout-processing-label').insertAdjacentText('beforeend', ROLLOUT_IN_PROGRESS_LABEL);
     }
 
     function updateLog(dialog, message) {
         if (message.type !== 'rollout' && message.type !== 'activation') return;
         const itemToUpdate = $(dialog)
             .find('.rollout-log-item')
-            .filter((i, item) => item.value === message.path)
+            .filter((i, item) => $(item).text() === message.path)
             .first();
         if (!itemToUpdate.length) return;
 
@@ -82,8 +81,10 @@
     }
 
     function handleRollout(item, result) {
-        item.prop('checked', result === 'success');
-        item.toggleClass('rollout-log-item-error', result === 'error');
+        const $icon = item.find('coral-icon');
+        if ($icon.hasClass('updated')) return;
+        $icon[0].set('icon', result === 'success' ? 'checkmark' : 'close');
+        $icon.addClass('updated');
     }
 
     function handleActivation(item, result) {
@@ -100,8 +101,10 @@
     }
 
     function createLogItem(message) {
-        const $checkbox = $(`<coral-checkbox class="rollout-log-item" value="${message}">`).text(message);
-        return $('<li>').append($checkbox);
+        const $item = $('<li class="rollout-log-item">').text(message);
+        const $icon = new Coral.Icon();
+        $item.prepend($icon);
+        return $item;
     }
 
     function createLogList(dialog, message) {
@@ -131,8 +134,7 @@
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        dialog.content.appendChild(waitIcon);
-        $('<span class="rollout-processing-label">').appendTo(dialog.content);
+        $('<span class="rollout-processing-label">').append(waitIcon).appendTo(dialog.header);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
         closeBtn.variant = 'primary';
@@ -149,7 +151,7 @@
         return {
             dialog,
             finished: function (statusText) {
-                loggerDialogFinished(dialog, waitIcon, statusText);
+                loggerDialogFinished(dialog, statusText);
             },
             unblocked: function () {
                 loggerDialogUpdated(dialog);
