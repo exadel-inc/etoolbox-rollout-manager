@@ -114,6 +114,10 @@
         margin-top: 1em;
         font-style: italic;
     }
+
+    .rollout-manager-scope {
+        width: fit-content;
+    }
 }
 
 /* Cloud styles */
