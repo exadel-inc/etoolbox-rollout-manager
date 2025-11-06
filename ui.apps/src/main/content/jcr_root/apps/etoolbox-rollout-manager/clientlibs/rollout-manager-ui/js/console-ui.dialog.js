@@ -134,7 +134,7 @@
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        $('<span class="rollout-processing-label">').append(waitIcon).appendTo(dialog.header);
+        $('<div class="rollout-processing-label">').append(waitIcon).appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
         closeBtn.variant = 'primary';
@@ -225,7 +225,7 @@
 
     function appendRolloutScope(sourceElement) {
         $('<h3>').text(ROLLOUT_SCOPE_LABEL).appendTo(sourceElement);
-        $('<coral-checkbox name="isDeepRollout">').text(INCLUDE_SUBPAGES_LABEL).appendTo(sourceElement);
+        $('<coral-checkbox name="isDeepRollout" class="rollout-manager-scope">').text(INCLUDE_SUBPAGES_LABEL).appendTo(sourceElement);
     }
 
     function initNestedAccordion(currentCheckbox, liveCopiesJsonArray) {
