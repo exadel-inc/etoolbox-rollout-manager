@@ -75,9 +75,8 @@ public class RolloutExecutor implements JobExecutor {
     public static final String PROPERTY_DEEP = "deep";
     private static final String PROPERTY_INITIATOR = "initiator";
     public static final String PROPERTY_PLAN = "plan";
-    private static final String PROPERTY_RESULT = "result";
+    public static final String PROPERTY_PRE_LOG = "prelog";
     private static final String PROPERTY_TOPIC = "topic";
-    private static final String PROPERTY_TYPE = "type";
     public static final String PROPERTY_USER = "user";
 
     private static final String EVENT_ROLLOUT = "rollout";
@@ -274,17 +273,11 @@ public class RolloutExecutor implements JobExecutor {
                     .sorted(Map.Entry.comparingByKey())
                     .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
-            logTargets(
-                    logger,
-                    groupsSortedByDepth.stream()
-                            .flatMap(List::stream)
-                            .map(RolloutItem::getTarget)
-                            .filter(StringUtils::isNotBlank)
-                            .collect(Collectors.toList()));
             groupsSortedByDepth.forEach(this::processGroup);
         }
 
         private void processGroup(List<RolloutItem> items) {
+            items.sort(RolloutItem::compareTo);
             for (RolloutItem item : items) {
                 if (StringUtils.isBlank(item.getTarget())) {
                     LOG.debug("Rollout skipped because the target path is blank for master {}", item.getMaster());

@@ -187,7 +187,10 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             output.put("result", job.getResultMessage());
         }
 
-        String[] log = Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
+        String[] log = Stream.concat(
+                Stream.of(job.getProperty(RolloutExecutor.PROPERTY_PRE_LOG, String.class)),
+                Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
+            )
             .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
                 ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
                 : Stream.of(entry))
