@@ -42,6 +42,8 @@ import javax.json.JsonArrayBuilder;
 import javax.servlet.Servlet;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -125,7 +127,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
         jobs
             .stream()
-            .map(job -> createTaskDetails(request, job))
+            .map(job -> getTaskDetails(request, job))
             .map(details -> Json.createObjectBuilder(details).build())
             .forEach(arrayBuilder::add);
         ServletUtil.writeJsonResponse(
@@ -150,11 +152,11 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
-        Map<String, Object> output = createTaskDetails(request, job);
+        Map<String, Object> output = getTaskDetails(request, job);
         ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
     }
 
-    private static Map<String, Object> createTaskDetails(SlingHttpServletRequest request, Job job) {
+    private Map<String, Object> getTaskDetails(SlingHttpServletRequest request, Job job) {
         Map<String, Object> output = new HashMap<>();
         output.put(PROPERTY_ID, job.getId());
         Job.JobState jobState = job.getJobState();
@@ -163,6 +165,14 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         } else {
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
         }
+
+        if (jobState == Job.JobState.QUEUED) {
+            Map<String, Integer> queuePosition = getQueuePosition(job);
+            if (queuePosition != null) {
+                output.put("queue", queuePosition);
+            }
+        }
+
         if (
             (jobState == Job.JobState.ERROR
                 || jobState == Job.JobState.GIVEN_UP
@@ -209,5 +219,30 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             .collect(Collectors.toList());
         output.put(PROPERTY_MESSAGES, processedLogMessages);
         return output;
+    }
+
+    private Map<String, Integer> getQueuePosition(Job job) {
+        Collection<Job> queuedJobs = jobManager.findJobs(JobManager.QueryType.QUEUED, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER);
+        if (CollectionUtils.isEmpty(queuedJobs)) {
+            return null;
+        }
+        List<Job> sortedJobs = queuedJobs.stream()
+            .sorted((j1, j2) -> {
+                Calendar c1 = j1.getCreated();
+                Calendar c2 = j2.getCreated();
+                if (c1 == null && c2 == null) {
+                    return 0;
+                } else if (c1 == null) {
+                    return 1;
+                } else if (c2 == null) {
+                    return -1;
+                }
+                return c1.compareTo(c2);
+            })
+            .collect(Collectors.toList());
+        Map<String, Integer> result = new HashMap<>();
+        result.put("position", sortedJobs.indexOf(job) + 1);
+        result.put("total", sortedJobs.size());
+        return result;
     }
 }

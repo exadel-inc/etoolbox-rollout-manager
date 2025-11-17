@@ -208,6 +208,7 @@ class RolloutStatusServletTest {
         String output = context.response().getOutputAsString();
         JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
         assertEquals("active", jsonNode.get("status").asText());
+        assertTrue(jsonNode.get("queue") == null || jsonNode.get("queue").isNull());
     }
 
     @Test
@@ -436,6 +437,72 @@ class RolloutStatusServletTest {
         JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
         JsonNode messages = jsonNode.get("messages");
         assertTrue(messages.isEmpty());
+    }
+
+    @Test
+    void shouldIncludeQueuePositionForQueuedJob() throws IOException {
+        context.request().addRequestParameter(PARAM_TASK, TEST_JOB_ID);
+
+        Job job1 = mock(Job.class);
+        when(job1.getCreated()).thenReturn(getCalendar(1000L));
+
+        Job job2 = mock(Job.class);
+        when(job2.getId()).thenReturn(TEST_JOB_ID);
+        when(job2.getCreated()).thenReturn(getCalendar(2000L));
+
+        Job job3 = mock(Job.class);
+        when(job3.getCreated()).thenReturn(getCalendar(3000L));
+
+        when(job2.getJobState()).thenReturn(Job.JobState.QUEUED);
+        when(job2.getProgressLog()).thenReturn(null);
+        when(jobManager.getJobById(TEST_JOB_ID)).thenReturn(job2);
+        when(jobManager.findJobs(eq(JobManager.QueryType.QUEUED), eq(RolloutExecutor.TOPIC), anyLong(), any()))
+            .thenReturn(Arrays.asList(job1, job2, job3));
+
+        fixture.doGet(context.request(), context.response());
+
+        String output = context.response().getOutputAsString();
+        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode queue = jsonNode.get("queue");
+        assertNotNull(queue);
+        assertEquals(2, queue.get("position").asInt());
+        assertEquals(3, queue.get("total").asInt());
+    }
+
+    @Test
+    void shouldHandleJobsWithNullCreationTimestamp() throws IOException {
+        context.request().addRequestParameter(PARAM_TASK, TEST_JOB_ID);
+
+        Job job1 = mock(Job.class);
+        when(job1.getCreated()).thenReturn(getCalendar(1000L));
+
+        Job job2 = mock(Job.class);
+        when(job2.getId()).thenReturn(TEST_JOB_ID);
+        when(job2.getCreated()).thenReturn(null);
+
+        Job job3 = mock(Job.class);
+        when(job3.getCreated()).thenReturn(getCalendar(2000L));
+
+        when(job2.getJobState()).thenReturn(Job.JobState.QUEUED);
+        when(job2.getProgressLog()).thenReturn(null);
+        when(jobManager.getJobById(TEST_JOB_ID)).thenReturn(job2);
+        when(jobManager.findJobs(eq(JobManager.QueryType.QUEUED), eq(RolloutExecutor.TOPIC), anyLong(), any()))
+            .thenReturn(Arrays.asList(job1, job2, job3));
+
+        fixture.doGet(context.request(), context.response());
+
+        String output = context.response().getOutputAsString();
+        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode queue = jsonNode.get("queue");
+        assertNotNull(queue);
+        assertEquals(3, queue.get("position").asInt());
+        assertEquals(3, queue.get("total").asInt());
+    }
+
+    private static java.util.Calendar getCalendar(long timeInMillis) {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTimeInMillis(timeInMillis);
+        return calendar;
     }
 }
 
