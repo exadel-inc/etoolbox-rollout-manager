@@ -89,6 +89,12 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         String jobId = ServletUtil.getRequestParamString(request, PARAM_TASK);
         if (StringUtils.isBlank(jobId)) {
             outputAllTasks(request, response);
+        } else if (StringUtils.containsAny(jobId, ',', ';')) {
+            List<Job> jobs = Stream.of(StringUtils.split(jobId, ",;"))
+                .map(id -> jobManager.getJobById(id))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            outputMultipleTasks(request, response, jobs);
         } else {
             outputOneTask(request, response, jobId);
         }
@@ -101,23 +107,33 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             LOG.warn(RolloutServlet.ERROR_MISSING_USER);
             return;
         }
-        List<String> jobIds = jobManager.findJobs(JobManager.QueryType.ACTIVE, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER)
+        List<Job> jobs = jobManager.findJobs(JobManager.QueryType.ACTIVE, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER)
                 .stream()
                 .filter(job -> userId.equals(job.getProperty(RolloutExecutor.PROPERTY_USER, String.class)))
-                .map(Job::getId)
                 .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(jobIds)) {
+        if (CollectionUtils.isEmpty(jobs)) {
             ServletUtil.writeError(response, HttpStatus.SC_NOT_FOUND, "There are no active tasks for the current user");
             return;
         }
+        outputMultipleTasks(request, response, jobs);
+    }
+
+    private void outputMultipleTasks(
+            SlingHttpServletRequest request,
+            SlingHttpServletResponse response,
+            List<Job> jobs) {
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-        jobIds.forEach(arrayBuilder::add);
+        jobs
+            .stream()
+            .map(job -> createTaskDetails(request, job))
+            .map(details -> Json.createObjectBuilder(details).build())
+            .forEach(arrayBuilder::add);
         ServletUtil.writeJsonResponse(
-                response,
-                Json.createObjectBuilder()
-                        .add("tasks", arrayBuilder)
-                        .build()
-                        .toString());
+            response,
+            Json.createObjectBuilder()
+                .add("tasks", arrayBuilder)
+                .build()
+                .toString());
     }
 
     private void outputOneTask(
@@ -134,7 +150,11 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
+        Map<String, Object> output = createTaskDetails(request, job);
+        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+    }
 
+    private static Map<String, Object> createTaskDetails(SlingHttpServletRequest request, Job job) {
         Map<String, Object> output = new HashMap<>();
         output.put(PROPERTY_ID, job.getId());
         Job.JobState jobState = job.getJobState();
@@ -144,51 +164,50 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
         }
         if (
-                (jobState == Job.JobState.ERROR
-                        || jobState == Job.JobState.GIVEN_UP
-                        || jobState == Job.JobState.DROPPED
-                        || jobState == Job.JobState.STOPPED)
+            (jobState == Job.JobState.ERROR
+                || jobState == Job.JobState.GIVEN_UP
+                || jobState == Job.JobState.DROPPED
+                || jobState == Job.JobState.STOPPED)
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("error", job.getResultMessage());
         } else if (
-                jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
+            jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("result", job.getResultMessage());
         }
 
         String[] log = Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
-                .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
-                            ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
-                            : Stream.of(entry))
-                .filter(StringUtils::isNotBlank)
-                .toArray(String[]::new);
+            .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
+                ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
+                : Stream.of(entry))
+            .filter(StringUtils::isNotBlank)
+            .toArray(String[]::new);
         int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
         if (ArrayUtils.isEmpty(log) || offset >= log.length) {
             output.put(PROPERTY_MESSAGES, Collections.emptyList());
-            ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
-            return;
+            return output;
         }
 
         List<JsonNode> processedLogMessages = IntStream.range(0, log.length)
-                .skip(offset)
-                .mapToObj(index -> {
-                    String entry = log[index];
-                    try {
-                        JsonNode node = OBJECT_MAPPER.readTree(entry);
-                        if (!(node instanceof ObjectNode)) {
-                            throw new IOException("Not a JSON object");
-                        }
-                        ((ObjectNode) node).put(PROPERTY_ID, index);
-                        return node;
-                    } catch (IOException e) {
-                        LOG.warn("Could not parse log entry: {}", entry, e);
+            .skip(offset)
+            .mapToObj(index -> {
+                String entry = log[index];
+                try {
+                    JsonNode node = OBJECT_MAPPER.readTree(entry);
+                    if (!(node instanceof ObjectNode)) {
+                        throw new IOException("Not a JSON object");
                     }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                    ((ObjectNode) node).put(PROPERTY_ID, index);
+                    return node;
+                } catch (IOException e) {
+                    LOG.warn("Could not parse log entry: {}", entry, e);
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
         output.put(PROPERTY_MESSAGES, processedLogMessages);
-        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+        return output;
     }
 }
