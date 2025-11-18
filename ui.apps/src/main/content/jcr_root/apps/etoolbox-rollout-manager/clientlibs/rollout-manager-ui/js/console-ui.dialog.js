@@ -45,6 +45,7 @@
     const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Publishing started');
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
+    const ROLLOUT_IS_PENDING_LABEL = Granite.I18n.get('Pending (position in queue: {X} of {Y})');
 
     function isLoggerDialog(dialog) {
         return dialog.classList.contains(LOGGER_DIALOG_CLASS);
@@ -52,12 +53,16 @@
 
     function loggerDialogFinished(dialog, statusText) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-label').textContent = statusText;
+        dialog.querySelector('.rollout-processing-status').textContent = statusText;
     }
 
-    function loggerDialogUpdated(dialog) {
-        if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-label').insertAdjacentText('beforeend', ROLLOUT_IN_PROGRESS_LABEL);
+    function updateLoggerDialogStatus(dialog, queue) {
+        const processingLabel = dialog.querySelector('.rollout-processing-label');
+        if (!processingLabel.textContent.trim() || processingLabel.textContent.trim() !== ROLLOUT_IN_PROGRESS_LABEL) {
+            processingLabel.innerText = '';
+            const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{X}', queue.position).replace('{Y}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
+            processingLabel.insertAdjacentText('beforeend', labelText);
+        }
     }
 
     function updateLog(dialog, message) {
@@ -114,9 +119,10 @@
         $logList.appendTo(dialog.content);
     }
 
-    function rolloutLog(dialog, message) {
+    function rolloutLog(dialog, message, queue) {
         if (!isLoggerDialog(dialog)) return;
         if (!dialog.content.querySelector('.rollout-logs-list')) createLogList(dialog, message);
+        updateLoggerDialogStatus(dialog, queue);
         updateLog(dialog, message);
     }
 
@@ -128,13 +134,17 @@
      * @method finished
      * @method log
      */
-    function createLoggerDialog() {
+    function createLoggerDialog(rolloutPath) {
         const dialog = getBaseDialog();
         dialog.variant = 'default';
+        if (rolloutPath) {
+            dialog.header.textContent = `${DIALOG_LABEL} ${rolloutPath}`;
+        }
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        $('<div class="rollout-processing-label">').append(waitIcon).appendTo(dialog.content);
+        const $label = $('<span class="rollout-processing-label">')
+        $('<div class="rollout-processing-status">').append(waitIcon, $label).appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
         closeBtn.variant = 'primary';
@@ -153,11 +163,8 @@
             finished: function (statusText) {
                 loggerDialogFinished(dialog, statusText);
             },
-            unblocked: function () {
-                loggerDialogUpdated(dialog);
-            },
-            log: function (message) {
-                rolloutLog(dialog, message);
+            log: function (message, queue) {
+                rolloutLog(dialog, message, queue);
             }
         };
     }

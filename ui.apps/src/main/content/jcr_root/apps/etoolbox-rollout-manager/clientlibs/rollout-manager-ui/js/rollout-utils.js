@@ -29,7 +29,6 @@
         const logger = ns.createLoggerDialog();
         try {
             const response = await buildRolloutRequest(data);
-            logger.unblocked();
             if (response.task) {
                 await createStatusUpdater(logger, response.task);
                 logger.finished(SUCCESS_MSG);
@@ -69,7 +68,7 @@
 
             if (response.messages && response.messages.length) {
                 offset = response.messages.reduce((total, msg) => {
-                    logger.log(msg);
+                    logger.log(msg, response.queue);
                     return msg.id > total ? msg.id : total;
                 }, offset);
             }
