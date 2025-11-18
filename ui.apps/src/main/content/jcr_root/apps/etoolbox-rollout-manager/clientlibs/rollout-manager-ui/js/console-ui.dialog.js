@@ -64,7 +64,7 @@
         if (message.type !== 'rollout' && message.type !== 'activation') return;
         const itemToUpdate = $(dialog)
             .find('.rollout-log-item')
-            .filter((i, item) => $(item).text() === message.path)
+            .filter((i, item) => $.trim($(item).text()) === message.path)
             .first();
         if (!itemToUpdate.length) return;
 
