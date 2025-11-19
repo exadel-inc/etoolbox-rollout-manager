@@ -27,8 +27,8 @@ public class RolloutPlanUtil {
     public static RolloutItem[] getItems(String source) {
         try {
             return OBJECT_MAPPER.readValue(source, RolloutItem[].class);
-        } catch (IOException e) {
-            LOG.error("Failed to map JSON to models", e);
+        } catch (IOException | IllegalArgumentException e) {
+            LOG.error("Failed to extract items", e);
         }
         return null;
     }

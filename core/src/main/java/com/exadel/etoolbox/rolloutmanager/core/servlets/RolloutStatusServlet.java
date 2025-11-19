@@ -14,7 +14,10 @@
 
 package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
+import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
+import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutLogUtil;
+import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ThrottledLogger;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -215,7 +219,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         }
 
         String[] log = Stream.concat(
-                Stream.of(job.getProperty(RolloutExecutor.PROPERTY_PRE_LOG, String.class)),
+                Stream.of(getTargetsLogEntry(job)),
                 Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
             )
             .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
@@ -248,6 +252,19 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             .collect(Collectors.toList());
         output.put(PROPERTY_MESSAGES, processedLogMessages);
         return output;
+    }
+
+    private static String getTargetsLogEntry(Job job) {
+        RolloutItem[] items = RolloutPlanUtil.getItems(job.getProperty(RolloutExecutor.PROPERTY_PLAN, String.class));
+        if (ArrayUtils.isEmpty(items)) {
+            return StringUtils.EMPTY;
+        }
+        assert items != null;
+        AtomicReference<String> result = new AtomicReference<>();
+        RolloutLogUtil.logTargets(
+            result::set,
+            Arrays.stream(items).sorted().map(RolloutItem::getTarget).collect(Collectors.toList()));
+        return result.get();
     }
 
     private Map<String, Integer> getQueuePosition(Job job) {
