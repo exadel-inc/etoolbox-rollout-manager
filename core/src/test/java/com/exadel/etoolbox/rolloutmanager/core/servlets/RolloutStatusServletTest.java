@@ -16,6 +16,7 @@ package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
 import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ThrottledLogger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.wcm.testing.mock.aem.junit5.AemContext;
@@ -33,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -136,7 +138,7 @@ class RolloutStatusServletTest {
 
     @Test
     void shouldReturnDetailsForMultipleTasks() throws IOException {
-        for (String tasks : Arrays.asList("job-1,job-2,job-3", "job-1;job-2")) {
+        for (String tasks : Arrays.asList("job-1,job-2,job-3", "job-1; job-2; job-3")) {
             context.request().addRequestParameter(PARAM_TASK, tasks);
 
             Job job1 = mock(Job.class);
@@ -158,7 +160,7 @@ class RolloutStatusServletTest {
             String output = context.response().getOutputAsString();
             JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
             assertNotNull(jsonNode.get("tasks"));
-            assertEquals(2, jsonNode.get("tasks").size());
+            assertEquals(3, jsonNode.get("tasks").size());
 
             JsonNode task1 = jsonNode.get("tasks").get(0);
             assertEquals("job-1", task1.get("id").asText());
@@ -167,6 +169,11 @@ class RolloutStatusServletTest {
             JsonNode task2 = jsonNode.get("tasks").get(1);
             assertEquals("job-2", task2.get("id").asText());
             assertEquals("inactive", task2.get("status").asText());
+
+            JsonNode task3 = jsonNode.get("tasks").get(2);
+            assertEquals("job-3", task3.get("id").asText());
+            assertEquals("inactive", task3.get("status").asText());
+            assertEquals("Task is not found", task3.get("error").asText());
 
             context.response().reset();
         }
@@ -186,7 +193,7 @@ class RolloutStatusServletTest {
 
         assertEquals(HttpStatus.SC_OK, context.response().getStatus());
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals(TEST_JOB_ID, jsonNode.get("id").asText());
         assertEquals("active", jsonNode.get("status").asText());
         assertTrue(jsonNode.get("messages").isEmpty());
@@ -206,7 +213,7 @@ class RolloutStatusServletTest {
 
         assertEquals(HttpStatus.SC_OK, context.response().getStatus());
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals("active", jsonNode.get("status").asText());
         assertTrue(jsonNode.get("queue") == null || jsonNode.get("queue").isNull());
     }
@@ -225,7 +232,7 @@ class RolloutStatusServletTest {
 
         assertEquals(HttpStatus.SC_OK, context.response().getStatus());
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals("inactive", jsonNode.get("status").asText());
     }
 
@@ -238,7 +245,7 @@ class RolloutStatusServletTest {
 
         assertEquals(HttpStatus.SC_NOT_FOUND, context.response().getStatus());
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals(TEST_JOB_ID, jsonNode.get("id").asText());
         assertEquals("inactive", jsonNode.get("status").asText());
     }
@@ -257,7 +264,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals("Job completed successfully", jsonNode.get("result").asText());
     }
 
@@ -276,7 +283,7 @@ class RolloutStatusServletTest {
 
         assertEquals(HttpStatus.SC_OK, context.response().getStatus());
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals("inactive", jsonNode.get("status").asText());
         assertEquals("Something went wrong", jsonNode.get("error").asText());
     }
@@ -295,7 +302,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         assertEquals("Job gave up", jsonNode.get("error").asText());
     }
 
@@ -315,8 +322,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertEquals(2, messages.size());
         assertEquals("Processing page 1", messages.get(0).get("message").asText());
         assertEquals("Processing page 2", messages.get(1).get("message").asText());
@@ -342,8 +348,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertEquals(3, messages.size());
         assertEquals("Message 1", messages.get(0).get("message").asText());
         assertEquals("Message 2", messages.get(1).get("message").asText());
@@ -368,8 +373,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertEquals(1, messages.size());
         assertEquals("Message 3", messages.get(0).get("message").asText());
         assertEquals(2, messages.get(0).get("id").asInt());
@@ -457,8 +461,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertTrue(messages.isEmpty());
     }
 
@@ -480,8 +483,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertEquals(1, messages.size());
         assertEquals("Valid message", messages.get(0).get("message").asText());
         assertEquals(1, messages.get(0).get("id").asInt());
@@ -500,8 +502,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
-        JsonNode messages = jsonNode.get("messages");
+        JsonNode messages = getFirstMessagesNode(output);
         assertTrue(messages.isEmpty());
     }
 
@@ -528,7 +529,7 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         JsonNode queue = jsonNode.get("queue");
         assertNotNull(queue);
         assertEquals(2, queue.get("position").asInt());
@@ -558,14 +559,27 @@ class RolloutStatusServletTest {
         fixture.doGet(context.request(), context.response());
 
         String output = context.response().getOutputAsString();
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode jsonNode = getFirstTaskNode(output);
         JsonNode queue = jsonNode.get("queue");
         assertNotNull(queue);
         assertEquals(3, queue.get("position").asInt());
         assertEquals(3, queue.get("total").asInt());
     }
 
-    private static java.util.Calendar getCalendar(long timeInMillis) {
+    /* -------------------
+       Get service methods
+       ------------------- */
+
+    private static JsonNode getFirstTaskNode(String output) throws JsonProcessingException {
+        return OBJECT_MAPPER.readTree(output).get("tasks").get(0);
+    }
+
+    private static JsonNode getFirstMessagesNode(String output) throws JsonProcessingException {
+        JsonNode jsonNode = getFirstTaskNode(output);
+        return jsonNode.get("messages");
+    }
+
+    private static Calendar getCalendar(long timeInMillis) {
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         calendar.setTimeInMillis(timeInMillis);
         return calendar;

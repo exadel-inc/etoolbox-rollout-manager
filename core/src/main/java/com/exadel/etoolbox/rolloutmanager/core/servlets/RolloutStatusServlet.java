@@ -69,9 +69,13 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
     private static final String PARAM_OFFSET = "offset";
     private static final String PARAM_TASK = "task";
 
+    private static final String PROPERTY_ERROR = "error";
     private static final String PROPERTY_ID = "id";
     private static final String PROPERTY_MESSAGES = "messages";
+    private static final String PROPERTY_RESULT = "result";
     private static final String PROPERTY_STATUS = "status";
+
+    private static final String ERROR_NOT_FOUND = "Task is not found";
 
     private static final String STATUS_INACTIVE = "inactive";
     private static final String STATUS_ACTIVE = "active";
@@ -79,9 +83,14 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
     private static final String SEPARATOR_CHARS = ",;";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String PROPERTY_TASKS = "tasks";
 
     @Reference
     private transient JobManager jobManager;
+
+    /* ------
+       Output
+       ------ */
 
     @Override
     protected void doGet(
@@ -92,11 +101,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         if (StringUtils.isBlank(jobId)) {
             outputAllTasks(request, response);
         } else if (StringUtils.containsAny(jobId, ',', ';')) {
-            List<Job> jobs = Stream.of(StringUtils.split(jobId, SEPARATOR_CHARS))
-                .map(id -> jobManager.getJobById(id))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-            outputMultipleTasks(request, response, jobs);
+            outputMultipleTasks(request, response, StringUtils.split(jobId, SEPARATOR_CHARS));
         } else {
             outputOneTask(request, response, jobId);
         }
@@ -117,23 +122,31 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             ServletUtil.writeError(response, HttpStatus.SC_NOT_FOUND, "There are no active tasks for the current user");
             return;
         }
-        outputMultipleTasks(request, response, jobs);
+        List<Map<String, Object>> tasks = jobs
+            .stream()
+            .map(job -> getTaskDetails(job, 0))
+            .collect(Collectors.toList());
+        Map<String, Object> output = Collections.singletonMap(PROPERTY_TASKS, tasks);
+        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
     }
 
     private void outputMultipleTasks(
             SlingHttpServletRequest request,
             SlingHttpServletResponse response,
-            List<Job> jobs) throws IOException {
+            String[] jobIds) throws IOException {
         String offsetString = ServletUtil.getRequestParamString(request, PARAM_OFFSET);
         int[] offsets = Arrays.stream(StringUtils.split(offsetString, SEPARATOR_CHARS))
             .filter(StringUtils::isNumeric)
             .mapToInt(Integer::parseInt)
             .toArray();
-        List<Map<String, Object>> tasks = IntStream.range(0, jobs.size())
-            .mapToObj(index -> getTaskDetails(jobs.get(index), index < offsets.length ? offsets[index] : 0))
+        List<Map<String, Object>> tasks = IntStream.range(0, jobIds.length)
+            .mapToObj(index -> {
+                String jobId = jobIds[index];
+                int offset = index < offsets.length ? offsets[index] : 0;
+                return getTaskDetails(jobId, offset);
+            })
             .collect(Collectors.toList());
-        Map<String, Object> output = new HashMap<>();
-        output.put("tasks", tasks);
+        Map<String, Object> output = Collections.singletonMap(PROPERTY_TASKS, tasks);
         ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
     }
 
@@ -142,18 +155,32 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             SlingHttpServletResponse response,
             String jobId) throws IOException {
 
+        int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
+        Map<String, Object> taskDetails = getTaskDetails(jobId, offset);
+
+        if (ERROR_NOT_FOUND.equals(taskDetails.get(PROPERTY_ERROR))) {
+            response.setStatus(HttpStatus.SC_NOT_FOUND);
+        }
+
+        List<Map<String, Object>> tasks = Collections.singletonList(taskDetails);
+        Map<String, Object> output = Collections.singletonMap(PROPERTY_TASKS, tasks);
+        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+    }
+
+    /* --------------------
+       Task (job) detailing
+       -------------------- */
+
+    private Map<String, Object> getTaskDetails(String jobId, int offset) {
         Job job = jobManager.getJobById(jobId);
         if (job == null) {
             Map<String, Object> output = new HashMap<>();
             output.put(PROPERTY_ID, jobId);
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
-            response.setStatus(HttpStatus.SC_NOT_FOUND);
-            ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
-            return;
+            output.put(PROPERTY_ERROR, ERROR_NOT_FOUND);
+            return output;
         }
-        int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
-        Map<String, Object> output = getTaskDetails(job, offset);
-        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+        return getTaskDetails(job, offset);
     }
 
     private Map<String, Object> getTaskDetails(Job job, int offset) {
@@ -180,11 +207,11 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
                 || jobState == Job.JobState.STOPPED)
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
-            output.put("error", job.getResultMessage());
+            output.put(PROPERTY_ERROR, job.getResultMessage());
         } else if (
             jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
         ) {
-            output.put("result", job.getResultMessage());
+            output.put(PROPERTY_RESULT, job.getResultMessage());
         }
 
         String[] log = Stream.concat(
