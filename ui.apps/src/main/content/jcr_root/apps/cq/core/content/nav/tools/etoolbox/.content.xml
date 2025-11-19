@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          jcr:primaryType="nt:unstructured"
+          jcr:title="EToolbox">
+    <rollout-manager
+            jcr:primaryType="nt:unstructured"
+            jcr:title="EToolbox Rollout Manager"
+            jcr:description="Multi-level content rollout and activation"
+            href="/etoolbox/rollout-manager/history.html"
+            consoleId="etoolbox-rollout-manager"
+            icon="etoolbox-rm"
+            order="{Long}100"/>
+</jcr:root>
