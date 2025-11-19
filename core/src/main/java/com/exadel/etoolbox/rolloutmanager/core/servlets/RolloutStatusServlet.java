@@ -37,8 +37,6 @@ import org.osgi.service.component.propertytypes.ServiceDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
 import javax.servlet.Servlet;
 import java.io.IOException;
 import java.util.Arrays;
@@ -68,8 +66,6 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
     private static final int NO_LIMIT = 0;
     private static final Map<String,Object>[] NO_FILTER = null;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private static final String PARAM_OFFSET = "offset";
     private static final String PARAM_TASK = "task";
 
@@ -79,6 +75,10 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
 
     private static final String STATUS_INACTIVE = "inactive";
     private static final String STATUS_ACTIVE = "active";
+
+    private static final String SEPARATOR_CHARS = ",;";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Reference
     private transient JobManager jobManager;
@@ -92,7 +92,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         if (StringUtils.isBlank(jobId)) {
             outputAllTasks(request, response);
         } else if (StringUtils.containsAny(jobId, ',', ';')) {
-            List<Job> jobs = Stream.of(StringUtils.split(jobId, ",;"))
+            List<Job> jobs = Stream.of(StringUtils.split(jobId, SEPARATOR_CHARS))
                 .map(id -> jobManager.getJobById(id))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -102,7 +102,7 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         }
     }
 
-    private void outputAllTasks(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+    private void outputAllTasks(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
         String userId = ServletUtil.getUserId(request);
         if (StringUtils.isEmpty(userId)) {
             ServletUtil.writeError(response, HttpStatus.SC_BAD_REQUEST, RolloutServlet.ERROR_MISSING_USER);
@@ -123,19 +123,18 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
     private void outputMultipleTasks(
             SlingHttpServletRequest request,
             SlingHttpServletResponse response,
-            List<Job> jobs) {
-        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-        jobs
-            .stream()
-            .map(job -> getTaskDetails(request, job))
-            .map(details -> Json.createObjectBuilder(details).build())
-            .forEach(arrayBuilder::add);
-        ServletUtil.writeJsonResponse(
-            response,
-            Json.createObjectBuilder()
-                .add("tasks", arrayBuilder)
-                .build()
-                .toString());
+            List<Job> jobs) throws IOException {
+        String offsetString = ServletUtil.getRequestParamString(request, PARAM_OFFSET);
+        int[] offsets = Arrays.stream(StringUtils.split(offsetString, SEPARATOR_CHARS))
+            .filter(StringUtils::isNumeric)
+            .mapToInt(Integer::parseInt)
+            .toArray();
+        List<Map<String, Object>> tasks = IntStream.range(0, jobs.size())
+            .mapToObj(index -> getTaskDetails(jobs.get(index), index < offsets.length ? offsets[index] : 0))
+            .collect(Collectors.toList());
+        Map<String, Object> output = new HashMap<>();
+        output.put("tasks", tasks);
+        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
     }
 
     private void outputOneTask(
@@ -152,11 +151,12 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
-        Map<String, Object> output = getTaskDetails(request, job);
+        int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
+        Map<String, Object> output = getTaskDetails(job, offset);
         ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
     }
 
-    private Map<String, Object> getTaskDetails(SlingHttpServletRequest request, Job job) {
+    private Map<String, Object> getTaskDetails(Job job, int offset) {
         Map<String, Object> output = new HashMap<>();
         output.put(PROPERTY_ID, job.getId());
         Job.JobState jobState = job.getJobState();
@@ -196,7 +196,6 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
                 : Stream.of(entry))
             .filter(StringUtils::isNotBlank)
             .toArray(String[]::new);
-        int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
         if (ArrayUtils.isEmpty(log) || offset >= log.length) {
             output.put(PROPERTY_MESSAGES, Collections.emptyList());
             return output;

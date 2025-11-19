@@ -376,6 +376,72 @@ class RolloutStatusServletTest {
     }
 
     @Test
+    void shouldApplyMultipleOffsetsToMultipleTasks() throws IOException {
+        context.request().addRequestParameter(PARAM_TASK, "job-1,job-2,job-3");
+        context.request().addRequestParameter(PARAM_OFFSET, "1,0,2");
+
+        Job job1 = mock(Job.class);
+        when(job1.getId()).thenReturn("job-1");
+        when(job1.getJobState()).thenReturn(Job.JobState.ACTIVE);
+        when(job1.getProgressLog()).thenReturn(new String[]{
+            "{\"message\":\"Job1 Message 1\"}",
+            "{\"message\":\"Job1 Message 2\"}",
+            "{\"message\":\"Job1 Message 3\"}"
+        });
+
+        Job job2 = mock(Job.class);
+        when(job2.getId()).thenReturn("job-2");
+        when(job2.getJobState()).thenReturn(Job.JobState.ACTIVE);
+        when(job2.getProgressLog()).thenReturn(new String[]{
+            "{\"message\":\"Job2 Message 1\"}",
+            "{\"message\":\"Job2 Message 2\"}"
+        });
+
+        Job job3 = mock(Job.class);
+        when(job3.getId()).thenReturn("job-3");
+        when(job3.getJobState()).thenReturn(Job.JobState.ACTIVE);
+        when(job3.getProgressLog()).thenReturn(new String[]{
+            "{\"message\":\"Job3 Message 1\"}",
+            "{\"message\":\"Job3 Message 2\"}",
+            "{\"message\":\"Job3 Message 3\"}",
+            "{\"message\":\"Job3 Message 4\"}"
+        });
+
+        when(jobManager.getJobById("job-1")).thenReturn(job1);
+        when(jobManager.getJobById("job-2")).thenReturn(job2);
+        when(jobManager.getJobById("job-3")).thenReturn(job3);
+
+        fixture.doGet(context.request(), context.response());
+
+        assertEquals(HttpStatus.SC_OK, context.response().getStatus());
+        String output = context.response().getOutputAsString();
+        JsonNode jsonNode = OBJECT_MAPPER.readTree(output);
+        JsonNode tasks = jsonNode.get("tasks");
+        assertEquals(3, tasks.size());
+
+        JsonNode task1 = tasks.get(0);
+        assertEquals("job-1", task1.get("id").asText());
+        JsonNode task1Messages = task1.get("messages");
+        assertEquals(2, task1Messages.size());
+        assertEquals("Job1 Message 2", task1Messages.get(0).get("message").asText());
+        assertEquals(1, task1Messages.get(0).get("id").asInt());
+
+        JsonNode task2 = tasks.get(1);
+        assertEquals("job-2", task2.get("id").asText());
+        JsonNode task2Messages = task2.get("messages");
+        assertEquals(2, task2Messages.size());
+        assertEquals("Job2 Message 1", task2Messages.get(0).get("message").asText());
+        assertEquals(0, task2Messages.get(0).get("id").asInt());
+
+        JsonNode task3 = tasks.get(2);
+        assertEquals("job-3", task3.get("id").asText());
+        JsonNode task3Messages = task3.get("messages");
+        assertEquals(2, task3Messages.size());
+        assertEquals("Job3 Message 3", task3Messages.get(0).get("message").asText());
+        assertEquals(2, task3Messages.get(0).get("id").asInt());
+    }
+
+    @Test
     void shouldReturnEmptyMessagesWhenOffsetExceedsLogLength() throws IOException {
         context.request().addRequestParameter(PARAM_TASK, TEST_JOB_ID);
         context.request().addRequestParameter(PARAM_OFFSET, "10");
