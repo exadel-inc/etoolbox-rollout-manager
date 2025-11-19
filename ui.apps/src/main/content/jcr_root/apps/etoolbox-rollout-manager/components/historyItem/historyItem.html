@@ -1,0 +1,28 @@
+<tr class="foundation-collection-item ${properties.status}" is="coral-table-row">
+    <td class="date created" is="coral-table-cell">
+        ${properties.dateCreated || '&ndash;' @ context='html'}
+    </td>
+    <td class="initiator" is="coral-table-cell">
+        ${properties.initiator}
+    </td>
+    <td class="date started" is="coral-table-cell">
+        ${properties.dateStarted || '&ndash;' @ context='html'}
+    </td>
+    <td class="date finished" is="coral-table-cell">
+        ${properties.dateFinished || '&ndash;' @ context='html'}
+    </td>
+    <td class="source" is="coral-table-cell">
+        ${properties.source}
+    </td>
+    <td class="targets" is="coral-table-cell">
+        <sly data-sly-list.item="${properties.target}">
+            <div class="target ${properties.target.size > 3 && itemList.count > 2 ? 'extra' : ''}">${item @ context='unsafe'}</div>
+        </sly>
+        <div data-sly-test="${properties.target.size > 3}" class="show-extra" role="button">
+            ... Total ${properties.target.size} targets (click to expand)
+        </div>
+    </td>
+    <td class="status" is="coral-table-cell">
+        ${properties.status}
+    </td>
+</tr>
