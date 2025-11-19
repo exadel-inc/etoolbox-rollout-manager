@@ -48,10 +48,9 @@
                     <filters>
                         <!-- /apps root -->
                         <filter><root>/apps</root></filter>
+                        <filter><root>/apps/cq/core/content/nav/tools/etoolbox</root></filter>
                         <filter><root>/apps/etoolbox-rollout-manager</root></filter>
                         <filter><root>/apps/wcm/core/content/sites/jcr:content/actions/selection</root></filter>
-
-
                     </filters>
                 </configuration>
             </plugin>
