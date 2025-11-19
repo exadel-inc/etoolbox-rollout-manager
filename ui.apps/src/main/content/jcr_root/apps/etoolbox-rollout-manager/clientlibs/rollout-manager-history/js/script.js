@@ -12,5 +12,4 @@
     $(document).off('erm-history')
         .on('click.erm-history', '#refresh', onRefreshClick)
         .on('click.erm-history', '.show-extra', onShowExtraClick);
-
 })(document, Granite.$);
