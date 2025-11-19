@@ -2,6 +2,7 @@ package com.exadel.etoolbox.rolloutmanager.core.utils;
 
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,10 @@ public class RolloutPlanUtil {
      * @return array of {@link RolloutItem} objects; null if mapping fails
      */
     public static RolloutItem[] getItems(String source) {
+        if (StringUtils.isEmpty(source)) {
+            LOG.warn("Source is empty");
+            return null;
+        }
         try {
             return OBJECT_MAPPER.readValue(source, RolloutItem[].class);
         } catch (IOException e) {
