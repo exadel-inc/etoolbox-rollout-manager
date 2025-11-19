@@ -42,6 +42,8 @@ import javax.json.JsonArrayBuilder;
 import javax.servlet.Servlet;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +91,12 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         String jobId = ServletUtil.getRequestParamString(request, PARAM_TASK);
         if (StringUtils.isBlank(jobId)) {
             outputAllTasks(request, response);
+        } else if (StringUtils.containsAny(jobId, ',', ';')) {
+            List<Job> jobs = Stream.of(StringUtils.split(jobId, ",;"))
+                .map(id -> jobManager.getJobById(id))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            outputMultipleTasks(request, response, jobs);
         } else {
             outputOneTask(request, response, jobId);
         }
@@ -101,23 +109,33 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             LOG.warn(RolloutServlet.ERROR_MISSING_USER);
             return;
         }
-        List<String> jobIds = jobManager.findJobs(JobManager.QueryType.ACTIVE, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER)
+        List<Job> jobs = jobManager.findJobs(JobManager.QueryType.ACTIVE, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER)
                 .stream()
                 .filter(job -> userId.equals(job.getProperty(RolloutExecutor.PROPERTY_USER, String.class)))
-                .map(Job::getId)
                 .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(jobIds)) {
+        if (CollectionUtils.isEmpty(jobs)) {
             ServletUtil.writeError(response, HttpStatus.SC_NOT_FOUND, "There are no active tasks for the current user");
             return;
         }
+        outputMultipleTasks(request, response, jobs);
+    }
+
+    private void outputMultipleTasks(
+            SlingHttpServletRequest request,
+            SlingHttpServletResponse response,
+            List<Job> jobs) {
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-        jobIds.forEach(arrayBuilder::add);
+        jobs
+            .stream()
+            .map(job -> getTaskDetails(request, job))
+            .map(details -> Json.createObjectBuilder(details).build())
+            .forEach(arrayBuilder::add);
         ServletUtil.writeJsonResponse(
-                response,
-                Json.createObjectBuilder()
-                        .add("tasks", arrayBuilder)
-                        .build()
-                        .toString());
+            response,
+            Json.createObjectBuilder()
+                .add("tasks", arrayBuilder)
+                .build()
+                .toString());
     }
 
     private void outputOneTask(
@@ -134,7 +152,11 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
             ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
             return;
         }
+        Map<String, Object> output = getTaskDetails(request, job);
+        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+    }
 
+    private Map<String, Object> getTaskDetails(SlingHttpServletRequest request, Job job) {
         Map<String, Object> output = new HashMap<>();
         output.put(PROPERTY_ID, job.getId());
         Job.JobState jobState = job.getJobState();
@@ -143,52 +165,87 @@ public class RolloutStatusServlet extends SlingSafeMethodsServlet {
         } else {
             output.put(PROPERTY_STATUS, STATUS_INACTIVE);
         }
+
+        if (jobState == Job.JobState.QUEUED) {
+            Map<String, Integer> queuePosition = getQueuePosition(job);
+            if (queuePosition != null) {
+                output.put("queue", queuePosition);
+            }
+        }
+
         if (
-                (jobState == Job.JobState.ERROR
-                        || jobState == Job.JobState.GIVEN_UP
-                        || jobState == Job.JobState.DROPPED
-                        || jobState == Job.JobState.STOPPED)
+            (jobState == Job.JobState.ERROR
+                || jobState == Job.JobState.GIVEN_UP
+                || jobState == Job.JobState.DROPPED
+                || jobState == Job.JobState.STOPPED)
                 && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("error", job.getResultMessage());
         } else if (
-                jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
+            jobState == Job.JobState.SUCCEEDED && StringUtils.isNotBlank(job.getResultMessage())
         ) {
             output.put("result", job.getResultMessage());
         }
 
-        String[] log = Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
-                .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
-                            ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
-                            : Stream.of(entry))
-                .filter(StringUtils::isNotBlank)
-                .toArray(String[]::new);
+        String[] log = Stream.concat(
+                Stream.of(job.getProperty(RolloutExecutor.PROPERTY_PRE_LOG, String.class)),
+                Arrays.stream(ArrayUtils.nullToEmpty(job.getProgressLog()))
+            )
+            .flatMap(entry -> StringUtils.contains(entry, ThrottledLogger.ENTRY_SEPARATOR)
+                ? Arrays.stream(StringUtils.split(entry, ThrottledLogger.ENTRY_SEPARATOR))
+                : Stream.of(entry))
+            .filter(StringUtils::isNotBlank)
+            .toArray(String[]::new);
         int offset = ServletUtil.getRequestParamInt(request, PARAM_OFFSET);
         if (ArrayUtils.isEmpty(log) || offset >= log.length) {
             output.put(PROPERTY_MESSAGES, Collections.emptyList());
-            ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writeValueAsString(output));
-            return;
+            return output;
         }
 
         List<JsonNode> processedLogMessages = IntStream.range(0, log.length)
-                .skip(offset)
-                .mapToObj(index -> {
-                    String entry = log[index];
-                    try {
-                        JsonNode node = OBJECT_MAPPER.readTree(entry);
-                        if (!(node instanceof ObjectNode)) {
-                            throw new IOException("Not a JSON object");
-                        }
-                        ((ObjectNode) node).put(PROPERTY_ID, index);
-                        return node;
-                    } catch (IOException e) {
-                        LOG.warn("Could not parse log entry: {}", entry, e);
+            .skip(offset)
+            .mapToObj(index -> {
+                String entry = log[index];
+                try {
+                    JsonNode node = OBJECT_MAPPER.readTree(entry);
+                    if (!(node instanceof ObjectNode)) {
+                        throw new IOException("Not a JSON object");
                     }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                    ((ObjectNode) node).put(PROPERTY_ID, index);
+                    return node;
+                } catch (IOException e) {
+                    LOG.warn("Could not parse log entry: {}", entry, e);
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
         output.put(PROPERTY_MESSAGES, processedLogMessages);
-        ServletUtil.writeJsonResponse(response, OBJECT_MAPPER.writer().writeValueAsString(output));
+        return output;
+    }
+
+    private Map<String, Integer> getQueuePosition(Job job) {
+        Collection<Job> queuedJobs = jobManager.findJobs(JobManager.QueryType.QUEUED, RolloutExecutor.TOPIC, NO_LIMIT, NO_FILTER);
+        if (CollectionUtils.isEmpty(queuedJobs)) {
+            return null;
+        }
+        List<Job> sortedJobs = queuedJobs.stream()
+            .sorted((j1, j2) -> {
+                Calendar c1 = j1.getCreated();
+                Calendar c2 = j2.getCreated();
+                if (c1 == null && c2 == null) {
+                    return 0;
+                } else if (c1 == null) {
+                    return 1;
+                } else if (c2 == null) {
+                    return -1;
+                }
+                return c1.compareTo(c2);
+            })
+            .collect(Collectors.toList());
+        Map<String, Integer> result = new HashMap<>();
+        result.put("position", sortedJobs.indexOf(job) + 1);
+        result.put("total", sortedJobs.size());
+        return result;
     }
 }

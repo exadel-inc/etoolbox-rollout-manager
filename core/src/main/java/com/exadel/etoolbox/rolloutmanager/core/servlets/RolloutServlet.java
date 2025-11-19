@@ -15,8 +15,8 @@
 package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
-import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
 import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
+import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutLogUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;
 import org.apache.commons.httpclient.HttpStatus;
@@ -37,16 +37,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.json.Json;
 import javax.servlet.Servlet;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
- * Performs rollout based on input json array. The 'isDeepRollout' request parameter defines if child pages should be
- * included in the rollout process. The json array is mapped to the array of {@link RolloutItem}. The rollout items
- * array is then grouped by depth which defines a level of nesting for live relationships. The items with a lower depth
- * are rolled out first. Rollout operation returns a {@link List} of {@link RolloutStatus} items. Failed items are put
- * into the servlet response and outputted in the UI dialog.
+ * Initiates a rollout based on the provided JSON array. The {@code isDeepRollout} request parameter defines if child
+ * pages should be included in the rollout process
  */
 @Component(service = Servlet.class)
 @SlingServletResourceTypes(
@@ -95,6 +94,7 @@ public class RolloutServlet extends SlingAllMethodsServlet {
         jobProperties.put(RolloutExecutor.PROPERTY_DEEP, ServletUtil.getRequestParamBoolean(request, PARAM_IS_DEEP));
         jobProperties.put(RolloutExecutor.PROPERTY_PLAN, rolloutPlanSource);
         jobProperties.put(RolloutExecutor.PROPERTY_USER, userId);
+        jobProperties.put(RolloutExecutor.PROPERTY_PRE_LOG, getPreLog(rolloutPlanSource));
         Job job = jobManager.addJob(RolloutExecutor.TOPIC, jobProperties);
         if (job == null) {
             ServletUtil.writeError(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, ERROR_COULD_NOT_CREATE);
@@ -104,5 +104,18 @@ public class RolloutServlet extends SlingAllMethodsServlet {
 
         response.setStatus(HttpStatus.SC_CREATED);
         ServletUtil.writeJsonResponse(response, Json.createObjectBuilder().add("task", job.getId()).build().toString());
+    }
+
+    private static String getPreLog(String rolloutPlanSource) {
+        RolloutItem[] items = RolloutPlanUtil.getItems(rolloutPlanSource);
+        if (ArrayUtils.isEmpty(items)) {
+            return StringUtils.EMPTY;
+        }
+        assert items != null;
+        AtomicReference<String> result = new AtomicReference<>();
+        RolloutLogUtil.logTargets(
+            result::set,
+            Arrays.stream(items).sorted().map(RolloutItem::getTarget).collect(Collectors.toList()));
+        return result.get();
     }
 }
