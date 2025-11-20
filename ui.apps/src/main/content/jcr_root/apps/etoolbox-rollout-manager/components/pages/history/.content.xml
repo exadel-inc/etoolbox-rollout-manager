@@ -48,7 +48,7 @@
                             size="{Long}40"
                             skipEmptyRow="{Boolean}true"
                             src="${requestPathInfo.resourcePath}.html{?offset,limit}"
-                            variant="list">
+                            variant="quiet">
                             <columns jcr:primaryType="nt:unstructured">
                                 <created
                                     jcr:primaryType="nt:unstructured"

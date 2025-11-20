@@ -1,7 +1,8 @@
-@color-active: rgb(81, 210, 103);
+@background-color-active: rgb(255, 255, 255);
+@color-active: rgb(90, 169, 250);
 @color-error: rgb(227, 72, 80);
 @color-queued: rgb(242, 148, 35);
-@color-success: rgb(90, 169, 250);
+@color-success: rgb(81, 210, 103);
 
 @padding-no-icon: ~"calc(18px + 0.3rem)";
 
@@ -26,9 +27,9 @@ tr.foundation-collection-item {
     }
 
     &.active {
+        background-color: @background-color-active;
         td:first-child:before {
             background-color: @color-active;
-            width: 0.35rem;
         }
     }
     &.failure {
@@ -37,9 +38,9 @@ tr.foundation-collection-item {
         }
     }
     &.queued {
+        background-color: @background-color-active;
         td:first-child:before {
             background-color: @color-queued;
-            width: 0.35rem;
         }
     }
     &.success {
