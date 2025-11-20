@@ -75,7 +75,6 @@ public class RolloutExecutor implements JobExecutor {
     public static final String PROPERTY_DEEP = "deep";
     private static final String PROPERTY_INITIATOR = "initiator";
     public static final String PROPERTY_PLAN = "plan";
-    public static final String PROPERTY_PRE_LOG = "prelog";
     private static final String PROPERTY_TOPIC = "topic";
     public static final String PROPERTY_USER = "user";
 
