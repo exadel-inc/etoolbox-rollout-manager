@@ -5,3 +5,4 @@ console-ui.dialog.js
 console-ui.actions.js
 time-util.js
 rollout-utils.js
+storage-utils.js

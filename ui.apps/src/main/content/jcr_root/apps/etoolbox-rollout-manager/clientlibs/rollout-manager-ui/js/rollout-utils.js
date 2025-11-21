@@ -12,29 +12,42 @@
  * limitations under the License.
  */
 
-/**
- * EToolbox Rollout Manager clientlib.
- * 'Rollout' button and dialog actions definition.
- */
 (function ($, ns, Granite) {
     'use strict';
 
     const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
     const CHECK_STATUS_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout/status';
-    const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
+  //  const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Failed because of');
     const STATUS_UPDATE_INTERVAL = 5000;
+
+    $(function () {
+        // const data = ns.getItemsData();
+        // const dialogData = ns.getOpenDialogData();
+        // if (!data.length && !dialogData.length) return;
+        //
+        // let logger;
+        // if (dialogData.length) {
+        //     const shouldUpdate = data.every(item => item.id !== dialogData.id);
+        //     if (shouldUpdate) ns.changeItemsData('add', dialogData.id, 0, dialogData.path);
+        //     logger = ns.createLoggerDialog(dialogData.path);
+        // }
+        // createStatusUpdater(logger)
+        //     .catch((e) => logger.finished(`${PROCESSING_ERROR_MSG} ${e}`));
+    });
 
     async function doItemsRollout(data) {
         const logger = ns.createLoggerDialog();
         try {
             const response = await buildRolloutRequest(data);
             if (response.task) {
-                await createStatusUpdater(logger, response.task);
-                logger.finished(SUCCESS_MSG);
+                ns.setOpenDialogKey(JSON.stringify({id: response.task, path: data.path}));
+                ns.changeItemsData('add', response.task, 0, data.path);
+                await promisifyTimeout(1000);
+                await createStatusUpdater(logger);
             }
         } catch (e) {
-            logger.finished(PROCESSING_ERROR_MSG + ' ' + e);
+            logger ? logger.finished(`${PROCESSING_ERROR_MSG} ${e}`) : console.log(`${PROCESSING_ERROR_MSG} ${e}`);
         }
     }
     ns.doItemsRollout = doItemsRollout;
@@ -58,24 +71,49 @@
         }
     }
 
-    async function createStatusUpdater(logger, taskId) {
-        let response = { status: 'active' };
-        let offset = 0;
-        while (response.status === 'active') {
-            response = await getStatusInfo(taskId, offset);
+    async function createStatusUpdater(logger) {
+        let response = { tasks: [{'status': 'active'}]};
+        while (response.tasks && response.tasks.some(item => item.status === 'active')) {
+            const data = ns.getItemsData();
+            if (!data.length) throw new Error('No active tasks found');
 
-            if (response.error) throw new Error(`${response.error}`);
+            const id = data.map(item => item.id).join(';');
+            const offset = data.map(item => item.offset).join(';');
 
-            if (response.messages && response.messages.length) {
-                offset = response.messages.reduce((total, msg) => {
-                    logger.log(msg, response.queue);
-                    return msg.id > total ? msg.id : total;
-                }, offset);
+            response = await getStatusInfo(id, offset);
+            let limit = id.split(';').length;
+            if (response.tasks.length < limit) {
+                console.log('aborting due to missing tasks in response');
+                response.abort();
             }
-
-            if (!response.status) throw new Error('Wrong response from the server');
-
+            response.tasks.forEach((task) => handleTaskResponse(task, logger));
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
+        }
+    }
+
+    function handleTaskResponse(task, logger) {
+        const openDialogData = ns.getOpenDialogData(task.id);
+        const isOpenDialog = openDialogData.id && openDialogData.id === task.id;
+        let { offset, path } = ns.getItemsData().find(item => item.id === task.id);
+
+        if (task.error) {
+            isOpenDialog ? logger.finished(`${task.error}`) : ns.showStatusMessage(path, `${task.error}`, 'error');
+            ns.changeItemsData('remove', task.id);
+            return;
+        }
+
+        if (task.messages && task.messages.length) {
+            offset = task.messages.reduce((total, msg) => {
+                isOpenDialog && logger.log(msg, task.queue);
+                return msg.id > total ? msg.id : total;
+            }, offset);
+        }
+
+        if (task.status && task.status === 'active') {
+            ns.changeItemsData('update', task.id, offset);
+        } else {
+            isOpenDialog ? logger.finished(`${task.result}`) : ns.showStatusMessage(path, `${task.result}`, !task.status ? 'error' : 'success');
+            ns.changeItemsData('remove', task.id);
         }
     }
 

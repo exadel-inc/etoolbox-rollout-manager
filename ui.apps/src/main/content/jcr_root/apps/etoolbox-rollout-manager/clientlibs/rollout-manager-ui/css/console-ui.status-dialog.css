@@ -30,3 +30,10 @@
         }
     }
 }
+
+#rollout-manager-status-popup {
+    z-index: 10031; /* more than coral-dialog */
+    top: 60px;
+    left: 50%;
+    transform: translate(-50%, 0);
+}

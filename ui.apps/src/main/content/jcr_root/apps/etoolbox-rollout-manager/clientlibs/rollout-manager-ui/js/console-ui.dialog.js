@@ -31,7 +31,10 @@
                 backdrop: Coral.Dialog.backdrop.STATIC,
                 interaction: 'off'
             }).on('coral-overlay:close', function (e) {
-                baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
+                if (baseDialog.classList.contains(LOGGER_DIALOG_CLASS)) {
+                    baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
+                    ns.removeOpenDialogKey();
+                }
                 e.target.remove();
             });
             baseDialog.classList.add(BASE_DIALOG_CLASS);
@@ -169,6 +172,19 @@
         };
     }
     ns.createLoggerDialog = createLoggerDialog;
+
+    function showStatusMessage(path, message, status) {
+        const popup = new Coral.Alert();
+        popup.id = 'rollout-manager-status-popup';
+        popup.variant = status;
+        popup.content.textContent = `${DIALOG_LABEL} ${path} ${message}`;
+        document.body.append(popup);
+        setTimeout(() => {
+            $(popup).fadeOut();
+            popup.remove();
+        }, 3000);
+    }
+    ns.showStatusMessage = showStatusMessage;
 
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
