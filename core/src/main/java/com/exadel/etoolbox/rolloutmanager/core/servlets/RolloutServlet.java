@@ -38,15 +38,11 @@ import org.slf4j.LoggerFactory;
 import javax.json.Json;
 import javax.servlet.Servlet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Performs rollout based on input json array. The 'isDeepRollout' request parameter defines if child pages should be
- * included in the rollout process. The json array is mapped to the array of {@link RolloutItem}. The rollout items
- * array is then grouped by depth which defines a level of nesting for live relationships. The items with a lower depth
- * are rolled out first. Rollout operation returns a {@link List} of {@link RolloutStatus} items. Failed items are put
- * into the servlet response and outputted in the UI dialog.
+ * Initiates a rollout based on the provided JSON array. The {@code isDeepRollout} request parameter defines if child
+ * pages should be included in the rollout process
  */
 @Component(service = Servlet.class)
 @SlingServletResourceTypes(
