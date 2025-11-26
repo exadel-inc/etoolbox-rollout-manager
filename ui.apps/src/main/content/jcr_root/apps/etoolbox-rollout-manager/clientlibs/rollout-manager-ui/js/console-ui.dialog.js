@@ -405,7 +405,7 @@
      */
     function filterLiveCopiesTree(liveCopies, searchTerm) {
         if (!searchTerm) return liveCopies;
-        const term = searchTerm.toLowerCase().trim();
+        const term = searchTerm.trim().toLowerCase();
 
         const filterNode = ({ path, liveCopies: children = [], ...rest }) => {
             const pathMatch = path && path.toLowerCase().includes(term);
