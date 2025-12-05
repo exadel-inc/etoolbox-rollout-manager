@@ -81,7 +81,7 @@
     async function createStatusUpdater(logger, startIdArray = [], offsetFromStart = false) {
         let response = { tasks: [{'status': 'active'}]};
         while (response.tasks && response.tasks.some(item => item.status === 'active')) {
-            let data = ns.getItemsData();
+            const data = ns.getItemsData();
             if (!data.length) return;
 
             const id = data.map(item => item.id).join(';');
@@ -110,7 +110,7 @@
     }
 
     function getStartIdArray() {
-        return ns.getItemsData().map(item => item.id).join(';').split(';');
+        return ns.getItemsData().map(item => item.id);
     }
 
     function isOpenDialogTask(id) {
