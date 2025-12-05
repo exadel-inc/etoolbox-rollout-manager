@@ -28,7 +28,7 @@
         let logger;
         if (dialogData.length) {
             const loggerData = dialogData[0];
-            const shouldUpdateData = data.every(item => item.id !== loggerData.id);
+            const shouldUpdateData = data.every((item) => item.id !== loggerData.id);
             if (shouldUpdateData) ns.changeItemsData('add', loggerData.id, 0, loggerData.path);
             logger = ns.createLoggerDialog(loggerData.path);
         }
@@ -79,18 +79,20 @@
     }
 
     async function createStatusUpdater(logger, startIdArray = [], offsetFromStart = false) {
-        let response = { tasks: [{'status': 'active'}]};
-        while (response.tasks && response.tasks.some(item => item.status === 'active')) {
+        let response = {tasks: [{'status': 'active'}]};
+        while (response.tasks && response.tasks.some((item) => item.status === 'active')) {
             const data = ns.getItemsData();
             if (!data.length) return;
 
-            const id = data.map(item => item.id).join(';');
-            const offset =  data.map(item => {
+            const id = data.map((item) => item.id).join(';');
+            const offset =  data.map((item) => {
                 if (!offsetFromStart) return item.offset;
                 return isOpenDialogTask(item.id) ? 0 : item.offset
             }).join(';');
+
+            const startIdSet = new Set(startIdArray);
             const currentIdArray = id.split(';');
-            const isAbortRequest = currentIdArray.some(item => !startIdArray.includes(item));
+            const isAbortRequest = currentIdArray.some((item) => !startIdSet.has(item));
             response = await getStatusInfo(isAbortRequest, id, offset);
             response.tasks.forEach((task) => handleTaskResponse(task, logger));
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
@@ -120,7 +122,7 @@
 
     function handleTaskResponse(task, logger) {
         const isOpenDialog = isOpenDialogTask(task.id);
-        let { offset, path } = ns.getItemsData().find(item => item.id === task.id);
+        let {offset, path} = ns.getItemsData().find(item => item.id === task.id);
 
         if (task.error) {
             handleTaskError(task, isOpenDialog, logger, path)
