@@ -49,7 +49,6 @@
 
                 if (!ns.getItemsData().length) throw new Error('No active tasks found');
                 const startIdArray = getStartIdArray();
-                await promisifyTimeout(1000);
                 await createStatusUpdater(logger, startIdArray);
             }
         } catch (e) {
@@ -80,6 +79,7 @@
 
     async function createStatusUpdater(logger, startIdArray = [], offsetFromStart = false) {
         let response = {tasks: [{'status': 'active'}]};
+        let firstAttempt = true;
         while (response.tasks && response.tasks.some((item) => item.status === 'active')) {
             const data = ns.getItemsData();
             if (!data.length) return;
@@ -93,13 +93,17 @@
             const startIdSet = new Set(startIdArray);
             const currentIdArray = id.split(';');
             const isAbortRequest = currentIdArray.some((item) => !startIdSet.has(item));
-            response = await getStatusInfo(isAbortRequest, id, offset);
-            response.tasks.forEach((task) => handleTaskResponse(task, logger));
+            response = await getStatusInfo(isAbortRequest, firstAttempt, id, offset);
+            if (response.firstAttempt === false) {
+                firstAttempt = false;
+            } else {
+                response.tasks.forEach((task) => handleTaskResponse(task, logger));
+            }
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
         }
     }
 
-    async function getStatusInfo(isAbortRequest, taskId, offset = '0') {
+    async function getStatusInfo(isAbortRequest, firstAttempt = true, taskId, offset = '0') {
         try {
             const params = new URLSearchParams({ task: taskId, 'offset': offset });
             const url = `${CHECK_STATUS_COMMAND}?${params}`;
@@ -107,7 +111,11 @@
             if (isAbortRequest) return request.abort('Aborted requested');
             return await request;
         } catch (e) {
-            throw new Error(e.responseJSON.error || 'Job was not found');
+            if (e.status === 404 && firstAttempt) {
+                return {tasks: [{'status': 'active'}], firstAttempt: false};
+            } else {
+                throw new Error(e.responseJSON.error || 'Job was not found');
+            }
         }
     }
 
