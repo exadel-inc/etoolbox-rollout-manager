@@ -146,7 +146,7 @@
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        const $label = $('<span class="rollout-processing-label">')
+        const $label = $('<span class="rollout-processing-label">');
         $('<div class="rollout-processing-status">').append(waitIcon, $label).appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();

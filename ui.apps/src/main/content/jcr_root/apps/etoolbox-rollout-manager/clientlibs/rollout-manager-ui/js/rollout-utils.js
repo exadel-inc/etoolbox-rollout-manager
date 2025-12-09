@@ -35,7 +35,7 @@
         const startIdArray = getStartIdArray();
         createStatusUpdater(logger, startIdArray, !!dialogData.length)
             .catch((e) => {
-                logger ? logger.finished(`${PROCESSING_ERROR_MSG} ${e}`) : console.log(`${PROCESSING_ERROR_MSG} ${e}`)
+                logger ? logger.finished(`${PROCESSING_ERROR_MSG} ${e}`) : console.log(`${PROCESSING_ERROR_MSG} ${e}`);
             });
     });
 
@@ -44,7 +44,7 @@
         try {
             const response = await buildRolloutRequest(data);
             if (response.task) {
-                ns.setOpenDialogKey(JSON.stringify([{id: response.task, path: data.path}]));
+                ns.setOpenDialogKey(JSON.stringify([{ id: response.task, path: data.path }]));
                 ns.changeItemsData('add', response.task, 0, data.path);
 
                 if (!ns.getItemsData().length) throw new Error('No active tasks found');
@@ -52,8 +52,8 @@
                 await createStatusUpdater(logger, startIdArray);
             }
         } catch (e) {
-           if (e.statusText === 'Aborted requested') return;
-           logger.finished(`${PROCESSING_ERROR_MSG} ${e}`);
+            if (e.statusText === 'Aborted requested') return;
+            logger.finished(`${PROCESSING_ERROR_MSG} ${e}`);
         }
     }
     ns.doItemsRollout = doItemsRollout;
@@ -78,16 +78,16 @@
     }
 
     async function createStatusUpdater(logger, startIdArray = [], offsetFromStart = false) {
-        let response = {tasks: [{'status': 'active'}]};
+        let response = { tasks: [{ status: 'active' }] };
         let firstAttempt = true;
         while (response.tasks && response.tasks.some((item) => item.status === 'active')) {
             const data = ns.getItemsData();
             if (!data.length) return;
 
             const id = data.map((item) => item.id).join(';');
-            const offset =  data.map((item) => {
+            const offset = data.map((item) => {
                 if (!offsetFromStart) return item.offset;
-                return isOpenDialogTask(item.id) ? 0 : item.offset
+                return isOpenDialogTask(item.id) ? 0 : item.offset;
             }).join(';');
 
             const startIdSet = new Set(startIdArray);
@@ -102,14 +102,14 @@
 
     async function getStatusInfo(isAbortRequest, firstAttempt = true, taskId, offset = '0') {
         try {
-            const params = new URLSearchParams({ task: taskId, 'offset': offset });
+            const params = new URLSearchParams({ task: taskId, offset });
             const url = `${CHECK_STATUS_COMMAND}?${params}`;
             const request = $.ajax({ url });
             if (isAbortRequest) return request.abort('Aborted requested');
             return await request;
         } catch (e) {
             if (e.status === 404 && firstAttempt) {
-                return {tasks: [{'status': 'active'}], failedAttempt: true};
+                return { tasks: [{ status: 'active' }], failedAttempt: true };
             } else {
                 throw new Error(e.responseJSON.error || 'Job was not found');
             }
@@ -122,15 +122,15 @@
 
     function isOpenDialogTask(id) {
         const openDialogData = ns.getOpenDialogData(id);
-        return openDialogData.length && openDialogData[0].id === id
+        return openDialogData.length && openDialogData[0].id === id;
     }
 
     function handleTaskResponse(task, logger) {
         const isOpenDialog = isOpenDialogTask(task.id);
-        let {offset, path} = ns.getItemsData().find(item => item.id === task.id);
+        let { offset, path } = ns.getItemsData().find(item => item.id === task.id);
 
         if (task.error) {
-            handleTaskError(task, isOpenDialog, logger, path)
+            handleTaskError(task, isOpenDialog, logger, path);
             return;
         }
 

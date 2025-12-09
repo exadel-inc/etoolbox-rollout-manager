@@ -1,13 +1,13 @@
 (function ($, ns, Granite) {
     'use strict';
 
-    const ACTIVE_TASKS_ID ='erm-id';
+    const ACTIVE_TASKS_ID = 'erm-id';
     const OPEN_DIALOG_KEY = 'erm-open-id';
 
     function parseData(key) {
         try {
             return JSON.parse(sessionStorage.getItem(key)) || [];
-        } catch(e) {
+        } catch (e) {
             return [];
         }
     }
@@ -37,14 +37,14 @@
     ns.changeItemsData = changeItemsData;
 
     function addItemData(data, id, offset, path) {
-        data.push({id, offset, path});
+        data.push({ id, offset, path });
         return data;
     }
 
     function updateItemData(data, id, offset) {
         data.forEach(item => {
             if (item.id === id) item.offset = offset;
-        })
+        });
         return data;
     }
 
@@ -66,5 +66,4 @@
         return parseData(OPEN_DIALOG_KEY);
     }
     ns.getOpenDialogData = getOpenDialogData;
-
 })(Granite.$, window.ERM = (window.ERM || {}), Granite);
