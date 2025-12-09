@@ -94,11 +94,8 @@
             const currentIdArray = id.split(';');
             const isAbortRequest = currentIdArray.some((item) => !startIdSet.has(item));
             response = await getStatusInfo(isAbortRequest, firstAttempt, id, offset);
-            if (response.firstAttempt === false) {
-                firstAttempt = false;
-            } else {
-                response.tasks.forEach((task) => handleTaskResponse(task, logger));
-            }
+            if (!response.failedAttempt) response.tasks.forEach((task) => handleTaskResponse(task, logger));
+            firstAttempt = false;
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
         }
     }
@@ -112,7 +109,7 @@
             return await request;
         } catch (e) {
             if (e.status === 404 && firstAttempt) {
-                return {tasks: [{'status': 'active'}], firstAttempt: false};
+                return {tasks: [{'status': 'active'}], failedAttempt: true};
             } else {
                 throw new Error(e.responseJSON.error || 'Job was not found');
             }
