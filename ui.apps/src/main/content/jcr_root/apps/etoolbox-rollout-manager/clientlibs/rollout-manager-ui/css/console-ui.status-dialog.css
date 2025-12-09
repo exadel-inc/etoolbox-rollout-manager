@@ -1,5 +1,5 @@
 .rollout-manager-logger-dialog {
-    .rollout-processing-label {
+    .rollout-processing-status {
         font-weight: 500;
         margin-bottom: 1em;
     }
@@ -29,4 +29,11 @@
             }
         }
     }
+}
+
+#rollout-manager-status-popup {
+    z-index: 10031; /* more than coral-dialog */
+    top: 60px;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
