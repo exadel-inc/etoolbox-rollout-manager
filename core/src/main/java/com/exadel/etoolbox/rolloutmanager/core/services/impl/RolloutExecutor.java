@@ -10,6 +10,7 @@ import com.day.cq.wcm.msm.api.LiveRelationshipManager;
 import com.day.cq.wcm.msm.api.RolloutManager;
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
 import com.exadel.etoolbox.rolloutmanager.core.servlets.RolloutServlet;
+import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutLogUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ThrottledLogger;
 import org.apache.commons.lang3.StringUtils;
@@ -37,9 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObjectBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,9 +75,7 @@ public class RolloutExecutor implements JobExecutor {
     public static final String PROPERTY_DEEP = "deep";
     private static final String PROPERTY_INITIATOR = "initiator";
     public static final String PROPERTY_PLAN = "plan";
-    private static final String PROPERTY_RESULT = "result";
     private static final String PROPERTY_TOPIC = "topic";
-    private static final String PROPERTY_TYPE = "type";
     public static final String PROPERTY_USER = "user";
 
     private static final String EVENT_ROLLOUT = "rollout";
@@ -276,17 +272,11 @@ public class RolloutExecutor implements JobExecutor {
                     .sorted(Map.Entry.comparingByKey())
                     .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
-            logTargets(
-                    logger,
-                    groupsSortedByDepth.stream()
-                            .flatMap(List::stream)
-                            .map(RolloutItem::getTarget)
-                            .filter(StringUtils::isNotBlank)
-                            .collect(Collectors.toList()));
             groupsSortedByDepth.forEach(this::processGroup);
         }
 
         private void processGroup(List<RolloutItem> items) {
+            items.sort(RolloutItem::compareTo);
             for (RolloutItem item : items) {
                 if (StringUtils.isBlank(item.getTarget())) {
                     LOG.debug("Rollout skipped because the target path is blank for master {}", item.getMaster());
@@ -310,7 +300,7 @@ public class RolloutExecutor implements JobExecutor {
             Page masterPage = pageManager.getPage(masterPath);
             if (masterPage == null) {
                 LOG.warn("Rollout failed: master page is missing at {}", masterPath);
-                logEvent(logger, EVENT_ROLLOUT, targetPath, "Source page is missing");
+                RolloutLogUtil.logEvent(logger, EVENT_ROLLOUT, targetPath, "Source page is missing");
                 return false;
             }
 
@@ -321,7 +311,7 @@ public class RolloutExecutor implements JobExecutor {
                         "Rollout from {} to {} skipped because an automatic rollout is triggered at this path",
                         item.getMaster(),
                         item.getTarget());
-                logEvent(logger, EVENT_ROLLOUT, targetPath);
+                RolloutLogUtil.logEvent(logger, EVENT_ROLLOUT, targetPath);
                 return true;
             }
 
@@ -330,11 +320,11 @@ public class RolloutExecutor implements JobExecutor {
                 LOG.debug("Rollout from {} to {} started", masterPath, targetPath);
                 rolloutManager.rollout(params);
                 LOG.debug("Rollout from {} to {} finished", masterPath, targetPath);
-                logEvent(logger, EVENT_ROLLOUT, targetPath);
+                RolloutLogUtil.logEvent(logger, EVENT_ROLLOUT, targetPath);
                 return true;
             } catch (WCMException e) {
                 LOG.error("Rollout from {} to {} failed", masterPath, targetPath, e);
-                logEvent(logger, EVENT_ROLLOUT, targetPath, e.getMessage());
+                RolloutLogUtil.logEvent(logger, EVENT_ROLLOUT, targetPath, e.getMessage());
                 failedRollouts.add(targetPath);
                 discardUnsavedChanges(masterPage);
             }
@@ -346,7 +336,7 @@ public class RolloutExecutor implements JobExecutor {
             Page page = pageManager.getPage(targetPath);
             if (page == null) {
                 LOG.warn("Activation skipped: page is missing at {}", targetPath);
-                logEvent(logger, EVENT_ACTIVATION, targetPath, "Page is missing");
+                RolloutLogUtil.logEvent(logger, EVENT_ACTIVATION, targetPath, "Page is missing");
                 failedActivations.add(targetPath);
                 return;
             }
@@ -357,10 +347,10 @@ public class RolloutExecutor implements JobExecutor {
             try {
                 LOG.debug("Activating {}", page.getPath());
                 replicator.replicate(session, ReplicationActionType.ACTIVATE, page.getPath());
-                logEvent(logger, EVENT_ACTIVATION, page.getPath());
+                RolloutLogUtil.logEvent(logger, EVENT_ACTIVATION, page.getPath());
             } catch (ReplicationException e) {
                 LOG.error("Activation of {} failed", page.getPath(), e);
-                logEvent(logger, EVENT_ACTIVATION, page.getPath(), e.getMessage());
+                RolloutLogUtil.logEvent(logger, EVENT_ACTIVATION, page.getPath(), e.getMessage());
                 failedActivations.add(page.getPath());
                 return;
             }
@@ -425,38 +415,5 @@ public class RolloutExecutor implements JobExecutor {
                 .map(page -> page.adaptTo(Resource.class))
                 .map(Resource::getResourceResolver)
                 .ifPresent(ResourceResolver::revert);
-    }
-
-    /* -------
-       Logging
-       ------- */
-
-    private static void logTargets(ThrottledLogger logger, List<String> targets) {
-        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-        targets.forEach(arrayBuilder::add);
-        String message = Json.createObjectBuilder()
-                .add(PROPERTY_TYPE, "targets")
-                .add("items", arrayBuilder.build())
-                .build()
-                .toString();
-        logger.log(message);
-    }
-
-    private static void logEvent(ThrottledLogger logger, String type, String target) {
-        logEvent(logger, type, target, null);
-    }
-
-    private static void logEvent(ThrottledLogger logger, String type, String target, String errorMessage) {
-        JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add(PROPERTY_TYPE, type)
-                .add("path", target);
-        if (StringUtils.isNotEmpty(errorMessage)) {
-            builder.add(PROPERTY_RESULT, "error");
-            builder.add("error", errorMessage);
-        } else {
-            builder.add(PROPERTY_RESULT, "success");
-        }
-        String message = builder.build().toString();
-        logger.log(message);
     }
 }

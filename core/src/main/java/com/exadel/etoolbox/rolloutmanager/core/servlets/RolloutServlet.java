@@ -15,7 +15,6 @@
 package com.exadel.etoolbox.rolloutmanager.core.servlets;
 
 import com.exadel.etoolbox.rolloutmanager.core.models.RolloutItem;
-import com.exadel.etoolbox.rolloutmanager.core.models.RolloutStatus;
 import com.exadel.etoolbox.rolloutmanager.core.services.impl.RolloutExecutor;
 import com.exadel.etoolbox.rolloutmanager.core.utils.RolloutPlanUtil;
 import com.exadel.etoolbox.rolloutmanager.core.utils.ServletUtil;

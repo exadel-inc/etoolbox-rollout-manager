@@ -12,31 +12,48 @@
  * limitations under the License.
  */
 
-/**
- * EToolbox Rollout Manager clientlib.
- * 'Rollout' button and dialog actions definition.
- */
 (function ($, ns, Granite) {
     'use strict';
 
     const ROLLOUT_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout';
     const CHECK_STATUS_COMMAND = '/content/etoolbox/rollout-manager/servlet/rollout/status';
-    const SUCCESS_REPLICATION_MSG = Granite.I18n.get('Rollout is completed. Publishing is in progress.');
-    const SUCCESS_MSG = Granite.I18n.get('Rollout completed');
     const PROCESSING_ERROR_MSG = Granite.I18n.get('Failed because of');
     const STATUS_UPDATE_INTERVAL = 5000;
+
+    $(function () {
+        const data = ns.getItemsData();
+        const dialogData = ns.getOpenDialogData();
+        if (!data.length && !dialogData.length) return;
+
+        let logger;
+        if (dialogData.length) {
+            const loggerData = dialogData[0];
+            const shouldUpdateData = data.every((item) => item.id !== loggerData.id);
+            if (shouldUpdateData) ns.changeItemsData('add', loggerData.id, 0, loggerData.path);
+            logger = ns.createLoggerDialog(loggerData.path);
+        }
+        const startIdArray = getStartIdArray();
+        createStatusUpdater(logger, startIdArray, !!dialogData.length)
+            .catch((e) => {
+                logger ? logger.finished(`${PROCESSING_ERROR_MSG} ${e}`) : console.log(`${PROCESSING_ERROR_MSG} ${e}`);
+            });
+    });
 
     async function doItemsRollout(data) {
         const logger = ns.createLoggerDialog();
         try {
             const response = await buildRolloutRequest(data);
-            logger.unblocked();
             if (response.task) {
-                await createStatusUpdater(logger, response.task);
-                logger.finished(data.shouldActivate ? SUCCESS_REPLICATION_MSG : SUCCESS_MSG);
+                ns.setOpenDialogKey(JSON.stringify([{ id: response.task, path: data.path }]));
+                ns.changeItemsData('add', response.task, 0, data.path);
+
+                if (!ns.getItemsData().length) throw new Error('No active tasks found');
+                const startIdArray = getStartIdArray();
+                await createStatusUpdater(logger, startIdArray);
             }
         } catch (e) {
-            logger.finished(PROCESSING_ERROR_MSG + ' ' + e);
+            if (e.statusText === 'Aborted requested') return;
+            logger.finished(`${PROCESSING_ERROR_MSG} ${e}`);
         }
     }
     ns.doItemsRollout = doItemsRollout;
@@ -60,36 +77,83 @@
         }
     }
 
-    async function createStatusUpdater(logger, taskId) {
-        let response = { status: 'active' };
-        let offset = 0;
-        while (response.status === 'active') {
-            response = await getStatusInfo(taskId, offset);
+    async function createStatusUpdater(logger, startIdArray = [], offsetFromStart = false) {
+        let response = { tasks: [{ status: 'active' }] };
+        let firstAttempt = true;
+        while (response.tasks && response.tasks.some((item) => item.status === 'active')) {
+            const data = ns.getItemsData();
+            if (!data.length) return;
 
-            if (response.error) throw new Error(`${response.error}`);
+            const id = data.map((item) => item.id).join(';');
+            const offset = data.map((item) => {
+                if (!offsetFromStart) return item.offset;
+                return isOpenDialogTask(item.id) ? 0 : item.offset;
+            }).join(';');
 
-            if (response.messages && response.messages.length) {
-                offset = response.messages.reduce((total, msg) => {
-                    logger.log(msg);
-                    return msg.id > total ? msg.id : total;
-                }, offset);
-            }
-
-            if (!response.status) throw new Error('Wrong response from the server');
-
+            const startIdSet = new Set(startIdArray);
+            const currentIdArray = id.split(';');
+            const isAbortRequest = currentIdArray.some((item) => !startIdSet.has(item));
+            response = await getStatusInfo(isAbortRequest, firstAttempt, id, offset);
+            if (!response.failedAttempt) response.tasks.forEach((task) => handleTaskResponse(task, logger));
+            firstAttempt = false;
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
         }
     }
 
-    async function getStatusInfo(taskId, offset) {
+    async function getStatusInfo(isAbortRequest, firstAttempt = true, taskId, offset = '0') {
         try {
-            const params = new URLSearchParams({ task: taskId });
-            if (offset) params.append('offset', offset);
+            const params = new URLSearchParams({ task: taskId, offset });
             const url = `${CHECK_STATUS_COMMAND}?${params}`;
-            return await $.ajax({ url });
+            const request = $.ajax({ url });
+            if (isAbortRequest) return request.abort('Aborted requested');
+            return await request;
         } catch (e) {
-            throw new Error(e.responseJSON.error || 'Job was not found');
+            if (e.status === 404 && firstAttempt) {
+                return { tasks: [{ status: 'active' }], failedAttempt: true };
+            } else {
+                throw new Error(e.responseJSON.error || 'Job was not found');
+            }
         }
+    }
+
+    function getStartIdArray() {
+        return ns.getItemsData().map(item => item.id);
+    }
+
+    function isOpenDialogTask(id) {
+        const openDialogData = ns.getOpenDialogData(id);
+        return openDialogData.length && openDialogData[0].id === id;
+    }
+
+    function handleTaskResponse(task, logger) {
+        const isOpenDialog = isOpenDialogTask(task.id);
+        let { offset, path } = ns.getItemsData().find(item => item.id === task.id);
+
+        if (task.error) {
+            handleTaskError(task, isOpenDialog, logger, path);
+            return;
+        }
+
+        if (task.messages && task.messages.length) {
+            offset = updateTaskOffset(task, offset, isOpenDialog, logger);
+        }
+
+        const isActiveTask = task.status && task.status === 'active';
+        ns.changeItemsData(isActiveTask ? 'update' : 'remove', task.id, offset);
+        if (isActiveTask) return;
+        isOpenDialog ? logger.finished(`${task.result}`) : ns.showStatusMessage(path, `${task.result}`, !task.status ? 'error' : 'success');
+    }
+
+    function handleTaskError(task, isOpenDialog, logger, path) {
+        isOpenDialog ? logger.finished(`${task.error}`) : ns.showStatusMessage(path, `${task.error}`, 'error');
+        ns.changeItemsData('remove', task.id);
+    }
+
+    function updateTaskOffset(task, offset, isOpenDialog, logger) {
+        return task.messages.reduce((total, msg) => {
+            isOpenDialog && logger.log(msg, task.queue);
+            return msg.id > total ? msg.id : total;
+        }, offset);
     }
 
     function promisifyTimeout(interval) {

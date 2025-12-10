@@ -49,18 +49,18 @@ class ThrottledLoggerTest {
 
     @Test
     void log_FirstMessage_LogsImmediately() {
-        fixture.log(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_1);
 
         verify(context, times(1)).log(eq("{0}"), eq(TEST_MESSAGE_1));
     }
 
     @Test
     void log_MultipleMessagesWithinThrottleInterval_QueuesMessages() throws InterruptedException {
-        fixture.log(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_1);
         Thread.sleep(100);
-        fixture.log(TEST_MESSAGE_2);
+        fixture.accept(TEST_MESSAGE_2);
         Thread.sleep(100);
-        fixture.log(TEST_MESSAGE_3);
+        fixture.accept(TEST_MESSAGE_3);
 
         verify(context, times(1)).log(eq("{0}"), eq(TEST_MESSAGE_1));
         verify(context, never()).log(eq("{0}"), eq(TEST_MESSAGE_2));
@@ -69,11 +69,11 @@ class ThrottledLoggerTest {
 
     @Test
     void log_MessagesAfterThrottleInterval_LogsBatch() throws InterruptedException {
-        fixture.log(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_1);
         Thread.sleep(100);
-        fixture.log(TEST_MESSAGE_2);
+        fixture.accept(TEST_MESSAGE_2);
         Thread.sleep(5100);
-        fixture.log(TEST_MESSAGE_3);
+        fixture.accept(TEST_MESSAGE_3);
 
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
         verify(context, times(2)).log(eq("{0}"), messageCaptor.capture());
@@ -86,8 +86,8 @@ class ThrottledLoggerTest {
 
     @Test
     void close_FlushesQueuedMessages() {
-        fixture.log(TEST_MESSAGE_1);
-        fixture.log(TEST_MESSAGE_2);
+        fixture.accept(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_2);
 
         verify(context, times(1)).log(eq("{0}"), eq(TEST_MESSAGE_1));
 
@@ -102,9 +102,9 @@ class ThrottledLoggerTest {
 
     @Test
     void close_WithMultipleQueuedMessages_FlushesAsBatch() {
-        fixture.log(TEST_MESSAGE_1);
-        fixture.log(TEST_MESSAGE_2);
-        fixture.log(TEST_MESSAGE_3);
+        fixture.accept(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_2);
+        fixture.accept(TEST_MESSAGE_3);
 
         verify(context, times(1)).log(eq("{0}"), eq(TEST_MESSAGE_1));
 
@@ -120,7 +120,7 @@ class ThrottledLoggerTest {
 
     @Test
     void close_WithEmptyQueue_DoesNotLog() {
-        fixture.log(TEST_MESSAGE_1);
+        fixture.accept(TEST_MESSAGE_1);
 
         verify(context, times(1)).log(eq("{0}"), eq(TEST_MESSAGE_1));
 
@@ -133,13 +133,13 @@ class ThrottledLoggerTest {
     void log_ConcurrentAccess_ThreadSafe() throws InterruptedException {
         Thread thread1 = new Thread(() -> {
             for (int i = 0; i < 10; i++) {
-                fixture.log("Thread 1 message " + i);
+                fixture.accept("Thread 1 message " + i);
             }
         });
 
         Thread thread2 = new Thread(() -> {
             for (int i = 0; i < 10; i++) {
-                fixture.log("Thread 2 message " + i);
+                fixture.accept("Thread 2 message " + i);
             }
         });
 

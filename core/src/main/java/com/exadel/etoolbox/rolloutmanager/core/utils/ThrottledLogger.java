@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 /**
  * A facade for {@link JobExecutionContext#log(String, Object...)} that throttles log calls
@@ -13,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * throttle interval.
  * <p> This class is thread-safe
  */
-public class ThrottledLogger implements AutoCloseable {
+public class ThrottledLogger implements Consumer<String>, AutoCloseable {
 
     public static final String ENTRY_SEPARATOR = "\n\n";
 
@@ -42,7 +43,8 @@ public class ThrottledLogger implements AutoCloseable {
      *
      * @param message the message to log
      */
-    public void log(String message) {
+    @Override
+    public void accept(String message) {
         lock.lock();
         try {
             long currentTime = System.currentTimeMillis();

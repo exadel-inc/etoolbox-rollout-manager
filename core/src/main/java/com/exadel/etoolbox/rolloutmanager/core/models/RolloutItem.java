@@ -14,8 +14,10 @@
 
 package com.exadel.etoolbox.rolloutmanager.core.models;
 
+import org.apache.commons.lang3.StringUtils;
+
 @SuppressWarnings("unused")
-public class RolloutItem {
+public class RolloutItem implements Comparable<RolloutItem>{
     private String master;
     private String target;
     private int depth;
@@ -35,5 +37,17 @@ public class RolloutItem {
 
     public boolean isAutoRolloutTrigger() {
         return autoRolloutTrigger;
+    }
+
+    @Override
+    public int compareTo(RolloutItem other) {
+        if (other == null) {
+            return -1;
+        }
+        int otherDepth = other.getDepth();
+        if (this.depth != otherDepth) {
+            return Integer.compare(this.depth, otherDepth);
+        }
+        return StringUtils.compare(this.target, other.target);
     }
 }
