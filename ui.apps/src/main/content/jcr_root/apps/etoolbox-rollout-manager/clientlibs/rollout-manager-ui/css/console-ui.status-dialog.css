@@ -33,6 +33,8 @@
 
 #rollout-manager-status-popup {
     z-index: 10031; /* more than coral-dialog */
+    display: block;
+    width: fit-content;
     top: 60px;
     left: 50%;
     transform: translate(-50%, 0);
