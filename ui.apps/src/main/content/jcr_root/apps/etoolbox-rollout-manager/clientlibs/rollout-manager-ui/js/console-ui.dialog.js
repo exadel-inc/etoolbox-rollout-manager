@@ -182,7 +182,7 @@
         setTimeout(() => {
             $(popup).fadeOut();
             popup.remove();
-        }, 3000);
+        }, 6000);
     }
     ns.showStatusMessage = showStatusMessage;
 
