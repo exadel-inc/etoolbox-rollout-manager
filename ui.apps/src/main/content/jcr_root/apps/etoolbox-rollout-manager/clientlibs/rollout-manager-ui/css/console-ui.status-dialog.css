@@ -1,18 +1,23 @@
 .rollout-manager-logger-dialog {
+    coral-dialog-content {
+        overflow-y: auto;
+    }
+
     .rollout-processing-status {
         font-weight: 500;
         margin-bottom: 1em;
     }
 
     .rollout-logs-list {
+        position: relative;
         margin-block: 0;
         list-style: none;
         padding: 0;
-        overflow-y: auto;
 
         .rollout-log-item > coral-icon {
             margin-right: 5px;
             vertical-align: text-top;
+            pointer-events: auto;
         }
 
         .rollout-log-item > label {

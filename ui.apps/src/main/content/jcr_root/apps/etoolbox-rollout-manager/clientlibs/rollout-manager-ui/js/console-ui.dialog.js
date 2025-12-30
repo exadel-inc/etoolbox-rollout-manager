@@ -76,35 +76,51 @@
             .first();
         if (!itemToUpdate.length) return;
 
-        const { type, result } = message;
-        switch (type) {
+        switch (message.type) {
             case 'rollout':
-                handleRollout(itemToUpdate, result);
+                handleRollout(itemToUpdate, message);
                 break;
 
             case 'activation':
-                handleActivation(itemToUpdate, result);
+                handleActivation(itemToUpdate, message);
                 break;
         }
     }
 
-    function handleRollout(item, result) {
+    function handleRollout(item, message) {
         const $icon = item.find('coral-icon');
         if ($icon.hasClass('updated')) return;
-        $icon[0].set('icon', result === 'success' ? 'checkmark' : 'close');
+        $icon[0].set('icon', message.result === 'success' ? 'checkmark' : 'close');
+        $icon.attr('id', `erm-tooltip-target-${message.id}`);
+        if (message.result === 'error') createErrorTooltip(message, $icon);
         $icon.addClass('updated');
     }
 
-    function handleActivation(item, result) {
+    function createErrorTooltip(message, $icon) {
+        const tooltip = new Coral.Tooltip().set({
+            content: {
+                innerHTML: message.error
+            },
+            variant: 'inspect',
+            target: `#erm-tooltip-target-${message.id}`,
+            placement: 'top',
+            interaction: 'off'
+        });
+        document.body.appendChild(tooltip);
+        $icon.on('mouseover', () => tooltip.show());
+        $icon.on('mouseout', () => tooltip.hide());
+    }
+
+    function handleActivation(item, message) {
         if (item.find('.rollout-activation-status').length) return;
 
-        const isError = result === 'error';
-        const message = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
+        const isError = message.result === 'error';
+        const activationMessage = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
 
         $('<i>')
             .addClass('rollout-activation-status')
             .toggleClass('error', isError)
-            .text(message)
+            .text(activationMessage)
             .appendTo(item);
     }
 
