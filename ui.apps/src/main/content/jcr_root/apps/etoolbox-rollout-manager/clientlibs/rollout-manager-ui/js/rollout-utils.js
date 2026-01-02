@@ -35,6 +35,7 @@
         const startIdArray = getStartIdArray();
         createStatusUpdater(logger, startIdArray, !!dialogData.length)
             .catch((e) => {
+                ns.removeActiveTasksKey();
                 logger ? logger.finished(`${PROCESSING_ERROR_MSG} ${e}`) : console.log(`${PROCESSING_ERROR_MSG} ${e}`);
             });
     });
@@ -53,6 +54,7 @@
             }
         } catch (e) {
             if (e.statusText === 'Aborted requested') return;
+            ns.removeActiveTasksKey();
             logger.finished(`${PROCESSING_ERROR_MSG} ${e}`);
         }
     }
@@ -94,7 +96,7 @@
             const currentIdArray = id.split(';');
             const isAbortRequest = currentIdArray.some((item) => !startIdSet.has(item));
             response = await getStatusInfo(isAbortRequest, firstAttempt, id, offset);
-            if (!response.failedAttempt) response.tasks.forEach((task) => handleTaskResponse(task, logger));
+            if (!response.failedAttempt && response.tasks) response.tasks.forEach((task) => handleTaskResponse(task, logger));
             firstAttempt = false;
             await promisifyTimeout(STATUS_UPDATE_INTERVAL);
         }
