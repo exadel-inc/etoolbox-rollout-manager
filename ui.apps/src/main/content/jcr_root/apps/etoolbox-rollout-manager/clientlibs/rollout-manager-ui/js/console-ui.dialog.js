@@ -33,6 +33,7 @@
             }).on('coral-overlay:close', function (e) {
                 if (baseDialog.classList.contains(LOGGER_DIALOG_CLASS)) {
                     baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
+                    document.body.querySelectorAll('.erm-error-tooltip').forEach(tooltip => tooltip.remove());
                     ns.removeOpenDialogKey();
                 }
                 e.target.remove();
@@ -56,16 +57,14 @@
 
     function loggerDialogFinished(dialog, statusText) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-status').textContent = statusText;
+        dialog.querySelector('.rollout-processing-status').textContent = statusText.startsWith('Completed') ? 'Completed' : statusText;
     }
 
     function updateLoggerDialogStatus(dialog, queue) {
         const processingLabel = dialog.querySelector('.rollout-processing-label');
-        if (!processingLabel.textContent.trim() || processingLabel.textContent.trim() !== ROLLOUT_IN_PROGRESS_LABEL) {
-            processingLabel.innerText = '';
-            const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{X}', queue.position).replace('{Y}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
-            processingLabel.insertAdjacentText('beforeend', labelText);
-        }
+        processingLabel.innerText = '';
+        const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{X}', queue.position).replace('{Y}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
+        processingLabel.insertAdjacentText('beforeend', labelText);
     }
 
     function updateLog(dialog, message) {
@@ -106,6 +105,7 @@
             placement: 'top',
             interaction: 'off'
         });
+        tooltip.classList.add('erm-error-tooltip');
         document.body.appendChild(tooltip);
         $icon.on('mouseover', () => tooltip.show());
         $icon.on('mouseout', () => tooltip.hide());
@@ -162,7 +162,7 @@
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        const $label = $('<span class="rollout-processing-label">');
+        const $label = $('<span class="rollout-processing-label">').text(ROLLOUT_IN_PROGRESS_LABEL);
         $('<div class="rollout-processing-status">').append(waitIcon, $label).appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
@@ -193,7 +193,8 @@
         const popup = new Coral.Alert();
         popup.id = 'rollout-manager-status-popup';
         popup.variant = status;
-        popup.content.textContent = `${DIALOG_LABEL} ${path} ${message.toLowerCase()}`;
+        const msg = message.toLowerCase().startsWith('completed') ? 'completed' : message.toLowerCase();
+        popup.content.textContent = `${DIALOG_LABEL} ${path} ${msg}`;
         document.body.append(popup);
         setTimeout(() => {
             $(popup).fadeOut();
