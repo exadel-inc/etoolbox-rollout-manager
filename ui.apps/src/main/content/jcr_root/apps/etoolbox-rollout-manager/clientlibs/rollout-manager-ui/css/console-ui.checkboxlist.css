@@ -118,6 +118,10 @@
     .rollout-manager-scope {
         width: fit-content;
     }
+
+    #rollout-history-btn {
+        margin-right: auto;
+    }
 }
 
 /* Cloud styles */

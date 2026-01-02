@@ -206,6 +206,7 @@
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const HISTORY_LABEL = Granite.I18n.get('Rollout History');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
     const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Warning: Publishing action');
     const CONFIRMATION_MESSAGE = Granite.I18n.get(
@@ -431,6 +432,7 @@
         dialog.on('click.rm-dialog', CHECKBOX_SELECT_ALL, onSelectAllClick);
         dialog.on('click.rm-dialog', '.rollout-manager-expand', onExpandButtonClick);
         dialog.on('click.rm-dialog', '[data-dialog-action]', onResolve);
+        dialog.on('click.rm-dialog', '#rollout-history-btn', () => window.open('/etoolbox/rollout-manager/history.html'));
         dialog.one('coral-overlay:close', function () {
             dialog.off('.rm-dialog');
             deferred.reject();
@@ -469,8 +471,10 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
+        const $rolloutHistoryBtn = $('<button id="rollout-history-btn" is="coral-button" variant="secondary">').text(HISTORY_LABEL);
         const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
         const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary">').text(ROLLOUT_AND_PUBLISH_LABEL);
+        $rolloutHistoryBtn.prependTo(dialog.footer);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 
