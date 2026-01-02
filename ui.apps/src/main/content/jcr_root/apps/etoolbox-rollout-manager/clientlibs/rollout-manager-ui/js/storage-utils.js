@@ -57,7 +57,6 @@
     }
     ns.removeActiveTasksKey = removeActiveTasksKey;
 
-
     function removeOpenDialogKey() {
         sessionStorage.removeItem(OPEN_DIALOG_KEY);
     }
