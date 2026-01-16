@@ -21,6 +21,7 @@
 
     const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
     const BASE_DIALOG_CLASS = 'rollout-manager-dialog';
+    const POPUP_HIDE_DELAY = 6000;
 
     let baseDialog;
 
@@ -33,7 +34,7 @@
             }).on('coral-overlay:close', function (e) {
                 if (baseDialog.classList.contains(LOGGER_DIALOG_CLASS)) {
                     baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
-                    document.body.querySelectorAll('.erm-error-tooltip').forEach(tooltip => tooltip.remove());
+                    document.body.querySelectorAll('.erm-error-tooltip').forEach((tooltip) => tooltip.remove());
                     ns.removeOpenDialogKey();
                 }
                 e.target.remove();
@@ -49,7 +50,7 @@
     const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Publishing started');
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
-    const ROLLOUT_IS_PENDING_LABEL = Granite.I18n.get('Pending (position in queue: {X} of {Y})');
+    const ROLLOUT_IS_PENDING_LABEL = Granite.I18n.get('Pending (position in queue: {position} of {total})');
 
     function isLoggerDialog(dialog) {
         return dialog.classList.contains(LOGGER_DIALOG_CLASS);
@@ -63,7 +64,7 @@
     function updateLoggerDialogStatus(dialog, queue) {
         const processingLabel = dialog.querySelector('.rollout-processing-label');
         processingLabel.innerText = '';
-        const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{X}', queue.position).replace('{Y}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
+        const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{position}', queue.position).replace('{total}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
         processingLabel.insertAdjacentText('beforeend', labelText);
     }
 
@@ -199,7 +200,7 @@
         setTimeout(() => {
             $(popup).fadeOut();
             popup.remove();
-        }, 6000);
+        }, POPUP_HIDE_DELAY);
     }
     ns.showStatusMessage = showStatusMessage;
 
