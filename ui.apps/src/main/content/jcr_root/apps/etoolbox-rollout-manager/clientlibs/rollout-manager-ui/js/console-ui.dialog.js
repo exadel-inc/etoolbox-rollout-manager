@@ -21,6 +21,7 @@
 
     const LOGGER_DIALOG_CLASS = 'rollout-manager-logger-dialog';
     const BASE_DIALOG_CLASS = 'rollout-manager-dialog';
+    const POPUP_HIDE_DELAY = 6000;
 
     let baseDialog;
 
@@ -33,6 +34,7 @@
             }).on('coral-overlay:close', function (e) {
                 if (baseDialog.classList.contains(LOGGER_DIALOG_CLASS)) {
                     baseDialog.classList.remove(LOGGER_DIALOG_CLASS);
+                    document.body.querySelectorAll('.erm-error-tooltip').forEach((tooltip) => tooltip.remove());
                     ns.removeOpenDialogKey();
                 }
                 e.target.remove();
@@ -48,7 +50,7 @@
     const PUBLISH_SUCCESS_MSG = Granite.I18n.get('Publishing started');
     const PUBLISH_ERROR_MSG = Granite.I18n.get('Publishing is denied.');
     const ROLLOUT_IN_PROGRESS_LABEL = Granite.I18n.get('Rollout in progress ...');
-    const ROLLOUT_IS_PENDING_LABEL = Granite.I18n.get('Pending (position in queue: {X} of {Y})');
+    const ROLLOUT_IS_PENDING_LABEL = Granite.I18n.get('Pending (position in queue: {position} of {total})');
 
     function isLoggerDialog(dialog) {
         return dialog.classList.contains(LOGGER_DIALOG_CLASS);
@@ -56,16 +58,14 @@
 
     function loggerDialogFinished(dialog, statusText) {
         if (!isLoggerDialog(dialog)) return;
-        dialog.querySelector('.rollout-processing-status').textContent = statusText;
+        dialog.querySelector('.rollout-processing-status').textContent = statusText.startsWith('Completed') ? 'Completed' : statusText;
     }
 
     function updateLoggerDialogStatus(dialog, queue) {
         const processingLabel = dialog.querySelector('.rollout-processing-label');
-        if (!processingLabel.textContent.trim() || processingLabel.textContent.trim() !== ROLLOUT_IN_PROGRESS_LABEL) {
-            processingLabel.innerText = '';
-            const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{X}', queue.position).replace('{Y}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
-            processingLabel.insertAdjacentText('beforeend', labelText);
-        }
+        processingLabel.innerText = '';
+        const labelText = queue ? ROLLOUT_IS_PENDING_LABEL.replace('{position}', queue.position).replace('{total}', queue.total) : ROLLOUT_IN_PROGRESS_LABEL;
+        processingLabel.insertAdjacentText('beforeend', labelText);
     }
 
     function updateLog(dialog, message) {
@@ -76,35 +76,52 @@
             .first();
         if (!itemToUpdate.length) return;
 
-        const { type, result } = message;
-        switch (type) {
+        switch (message.type) {
             case 'rollout':
-                handleRollout(itemToUpdate, result);
+                handleRollout(itemToUpdate, message);
                 break;
 
             case 'activation':
-                handleActivation(itemToUpdate, result);
+                handleActivation(itemToUpdate, message);
                 break;
         }
     }
 
-    function handleRollout(item, result) {
+    function handleRollout(item, message) {
         const $icon = item.find('coral-icon');
         if ($icon.hasClass('updated')) return;
-        $icon[0].set('icon', result === 'success' ? 'checkmark' : 'close');
+        $icon[0].set('icon', message.result === 'success' ? 'checkmark' : 'close');
+        $icon.attr('id', `erm-tooltip-target-${message.id}`);
+        if (message.result === 'error') createErrorTooltip(message, $icon);
         $icon.addClass('updated');
     }
 
-    function handleActivation(item, result) {
+    function createErrorTooltip(message, $icon) {
+        const tooltip = new Coral.Tooltip().set({
+            content: {
+                innerHTML: message.error
+            },
+            variant: 'inspect',
+            target: `#erm-tooltip-target-${message.id}`,
+            placement: 'top',
+            interaction: 'off'
+        });
+        tooltip.classList.add('erm-error-tooltip');
+        document.body.appendChild(tooltip);
+        $icon.on('mouseover', () => tooltip.show());
+        $icon.on('mouseout', () => tooltip.hide());
+    }
+
+    function handleActivation(item, message) {
         if (item.find('.rollout-activation-status').length) return;
 
-        const isError = result === 'error';
-        const message = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
+        const isError = message.result === 'error';
+        const activationMessage = isError ? PUBLISH_ERROR_MSG : PUBLISH_SUCCESS_MSG;
 
         $('<i>')
             .addClass('rollout-activation-status')
             .toggleClass('error', isError)
-            .text(message)
+            .text(activationMessage)
             .appendTo(item);
     }
 
@@ -146,7 +163,7 @@
         dialog.content.innerHTML = '';
         dialog.footer.innerHTML = '';
         const waitIcon = new Coral.Wait().set({ size: 'S' });
-        const $label = $('<span class="rollout-processing-label">');
+        const $label = $('<span class="rollout-processing-label">').text(ROLLOUT_IN_PROGRESS_LABEL);
         $('<div class="rollout-processing-status">').append(waitIcon, $label).appendTo(dialog.content);
         dialog.classList.add(LOGGER_DIALOG_CLASS);
         const closeBtn = new Coral.Button();
@@ -177,18 +194,20 @@
         const popup = new Coral.Alert();
         popup.id = 'rollout-manager-status-popup';
         popup.variant = status;
-        popup.content.textContent = `${DIALOG_LABEL} ${path} ${message.toLowerCase()}`;
+        const msg = message.toLowerCase().startsWith('completed') ? 'completed' : message.toLowerCase();
+        popup.content.textContent = `${DIALOG_LABEL} ${path} ${msg}`;
         document.body.append(popup);
         setTimeout(() => {
             $(popup).fadeOut();
             popup.remove();
-        }, 3000);
+        }, POPUP_HIDE_DELAY);
     }
     ns.showStatusMessage = showStatusMessage;
 
     // Rollout dialog related constants
     const CANCEL_LABEL = Granite.I18n.get('Cancel');
     const DIALOG_LABEL = Granite.I18n.get('Rollout');
+    const HISTORY_LABEL = Granite.I18n.get('Rollout History');
     const ROLLOUT_AND_PUBLISH_LABEL = Granite.I18n.get('Rollout and Publish');
     const ROLLOUT_AND_PUBLISH_CONFIRMATION = Granite.I18n.get('Warning: Publishing action');
     const CONFIRMATION_MESSAGE = Granite.I18n.get(
@@ -414,6 +433,7 @@
         dialog.on('click.rm-dialog', CHECKBOX_SELECT_ALL, onSelectAllClick);
         dialog.on('click.rm-dialog', '.rollout-manager-expand', onExpandButtonClick);
         dialog.on('click.rm-dialog', '[data-dialog-action]', onResolve);
+        dialog.on('click.rm-dialog', '#rollout-history-btn', () => window.open('/etoolbox/rollout-manager/history.html'));
         dialog.one('coral-overlay:close', function () {
             dialog.off('.rm-dialog');
             deferred.reject();
@@ -452,8 +472,10 @@
         const deferred = $.Deferred();
 
         const dialog = initRolloutDialog(selectedPath);
+        const $rolloutHistoryBtn = $('<button id="rollout-history-btn" is="coral-button" variant="secondary">').text(HISTORY_LABEL);
         const $rolloutBtn = $('<button id="rolloutButton" data-dialog-action="rollout" is="coral-button" variant="primary" coral-close>').text(DIALOG_LABEL);
         const $submitBtn = $('<button id="rolloutAndPublishButton" data-dialog-action="rolloutPublish" is="coral-button" variant="primary">').text(ROLLOUT_AND_PUBLISH_LABEL);
+        $rolloutHistoryBtn.prependTo(dialog.footer);
         $rolloutBtn.appendTo(dialog.footer);
         $submitBtn.appendTo(dialog.footer);
 

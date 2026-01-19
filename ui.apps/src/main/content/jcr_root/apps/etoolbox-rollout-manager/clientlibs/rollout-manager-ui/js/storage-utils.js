@@ -52,6 +52,11 @@
         return data.filter((item) => item.id !== id);
     }
 
+    function removeActiveTasksKey() {
+        sessionStorage.removeItem(ACTIVE_TASKS_ID);
+    }
+    ns.removeActiveTasksKey = removeActiveTasksKey;
+
     function removeOpenDialogKey() {
         sessionStorage.removeItem(OPEN_DIALOG_KEY);
     }
